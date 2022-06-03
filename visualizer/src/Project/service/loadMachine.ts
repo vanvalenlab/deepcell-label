@@ -1,7 +1,7 @@
 /** Fetches data from the project storage API, including raw image data, label image data, and labels. */
 
 import * as zip from '@zip.js/zip.js';
-import { assign, createMachine } from 'xstate';
+import { assign, createMachine, sendParent } from 'xstate';
 import { loadOmeTiff } from '@hms-dbmi/viv';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
@@ -83,9 +83,9 @@ function fetchZip(context: Context) {
 async function splitArrays(files: Files) {
   const rawFile = files['X.ome.tiff'] as OmeTiff;
   const labeledFile = files['y.ome.tiff'] as OmeTiff;
-  const rawArrays = await getRawRasters(rawFile.data[0]);
-  const labeledArrays = await getLabelRasters(labeledFile.data[0]);
-  return { rawArrays, labeledArrays };
+  const raw = await getRawRasters(rawFile.data[0]);
+  const labeled = await getLabelRasters(labeledFile.data[0]);
+  return { raw, labeled };
 }
 
 async function getRawRasters(source: TiffPixelSource) {
@@ -148,8 +148,8 @@ interface Context {
   numFrames: number | null;
   numChannels: number | null;
   numFeatures: number | null;
-  rawArrays: Uint8Array[][][] | null;
-  labeledArrays: Int32Array[][][] | null;
+  raw: Uint8Array[][][] | null;
+  labeled: Int32Array[][][] | null;
   labels: Cells | null;
   spots: Spots | null;
   lineage: Lineage | null;
@@ -168,8 +168,8 @@ const createLoadMachine = (projectId: string) =>
         numFrames: null,
         numChannels: null,
         numFeatures: null,
-        rawArrays: null,
-        labeledArrays: null,
+        raw: null,
+        labeled: null,
         labels: null,
         spots: null,
         lineage: null,
@@ -186,8 +186,8 @@ const createLoadMachine = (projectId: string) =>
           };
           'split arrays': {
             data: {
-              rawArrays: Uint8Array[][][];
-              labeledArrays: Int32Array[][][];
+              raw: Uint8Array[][][];
+              labeled: Int32Array[][][];
             };
           };
         },
@@ -212,6 +212,7 @@ const createLoadMachine = (projectId: string) =>
         },
         loaded: {
           type: 'final',
+          entry: 'send loaded',
         },
       },
     },
@@ -254,9 +255,18 @@ const createLoadMachine = (projectId: string) =>
           };
         }),
         'set arrays': assign({
-          rawArrays: (_, event) => event.data.rawArrays,
-          labeledArrays: (_, event) => event.data.labeledArrays,
+          raw: (_, event) => event.data.raw,
+          labeled: (_, event) => event.data.labeled,
         }),
+        'send loaded': sendParent((ctx) => ({
+          type: 'LOADED',
+          raw: ctx.raw,
+          labeled: ctx.labeled,
+          labels: ctx.labels,
+          spots: ctx.spots,
+          lineage: ctx.lineage,
+          overlaps: ctx.overlaps,
+        })),
       },
     }
   );

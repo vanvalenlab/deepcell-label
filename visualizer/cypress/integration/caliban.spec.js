@@ -1,14 +1,21 @@
 /* eslint-disable jest/expect-expect */
 /* eslint-disable no-undef */
+import { deleteDB } from 'idb';
+import { getUniqueId } from './utils';
+
+after(() => {
+  deleteDB('deepcell-label');
+});
 
 it('shows loading spinner', () => {
-  cy.visit('/project?projectId=fakefakefake');
+  cy.visit(`/project?projectId=${getUniqueId()}`);
   cy.get('.MuiCircularProgress-svg');
 });
 
 it('shows tracking controls after loading lineage', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'oneDivision.zip' });
-  cy.visit('/project?projectId=fakefakefake');
+  const id = getUniqueId();
+  cy.intercept('GET', `/api/project/${id}`, { fixture: 'oneDivision.zip' });
+  cy.visit(`/project?projectId=${id}`);
   cy.get('.MuiCircularProgress-svg').should('not.exist');
   cy.contains('Parent');
   cy.contains('Daughters');
@@ -18,10 +25,11 @@ it('shows tracking controls after loading lineage', () => {
 });
 
 it('shows division', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'oneDivision.zip' });
+  const id = getUniqueId();
+  cy.intercept('GET', `/api/project/${id}`, { fixture: 'oneDivision.zip' });
   // contains cells 23, 31, 134, and 135
   // cell 31 divides into 134 and 135 on frame 1
-  cy.visit('/project?projectId=fakefakefake');
+  cy.visit(`/project?projectId=${id}`);
   cy.get('.MuiCircularProgress-svg').should('not.exist');
   cy.get('body').type('['); // Should select cell 135
   // Parent cell

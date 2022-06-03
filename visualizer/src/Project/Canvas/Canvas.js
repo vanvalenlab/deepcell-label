@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useArrays, useCanvas, useEditing } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvases';
 import LabeledCanvas from './LabeledCanvas';
@@ -65,7 +65,7 @@ function Canvas() {
     };
   }, []);
 
-  const [canvases, setCanvases] = React.useState([]);
+  const [canvases, setCanvases] = useState([]);
 
   const arrays = useArrays();
   const loading = useSelector(arrays, (state) => state.matches('waiting'));

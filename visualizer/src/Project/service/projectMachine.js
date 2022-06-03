@@ -7,9 +7,11 @@ import createApiMachine from './apiMachine';
 import createArraysMachine from './arraysMachine';
 import createCanvasMachine from './canvasMachine';
 import { EventBus, fromEventBus } from './eventBus';
+import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createLabelsMachine from './labelsMachine';
 import createLineageMachine from './lineageMachine';
+import createLoadMachine from './loadMachine';
 import createOverlapsMachine from './overlapsMachine';
 import createSelectMachine from './selectMachine';
 import createSpotsMachine from './spotsMachine';
@@ -35,6 +37,7 @@ const createProjectMachine = (projectId) =>
           load: new EventBus('load'),
           overlaps: new EventBus('overlaps'),
         },
+        track: false,
       },
       initial: 'setUpActors',
       invoke: {
@@ -45,47 +48,47 @@ const createProjectMachine = (projectId) =>
         setUpActors: {
           entry: 'spawnActors',
           always: [
-            { cond: () => process.env.REACT_APP_SPOTS_VISUALIZER === 'true', target: 'idle' },
-            { cond: () => process.env.REACT_APP_CALIBAN_VISUALIZER === 'true', target: 'idle' },
+            {
+              cond: () => process.env.REACT_APP_SPOTS_VISUALIZER === 'true',
+              target: 'loadProjectFromDB',
+            },
+            {
+              cond: () => process.env.REACT_APP_CALIBAN_VISUALIZER === 'true',
+              target: 'loadProjectFromDB',
+            },
             { target: 'setUpUndo' },
           ],
         },
         setUpUndo: {
           entry: 'addActorsToUndo',
-          always: 'idle',
+          always: 'loadProjectFromDB',
+        },
+        loadProjectFromDB: {
+          on: {
+            PROJECT_NOT_IN_DB: 'loadProjectFromServer',
+            LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
+          },
+        },
+        loadProjectFromServer: {
+          invoke: { src: 'loadMachine' },
+          on: {
+            LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
+          },
         },
         idle: {
-          on: {
-            LOADED: {
-              actions: [
-                forwardTo('loadEventBus'),
-                send(
-                  (c, e) => {
-                    const { rawArrays, labeledArrays } = e;
-                    return {
-                      type: 'DIMENSIONS',
-                      numChannels: rawArrays.length,
-                      numFeatures: labeledArrays.length,
-                      numFrames: rawArrays[0].length,
-                      height: rawArrays[0][0].length,
-                      width: rawArrays[0][0][0].length,
-                    };
-                  },
-                  { to: 'loadEventBus' }
-                ),
-              ],
-            },
-          },
+          entry: 'setTrack',
         },
       },
     },
     {
       services: {
+        loadMachine: (ctx) => createLoadMachine(ctx.projectId),
         loadEventBus: fromEventBus('project', (context) => context.eventBuses.load),
       },
       actions: {
         spawnActors: assign((context) => {
           const actors = {};
+          actors.idbRef = spawn(createIDBMachine(context), 'idb');
           actors.canvasRef = spawn(createCanvasMachine(context), 'canvas');
           actors.imageRef = spawn(createImageMachine(context), 'image');
           actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
@@ -110,6 +113,23 @@ const createProjectMachine = (projectId) =>
             send({ type: 'ADD_ACTOR', actor: ctx.selectRef }, { to: 'undo' }),
             send({ type: 'ADD_LABEL_ACTOR', actor: ctx.apiRef }, { to: 'undo' }),
           ];
+        }),
+        sendDimensions: send(
+          (c, e) => {
+            const { raw, labeled } = e;
+            return {
+              type: 'DIMENSIONS',
+              numChannels: raw.length,
+              numFeatures: labeled.length,
+              numFrames: raw[0].length,
+              height: raw[0][0].length,
+              width: raw[0][0][0].length,
+            };
+          },
+          { to: 'loadEventBus' }
+        ),
+        setTrack: assign({
+          track: (ctx, evt) => evt.lineage !== null && evt.lineage !== undefined,
         }),
       },
     }

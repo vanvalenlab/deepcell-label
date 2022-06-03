@@ -14,8 +14,8 @@ function OverlapHovering() {
   const feature = useSelector(arrays, (state) => state.context.feature);
   const frame = useSelector(arrays, (state) => state.context.frame);
   const value = useSelector(arrays, (state) => {
-    const { labeledArrays } = state.context;
-    return labeledArrays && labeledArrays[feature][frame][y][x];
+    const { labeled } = state.context;
+    return labeled && labeled[feature][frame][y][x];
   });
   // get label(s) from overlaps array
 

@@ -38,16 +38,11 @@ export function useSelectedCell() {
  * By default keyboard events will not fire inside of a textarea, input, or select.
  * Elements with the mousetrap class will fire keybinds. */
 export function useMousetrapRef() {
-  const ref = useRef();
-  const [hasClass, setHasClass] = useState(false);
-
-  if (ref.current && !hasClass) {
-    setHasClass(true);
-    const inputEl = ref.current;
-    inputEl.className = `${inputEl.className} mousetrap`;
-  }
-
-  return ref;
+  return (input) => {
+    if (input && !input?.className?.includes('mousetrap')) {
+      input.className = `${input?.className} mousetrap`;
+    }
+  };
 }
 
 export function useEditing() {
@@ -296,17 +291,21 @@ const gl = !!document.createElement('canvas').getContext('webgl');
 /** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
 export function useAlphaKernelCanvas() {
   const project = useProject();
+  const width = useSelector(useCanvas(), (state) => state.context.width);
+  const height = useSelector(useCanvas(), (state) => state.context.height);
   const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
     const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
     if (gl2) {
       canvas.getContext('webgl2', { premultipliedAlpha: false });
     } else if (gl) {
       canvas.getContext('webgl', { premultipliedAlpha: false });
     }
     setCanvas(canvas);
-  }, [project]);
+  }, [project, width, height]);
 
   return canvas;
 }

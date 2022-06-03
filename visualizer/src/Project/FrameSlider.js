@@ -58,7 +58,6 @@ function FrameSlider() {
             onChange={handleFrameChange}
             sx={{ p: 0 }}
             componentsProps={{ input: { ref: inputRef } }}
-            size='small'
           />
         </Tooltip>
       </>

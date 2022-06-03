@@ -33,7 +33,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+    (state) => state.context.labeled && state.context.labeled[feature][frame]
   );
 
   const overlaps = useOverlaps();
@@ -55,15 +55,21 @@ export const LabeledCanvas = ({ setCanvases }) => {
         let [r, g, b, a] = [0, 0, 0, 1];
         for (let i = 0; i < numLabels; i++) {
           if (overlaps[value][i] === 1) {
+            let [sr, sg, sb] = colormap[i];
             if (i !== selected) {
               a = a * (1 - opacity[0]);
+              sr = opacity[0] * sr / 255;
+              sg = opacity[0] * sg / 255;
+              sb = opacity[0] * sb / 255;
             } else {
               a = a * (1 - opacity[1]);
+              sr = opacity[1] * sr / 255;
+              sg = opacity[1] * sg / 255;
+              sb = opacity[1] * sb / 255;
             }
-            let [sr, sg, sb] = colormap[i];
-            r = r + sr / 255 - r * sr / 255;
-            g = g + sg / 255 - g * sg / 255;
-            b = b + sb / 255 - b * sb / 255;
+            r = r + sr - r * sr;
+            g = g + sg - g * sg;
+            b = b + sb - b * sb;
           }
         }
         this.color(r, g, b, 1 - a);

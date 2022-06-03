@@ -14,8 +14,8 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
         { src: fromEventBus('arrays', () => eventBuses.load) },
       ],
       context: {
-        rawArrays: null,
-        labeledArrays: null,
+        raw: null,
+        labeled: null,
         frame: 0,
         feature: 0,
         channel: 0,
@@ -24,19 +24,19 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
       states: {
         waiting: {
           on: {
-            LOADED: { target: 'idle', actions: ['setRawArrays', 'setLabeledArrays'] },
+            LOADED: { target: 'idle', actions: ['setRaw', 'setLabeled'] },
             SET_FRAME: { actions: 'setFrame' },
             SET_FEATURE: { actions: 'setFeature' },
             SET_CHANNEL: { actions: 'setChannel' },
           },
         },
         idle: {
-          entry: ['sendLabeledArray', 'sendRawArray'],
+          entry: ['sendLabeled', 'sendRaw'],
           on: {
-            SET_FRAME: { actions: ['setFrame', 'sendLabeledArray', 'sendRawArray'] },
-            SET_FEATURE: { actions: ['setFeature', 'sendLabeledArray'] },
-            SET_CHANNEL: { actions: ['setChannel', 'sendRawArray'] },
-            EDITED: { actions: ['setLabeledFrame', 'sendLabeledArray'] },
+            SET_FRAME: { actions: ['setFrame', 'sendLabeled', 'sendRaw'] },
+            SET_FEATURE: { actions: ['setFeature', 'sendLabeled'] },
+            SET_CHANNEL: { actions: ['setChannel', 'sendRaw'] },
+            EDITED: { actions: ['setLabeledFrame', 'sendLabeled'] },
           },
         },
       },
@@ -44,31 +44,30 @@ const createArraysMachine = ({ projectId, eventBuses }) =>
     {
       guards: {},
       actions: {
-        setRawArrays: assign({ rawArrays: (ctx, evt) => evt.rawArrays }),
-        setLabeledArrays: assign({ labeledArrays: (ctx, evt) => evt.labeledArrays }),
+        setRaw: assign({ raw: (ctx, evt) => evt.raw }),
+        setLabeled: assign({ labeled: (ctx, evt) => evt.labeled }),
         setFrame: assign({ frame: (ctx, evt) => evt.frame }),
         setFeature: assign({ feature: (ctx, evt) => evt.feature }),
         setChannel: assign({ channel: (ctx, evt) => evt.channel }),
         setLabeledFrame: assign({
-          labeledArrays: (ctx, evt) => {
+          labeled: (ctx, evt) => {
             const { frame, feature, labeled } = evt;
-            const { labeledArrays } = ctx;
             // TODO: update immutably
-            labeledArrays[feature][frame] = labeled;
-            return labeledArrays;
+            ctx.labeled[feature][frame] = labeled;
+            return ctx.labeled;
           },
         }),
-        sendLabeledArray: send(
+        sendLabeled: send(
           (ctx, evt) => ({
-            type: 'LABELED_ARRAY',
-            labeledArray: ctx.labeledArrays[ctx.feature][ctx.frame],
+            type: 'LABELED',
+            labeled: ctx.labeled[ctx.feature][ctx.frame],
           }),
           { to: 'eventBus' }
         ),
-        sendRawArray: send(
+        sendRaw: send(
           (ctx, evt) => ({
-            type: 'RAW_ARRAY',
-            rawArray: ctx.rawArrays[ctx.channel][ctx.frame],
+            type: 'RAW',
+            raw: ctx.raw[ctx.channel][ctx.frame],
           }),
           { to: 'eventBus' }
         ),
