@@ -1,6 +1,7 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useEditCells, useLabelMode, useSegment } from '../../ProjectContext';
+import { useEditCells, useEditDivisions, useLabelMode, useSegment } from '../../ProjectContext';
+import AddDaughterCanvas from './AddDaughterCanvas';
 import BrushCanvas from './BrushCanvas';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
@@ -15,9 +16,18 @@ function ToolCanvas({ setCanvases }) {
   const editCells = useEditCells();
   const cellsTool = useSelector(editCells, (state) => state.context.tool);
 
+  const editDivisions = useEditDivisions();
+  const addingDaughter = useSelector(editDivisions, (state) => state.matches('addingDaughter'));
+
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
-    state.matches('editSegment') ? 'segment' : state.matches('editCells') ? 'cells' : false
+    state.matches('editSegment')
+      ? 'segment'
+      : state.matches('editCells')
+      ? 'cells'
+      : state.matches('editDivisions')
+      ? 'divisions'
+      : false
   );
 
   switch (mode) {
@@ -42,6 +52,10 @@ function ToolCanvas({ setCanvases }) {
           return <ReplaceCanvas setCanvases={setCanvases} />;
         default:
           return null;
+      }
+    case 'divisions':
+      if (addingDaughter) {
+        return <AddDaughterCanvas setCanvases={setCanvases} />;
       }
     default:
       return null;
