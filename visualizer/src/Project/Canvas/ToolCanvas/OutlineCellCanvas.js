@@ -11,7 +11,7 @@ import {
   useLabeled,
 } from '../../ProjectContext';
 
-function OutlineCellCanvas({ setCanvases, cell }) {
+function OutlineCellCanvas({ setCanvases, cell, color }) {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -37,7 +37,7 @@ function OutlineCellCanvas({ setCanvases, cell }) {
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      `function (data, cells, cell) {
+      `function (data, cells, cell, color) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -59,7 +59,8 @@ function OutlineCellCanvas({ setCanvases, cell }) {
         }
         if (cells[value][cell] === 1) {
           if (cells[north][cell] === 0 || cells[south][cell] === 0 || cells[west][cell] === 0 || cells[east][cell] === 0) {
-            this.color(1, 0, 0, 1);
+            const [r, g, b, a] = color;
+            this.color(r, g, b, a);
           }
         }
       }`,
@@ -78,17 +79,19 @@ function OutlineCellCanvas({ setCanvases, cell }) {
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
+    // Cell beyond the cell matrix, so it's not in the frame
     if (cell > cellMatrix[0].length) {
+      // Remove the tool canvas
       setCanvases((canvases) => {
         const { tool, ...rest } = canvases;
         return rest;
       });
     } else if (labeledArray && cellMatrix) {
-      kernelRef.current(labeledArray, cellMatrix, cell);
+      kernelRef.current(labeledArray, cellMatrix, cell, color);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
     }
-  }, [labeledArray, cellMatrix, cell, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, cellMatrix, cell, color, setCanvases, kernelCanvas, width, height]);
 
   useEffect(
     () => () =>
