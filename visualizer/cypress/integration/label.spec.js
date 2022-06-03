@@ -27,7 +27,7 @@ it('Create a project from an example file', () => {
     .and('include', 'projectId=')
     .and('include', 'download=true');
   cy.get('.MuiCircularProgress-svg');
-  cy.get('canvas', { timeout: 10000 });
+  cy.get('canvas', { timeout: 30000 });
   cy.contains('DeepCell Label');
   cy.contains('Instructions');
   cy.contains('Download');
@@ -64,7 +64,7 @@ it('updates state with keybinds', () => {
   cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
   cy.visit(`/project?projectId=${id}`);
-  cy.get('.MuiCircularProgress-svg').should('not.exist');
+  cy.get('.MuiCircularProgress-svg', { timeout: 30000 }).should('not.exist');
   cy.get('body').type('b');
   cy.contains('Brush').should('have.attr', 'aria-pressed', 'true');
   cy.get('body').type('e');
