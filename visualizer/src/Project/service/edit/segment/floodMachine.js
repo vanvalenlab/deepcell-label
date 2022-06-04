@@ -26,26 +26,29 @@ const creatFloodMachine = (context) =>
           { cond: 'onFloodCell', actions: 'flood' },
           { actions: 'setFloodCell' },
         ],
+        EXIT: { actions: 'resetFloodCell' },
       },
     },
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
-        onFloodCell: (ctx) => ctx.hovering.includes(ctx.floodCell),
+        onFloodCell: (ctx) =>
+          ctx.hovering.includes(ctx.floodCell) || ctx.floodCell === ctx.selected,
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
+        resetFloodCell: assign({ floodCell: 0 }),
         setFloodCell: assign({
           floodCell: (ctx) => {
             const { hovering, floodCell } = ctx;
             const i = hovering.indexOf(floodCell);
+            if (i === hovering.length - 1) {
+              return ctx.selected;
+            }
             if (i === -1) {
               return hovering[0];
-            } else if (i === hovering.length - 1) {
-              return 0;
-            } else {
-              return hovering[i + 1];
             }
+            return hovering[i + 1];
           },
         }),
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
