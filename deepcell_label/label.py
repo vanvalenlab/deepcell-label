@@ -248,16 +248,9 @@ class Edit(object):
             x (int): x coordinate of region to flood
             y (int): y coordinate of region to flood
         """
-        if background == 0:
-            mask = self.get_mask(background)
-            # Lower connectivity helps prevent flooding whole image
-            flooded = flood(mask, (y, x), connectivity=1)
-            self.add_mask(flooded, foreground)
-        else:
-            mask = self.get_mask(background)
-            flooded = flood(mask, (y, x), connectivity=2) & mask
-            self.remove_mask(flooded, background)
-            self.add_mask(flooded, foreground)
+        mask = self.get_mask(background)
+        flooded = flood(mask, (y, x), connectivity=2)
+        self.add_mask(flooded, foreground)
 
     def action_watershed(self, cell, x1, y1, x2, y2):
         """Use watershed to segment different objects"""
