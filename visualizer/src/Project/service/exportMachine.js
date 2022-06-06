@@ -18,9 +18,7 @@ async function makeExportZip(context) {
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeled))));
   await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
   await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
-  if (divisions) {
-    await zipWriter.add('divisions.json', new zip.TextReader(JSON.stringify(divisions)));
-  }
+  await zipWriter.add('divisions.json', new zip.TextReader(JSON.stringify(divisions)));
 
   const zipBlob = await zipWriter.close();
   return zipBlob;
@@ -76,6 +74,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
       invoke: [
         { id: 'arrays', src: fromEventBus('export', () => eventBuses.arrays, 'ARRAYS') },
         { id: 'cells', src: fromEventBus('export', () => eventBuses.cells, 'CELLS') },
+        { id: 'divisions', src: fromEventBus('export', () => eventBuses.divisions, 'DIVISIONS') },
       ],
       context: {
         projectId,
@@ -84,10 +83,11 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         raw: null,
         labeled: null,
         cells: null,
-        // divisions: null,
+        divisions: null,
       },
       on: {
         CELLS: { actions: 'setCells' },
+        DIVISIONS: { actions: 'setDivisions' },
       },
       initial: 'idle',
       states: {
@@ -125,7 +125,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
               invoke: {
                 src: download,
                 onDone: { target: 'done', actions: 'download' },
-                onError: 'done',
+                onError: { target: 'done', actions: (ctx, evt) => console.log(ctx, evt) },
               },
             },
             done: { type: 'final' },
@@ -148,7 +148,8 @@ const createExportMachine = ({ projectId, eventBuses }) =>
           raw: evt.raw,
           labeled: evt.labeled,
         })),
-        setCells: assign((_, { cells }) => ({ cells })),
+        setCells: assign({ cells: (_, evt) => evt.cells }),
+        setDivisions: assign({ divisions: (_, evt) => evt.divisions }),
       },
     }
   );
