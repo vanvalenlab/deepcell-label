@@ -1,10 +1,10 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useBrush, useSegment, useSelect } from '../../../ProjectContext';
+import { useBrush, useEditSegment, useSelect } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function BrushButton(props) {
-  const segment = useSegment();
+  const segment = useEditSegment();
   const tool = useSelector(segment, (state) => state.context.tool);
 
   const brush = useBrush();

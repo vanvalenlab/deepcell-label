@@ -41,7 +41,7 @@ let mockSegmentActor = interpret(createSegmentMachine(context), {
 jest.mock('../ProjectContext', () => ({
   useArrays: () => mockArraysActor,
   useCanvas: () => mockCanvasActor,
-  useSegment: () => mockSegmentActor,
+  useEditSegment: () => mockSegmentActor,
   useSelect: () => mockSelectActor,
   useEditing: () => true,
 }));

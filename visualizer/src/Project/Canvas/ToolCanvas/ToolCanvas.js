@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useEditCells, useEditDivisions, useLabelMode, useSegment } from '../../ProjectContext';
+import { useEditCells, useEditDivisions, useEditSegment, useLabelMode } from '../../ProjectContext';
 import AddDaughterCanvas from './AddDaughterCanvas';
 import BrushCanvas from './BrushCanvas';
 import FloodCanvas from './FloodCanvas';
@@ -10,8 +10,8 @@ import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
 
 function ToolCanvas({ setCanvases }) {
-  const segment = useSegment();
-  const segmentTool = useSelector(segment, (state) => state.context.tool);
+  const editSegment = useEditSegment();
+  const segmentTool = useSelector(editSegment, (state) => state.context.tool);
 
   const editCells = useEditCells();
   const cellsTool = useSelector(editCells, (state) => state.context.tool);

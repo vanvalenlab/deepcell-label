@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
-import { useSegment } from '../../../ProjectContext';
+import { useEditSegment } from '../../../ProjectContext';
 import ActionButton from './ActionButton';
 
 function GrowButton(props) {
-  const segment = useSegment();
+  const segment = useEditSegment();
 
   const onClick = useCallback(() => segment.send('DILATE'), [segment]);
 

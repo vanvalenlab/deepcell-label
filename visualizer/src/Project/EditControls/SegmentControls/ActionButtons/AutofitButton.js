@@ -1,10 +1,10 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useSegment } from '../../../ProjectContext';
+import { useEditSegment } from '../../../ProjectContext';
 import ActionButton from './ActionButton';
 
 function AutofitButton(props) {
-  const segment = useSegment();
+  const segment = useEditSegment();
   const grayscale = useSelector(segment, (state) => state.matches('idle.display.grayscale'));
 
   const onClick = useCallback(() => segment.send('AUTOFIT'), [segment]);

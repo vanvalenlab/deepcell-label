@@ -34,7 +34,7 @@ export function useHovering() {
  * When these tools are not in use, returns null instead.
  */
 export function useOtherSelectedCell() {
-  const segment = useSegment();
+  const segment = useEditSegment();
   const segmentTool = useSelector(segment, (state) => state.context.tool);
 
   const editCells = useEditCells();
@@ -261,7 +261,7 @@ export function useLabelMode() {
   return labelMode;
 }
 
-export function useSegment() {
+export function useEditSegment() {
   const project = useProject();
   const segment = useSelector(project, (state) => {
     const tool = state.context.toolRef;

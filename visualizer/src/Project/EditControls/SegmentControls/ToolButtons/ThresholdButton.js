@@ -1,10 +1,10 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useSegment } from '../../../ProjectContext';
+import { useEditSegment } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function ThresholdButton(props) {
-  const segment = useSegment();
+  const segment = useEditSegment();
   const tool = useSelector(segment, (state) => state.context.tool);
   const grayscale = useSelector(segment, (state) => state.matches('idle.display.grayscale'));
 

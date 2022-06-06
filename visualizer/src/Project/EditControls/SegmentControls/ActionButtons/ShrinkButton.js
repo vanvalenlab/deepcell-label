@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
-import { useSegment } from '../../../ProjectContext';
+import { useEditSegment } from '../../../ProjectContext';
 import ActionButton from './ActionButton';
 
 function ShrinkButton(props) {
-  const segment = useSegment();
+  const segment = useEditSegment();
   const onClick = useCallback(() => segment.send('ERODE'), [segment]);
   const tooltipText = (
     <span>

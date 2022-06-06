@@ -1,10 +1,10 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useSegment } from '../../../ProjectContext';
+import { useEditSegment } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function SelectButton(props) {
-  const segment = useSegment();
+  const segment = useEditSegment();
   const tool = useSelector(segment, (state) => state.context.tool);
 
   const onClick = useCallback(() => segment.send({ type: 'SET_TOOL', tool: 'select' }), [segment]);
