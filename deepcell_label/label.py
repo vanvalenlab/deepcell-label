@@ -129,12 +129,13 @@ class Edit(object):
         values = set(map(lambda c: c['value'], self.cells))
         for cell in cells:
             values = values & set(self.get_values(cell))
-        if len(values) == 0:
-            value = self.new_value
-            for cell in cells:
-                self.cells.append({'value': value, 'cell': cell})
-            return value
-        return values.pop()
+        for value in values:
+            if set(self.get_cells(value)) == set(cells):
+                return value
+        value = self.new_value
+        for cell in cells:
+            self.cells.append({'value': value, 'cell': cell})
+        return value
 
     def get_mask(self, cell):
         """
