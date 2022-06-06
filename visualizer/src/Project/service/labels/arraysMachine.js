@@ -145,8 +145,8 @@ const createArraysMachine = (context) =>
         ),
         sendArrays: respond((ctx) => ({
           type: 'ARRAYS',
-          rawArrays: ctx.raw,
-          labeledArrays: ctx.labeled,
+          raw: ctx.raw,
+          labeled: ctx.labeled,
         })),
         sendInitialLabelsToHistory: send(
           (ctx) => ({
