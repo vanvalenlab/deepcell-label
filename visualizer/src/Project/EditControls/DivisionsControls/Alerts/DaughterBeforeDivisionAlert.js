@@ -15,7 +15,7 @@ function DaughterBeforeDivisionAlert({ division }) {
     const timesBeforeDivision = times.filter((f) => f < t);
     const timeText = formatTimes(timesBeforeDivision);
     if (timesBeforeDivision.length > 0) {
-      alerts.append([daughter, timeText]);
+      alerts.push([daughter, timeText]);
     }
   }
 
