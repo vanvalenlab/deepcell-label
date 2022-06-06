@@ -14,7 +14,7 @@ function ToolButtons() {
     bind('esc', () => editCells.send('EXIT'));
   }, [editCells]);
 
-  const onClick = useCallback(
+  const onChange = useCallback(
     (event, value) => {
       editCells.send({ type: 'SET_TOOL', tool: value });
     },
@@ -24,7 +24,7 @@ function ToolButtons() {
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Tools</FormLabel>
-      <ToggleButtonGroup orientation='vertical' value={tool} onClick={onClick}>
+      <ToggleButtonGroup exclusive orientation='vertical' value={tool} onChange={onChange}>
         <ToggleButton value={'select'} sx={{ px: 0.5, py: 0 }}>
           Select
         </ToggleButton>
