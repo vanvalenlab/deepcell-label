@@ -20,12 +20,12 @@ const createTrimMachine = (context) =>
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
         SELECTED: { actions: 'setCell' },
-        mouseup: [{ cond: 'onLabel', actions: 'trim' }, { actions: 'select' }],
+        mouseup: [{ cond: 'onCell', actions: 'trim' }, { actions: 'select' }],
       },
     },
     {
       guards: {
-        onLabel: (ctx) => ctx.hovering.includes(ctx.label),
+        onCell: (ctx) => ctx.hovering.includes(ctx.cell),
       },
       actions: {
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
