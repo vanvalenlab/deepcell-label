@@ -16,7 +16,7 @@ function ToolButtons() {
 
   const onChange = useCallback(
     (event, value) => {
-      editCells.send({ type: 'SET_TOOL', tool: value });
+      editCells.send({ type: 'SET_TOOL', tool: value === null ? tool : value });
     },
     [editCells]
   );
