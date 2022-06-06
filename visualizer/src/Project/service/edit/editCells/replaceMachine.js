@@ -19,6 +19,7 @@ function createReplaceMachine(context) {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
         mouseup: [
+          { cond: 'noneSelected', actions: 'select' },
           { cond: 'shift', actions: 'setReplaceCell' },
           { cond: 'onReplaceCell', actions: 'replace' },
           { actions: 'setReplaceCell' },
@@ -29,10 +30,12 @@ function createReplaceMachine(context) {
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
+        noneSelected: (ctx) => !ctx.selected,
         onReplaceCell: (ctx) => ctx.hovering.includes(ctx.replaceCell),
       },
       actions: {
         resetReplaceCell: assign({ replaceCell: null }),
+        select: send('SELECT', { to: 'select' }),
         setSelected: assign({
           selected: (_, evt) => evt.selected,
           replaceCell: (ctx, evt) => (evt.selected === ctx.replaceCell ? null : ctx.replaceCell),

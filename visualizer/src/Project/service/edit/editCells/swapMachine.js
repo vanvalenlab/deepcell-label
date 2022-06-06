@@ -19,6 +19,7 @@ function createSwapMachine(context) {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
         mouseup: [
+          { cond: 'noneSelected', actions: 'select' },
           { cond: 'shift', actions: 'setSwapCell' },
           { cond: 'onSwapCell', actions: 'swap' },
           { cond: 'onSelected', actions: 'swap' },
@@ -30,10 +31,12 @@ function createSwapMachine(context) {
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
+        noneSelected: (ctx) => !ctx.selected,
         onSwapCell: (ctx) => ctx.hovering.includes(ctx.swapCell),
         onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
       },
       actions: {
+        select: send('SELECT', { to: 'select' }),
         setSelected: assign({
           selected: (_, evt) => evt.selected,
           swapCell: (ctx, evt) => (evt.selected === ctx.swapCell ? null : ctx.swapCell),
