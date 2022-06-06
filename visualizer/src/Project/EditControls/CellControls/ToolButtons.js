@@ -1,4 +1,4 @@
-import { FormLabel, ToggleButton } from '@mui/material';
+import { FormLabel, ToggleButton, Tooltip } from '@mui/material';
 import Box from '@mui/material/Box';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useSelector } from '@xstate/react';
@@ -35,19 +35,29 @@ function ToolButtons() {
       <FormLabel>Tools</FormLabel>
       <ToggleButtonGroup exclusive orientation='vertical' value={tool} onChange={onChange}>
         <ToggleButton value={'select'} sx={{ px: 0.5, py: 0 }}>
-          Select
+          <Tooltip title={<kbd>V</kbd>} placement='right'>
+            <div>Select</div>
+          </Tooltip>
         </ToggleButton>
         <ToggleButton value={'delete'} sx={{ px: 0.5, py: 0 }}>
-          Delete
+          <Tooltip title={<kbd>Backspace</kbd>} placement='right'>
+            <div>Delete</div>
+          </Tooltip>
         </ToggleButton>
         <ToggleButton value={'replace'} sx={{ px: 0.5, py: 0 }}>
-          Replace
+          <Tooltip title={<kbd>R</kbd>} placement='right'>
+            <div>Replace</div>
+          </Tooltip>
         </ToggleButton>
         <ToggleButton value={'swap'} sx={{ px: 0.5, py: 0 }}>
-          Swap
+          <Tooltip title={<kbd>S</kbd>} placement='right'>
+            <div>Swap</div>
+          </Tooltip>
         </ToggleButton>
         <ToggleButton value={'new'} sx={{ px: 0.5, py: 0 }}>
-          New
+          <Tooltip title={<kbd>N</kbd>} placement='right'>
+            <div>New</div>
+          </Tooltip>
         </ToggleButton>
       </ToggleButtonGroup>
     </Box>
