@@ -20,6 +20,7 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
       entry: 'spawnTools',
       on: {
         SET_TOOL: { actions: 'setTool' },
+        EXIT: { actions: 'forwardToTool' },
         // from canvas event bus (forwarded from parent)
         mousedown: { actions: 'forwardToTool' },
         mouseup: { actions: 'forwardToTool' },
