@@ -14,6 +14,15 @@ function ToolButtons() {
     bind('esc', () => editCells.send('EXIT'));
   }, [editCells]);
 
+  // set up keybinds
+  useEffect(() => {
+    bind('v', () => editCells.send({ type: 'SET_TOOL', tool: 'select' }));
+    bind('backspace', () => editCells.send({ type: 'SET_TOOL', tool: 'delete' }));
+    bind('r', () => editCells.send({ type: 'SET_TOOL', tool: 'replace' }));
+    bind('s', () => editCells.send({ type: 'SET_TOOL', tool: 'swap' }));
+    bind('n', () => editCells.send({ type: 'SET_TOOL', tool: 'new' }));
+  }, [editCells]);
+
   const onChange = useCallback(
     (event, value) => {
       editCells.send({ type: 'SET_TOOL', tool: value === null ? tool : value });
