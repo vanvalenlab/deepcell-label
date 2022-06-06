@@ -1,5 +1,6 @@
 import { useSelector } from '@xstate/react';
-import React, { useCallback } from 'react';
+import { bind } from 'mousetrap';
+import React, { useCallback, useEffect } from 'react';
 import { useEditSegment } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
@@ -14,6 +15,10 @@ function FloodButton(props) {
       Click a region to fill it with a label <kbd>G</kbd>
     </span>
   );
+
+  useEffect(() => {
+    bind('esc', () => segment.send('EXIT'));
+  }, [segment]);
 
   return (
     <ToolButton
