@@ -18,7 +18,7 @@ const ActionButton = ({ tooltipText, disabled, onClick, hotkey, ...other }) => {
   }, [hotkey, onClick]);
 
   return (
-    <Tooltip title={tooltipText}>
+    <Tooltip title={tooltipText} placement='right'>
       <Button
         {...other}
         {...adjustedButtonProps}

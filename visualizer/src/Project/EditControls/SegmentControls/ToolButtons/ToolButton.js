@@ -19,7 +19,7 @@ function ToolButton(props) {
   }, [hotkey, onClick]);
 
   return (
-    <Tooltip title={tooltipText}>
+    <Tooltip title={tooltipText} placement='right'>
       <ToggleButton
         {...rest}
         {...adjustedButtonProps}

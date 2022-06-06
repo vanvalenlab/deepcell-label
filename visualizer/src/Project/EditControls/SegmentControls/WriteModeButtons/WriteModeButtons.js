@@ -28,17 +28,17 @@ function WriteModeButtons() {
         onChange={handleWriteMode}
         aria-label='label write mode'
       >
-        <Tooltip title='Overlap labels' value='overlap'>
+        <Tooltip title='Overlap labels' value='overlap' placement='right'>
           <ToggleButton value='overlap'>
             <OverlapIcon />
           </ToggleButton>
         </Tooltip>
-        <Tooltip title='Overwrite labels' value='overwrite'>
+        <Tooltip title='Overwrite labels' value='overwrite' placement='right'>
           <ToggleButton value='overwrite'>
             <OverwriteIcon />
           </ToggleButton>
         </Tooltip>
-        <Tooltip title='Exclude labels' value='exclude'>
+        <Tooltip title='Exclude labels' value='exclude' placement='right'>
           <ToggleButton value='exclude'>
             <ExcludeIcon />
           </ToggleButton>
