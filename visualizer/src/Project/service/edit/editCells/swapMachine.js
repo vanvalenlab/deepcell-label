@@ -34,13 +34,18 @@ function createSwapMachine(context) {
         onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
       },
       actions: {
-        setSelected: assign({ selected: (_, evt) => evt.selected }),
+        setSelected: assign({
+          selected: (_, evt) => evt.selected,
+          swapCell: (ctx, evt) => (evt.selected === ctx.swapCell ? null : ctx.swapCell),
+        }),
         resetSwapCell: assign({ swapCell: null }),
         setSwapCell: assign({
           swapCell: (ctx) => {
-            const { hovering, swapCell } = ctx;
+            const { hovering, swapCell, selected } = ctx;
             const i = hovering.indexOf(swapCell);
-            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
+            const next = i + 1 < hovering.length ? hovering[i + 1] : hovering[0];
+            const nextNext = i + 2 < hovering.length ? hovering[i + 2] : swapCell;
+            return next === selected ? nextNext : next;
           },
         }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),

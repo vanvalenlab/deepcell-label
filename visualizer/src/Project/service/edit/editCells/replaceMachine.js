@@ -33,12 +33,17 @@ function createReplaceMachine(context) {
       },
       actions: {
         resetReplaceCell: assign({ replaceCell: null }),
-        setSelected: assign({ selected: (_, evt) => evt.selected }),
+        setSelected: assign({
+          selected: (_, evt) => evt.selected,
+          replaceCell: (ctx, evt) => (evt.selected === ctx.replaceCell ? null : ctx.replaceCell),
+        }),
         setReplaceCell: assign({
           replaceCell: (ctx) => {
-            const { hovering, replaceCell } = ctx;
+            const { hovering, replaceCell, selected } = ctx;
             const i = hovering.indexOf(replaceCell);
-            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
+            const next = i + 1 < hovering.length ? hovering[i + 1] : hovering[0];
+            const nextNext = i + 2 < hovering.length ? hovering[i + 2] : replaceCell;
+            return next === selected ? nextNext : next;
           },
         }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
