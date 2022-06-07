@@ -24,6 +24,7 @@ function createReplaceMachine(context) {
           { cond: 'onReplaceCell', actions: 'replace' },
           { actions: 'setReplaceCell' },
         ],
+        ENTER: { cond: 'haveCells', actions: 'replace' },
         EXIT: { actions: 'resetReplaceCell' },
       },
     },
@@ -32,6 +33,7 @@ function createReplaceMachine(context) {
         shift: (_, evt) => evt.shiftKey,
         noneSelected: (ctx) => !ctx.selected,
         onReplaceCell: (ctx) => ctx.hovering.includes(ctx.replaceCell),
+        haveCells: (ctx) => !!ctx.replaceCell && !!ctx.selected,
       },
       actions: {
         resetReplaceCell: assign({ replaceCell: null }),

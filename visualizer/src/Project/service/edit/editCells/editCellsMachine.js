@@ -1,4 +1,4 @@
-import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import createSelectMachine from '../segment/selectMachine';
 import createDeleteMachine from './deleteMachine';
 import createNewCellMachine from './newCellMachine';
@@ -19,7 +19,18 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
       },
       entry: 'spawnTools',
       on: {
-        SET_TOOL: { actions: 'setTool' },
+        SET_TOOL: [
+          { cond: 'sameTool', actions: send('ENTER') },
+          {
+            actions: [
+              'setTool',
+              send('ENTER'),
+              (c, e) => console.log(c, e),
+              sendParent((c, e) => e),
+            ],
+          },
+        ],
+        ENTER: { actions: 'forwardToTool' },
         EXIT: { actions: 'forwardToTool' },
         // from canvas event bus (forwarded from parent)
         mousedown: { actions: 'forwardToTool' },
@@ -30,6 +41,9 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
       },
     },
     {
+      guards: {
+        sameTool: (ctx, evt) => ctx.tool === evt.tool,
+      },
       actions: {
         setTool: pure((ctx, evt) => [
           send('EXIT', { to: ctx.tools[ctx.tool] }),

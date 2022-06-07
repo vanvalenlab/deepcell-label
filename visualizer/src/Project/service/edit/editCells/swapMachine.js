@@ -25,6 +25,7 @@ function createSwapMachine(context) {
           { cond: 'onSelected', actions: 'swap' },
           { actions: 'setSwapCell' },
         ],
+        ENTER: { cond: 'haveCells', actions: 'swap' },
         EXIT: { actions: 'resetSwapCell' },
       },
     },
@@ -34,6 +35,7 @@ function createSwapMachine(context) {
         noneSelected: (ctx) => !ctx.selected,
         onSwapCell: (ctx) => ctx.hovering.includes(ctx.swapCell),
         onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
+        haveCells: (ctx) => !!ctx.replaceCell && !!ctx.selected,
       },
       actions: {
         select: send('SELECT', { to: 'select' }),

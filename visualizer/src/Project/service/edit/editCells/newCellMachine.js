@@ -22,10 +22,12 @@ function createNewCellMachine(context) {
           { cond: 'onSelected', actions: 'newCell' },
           { actions: 'selectCell' },
         ],
+        ENTER: { cond: 'haveSelected', actions: 'newCell' },
       },
     },
     {
       guards: {
+        haveSelected: (ctx) => !!ctx.selected,
         shift: (_, event) => event.shiftKey,
         onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
       },

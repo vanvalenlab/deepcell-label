@@ -16,6 +16,7 @@ function ToolButtons() {
 
   // set up keybinds
   useEffect(() => {
+    bind('enter', () => editCells.send('ENTER'));
     bind('v', () => editCells.send({ type: 'SET_TOOL', tool: 'select' }));
     bind('backspace', () => editCells.send({ type: 'SET_TOOL', tool: 'delete' }));
     bind('r', () => editCells.send({ type: 'SET_TOOL', tool: 'replace' }));
@@ -27,7 +28,7 @@ function ToolButtons() {
     (event, value) => {
       editCells.send({ type: 'SET_TOOL', tool: value === null ? tool : value });
     },
-    [editCells]
+    [editCells, tool]
   );
 
   return (
