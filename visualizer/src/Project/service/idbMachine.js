@@ -1,17 +1,17 @@
 /** Records the current project state in IDB so that it can be restored when closing.
  * MVP only records the labeled data state, not the UI state or the undo/redo history.
  */
-import { openDB } from 'idb';
-import { assign, Machine, sendParent } from 'xstate';
+import IdbWorker from 'worker-loader!./idbWebWorker'; // eslint-disable-line import/no-webpack-loader-syntax
+import { assign, Machine, send, sendParent } from 'xstate';
 import Cells from '../cells';
 import { fromEventBus } from './eventBus';
+import { fromWebWorker } from './from-web-worker';
 
 function createIDBMachine({ projectId, eventBuses }) {
   return Machine(
     {
       context: {
         projectId,
-        db: null,
         project: {
           raw: null, // Uint8Array[][][]
           labeled: null, // Int32Array[][][]
@@ -20,89 +20,50 @@ function createIDBMachine({ projectId, eventBuses }) {
         },
       },
       invoke: [
+        { id: 'idb', src: fromWebWorker(() => new IdbWorker()) },
         { src: fromEventBus('IDB', () => eventBuses.arrays, 'EDITED_SEGMENT') },
         { src: fromEventBus('IDB', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('IDB', () => eventBuses.divisions, 'DIVISIONS') },
         { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
-      initial: 'openDb',
+      entry: [
+        (c, e) => console.log(c, e),
+        send((ctx) => ({ type: 'PROJECT_ID', projectId: ctx.projectId }), { to: 'idb' }),
+      ],
+      on: {},
+      initial: 'getProject',
       states: {
-        openDb: {
-          invoke: {
-            src: 'openDB',
-            onDone: { target: 'getProject', actions: 'setDb' },
-          },
-        },
         getProject: {
-          invoke: {
-            src: 'getProject',
-            onDone: [
-              {
-                cond: 'projectInDb',
-                target: 'idle',
-                actions: ['setProject', 'sendLoaded'],
-              },
-              { target: 'loadProject', actions: 'sendProjectNotInDB' },
-            ],
+          on: {
+            LOADED: { target: 'idle', actions: ['setProject', 'forwardLoadedToParent'] },
+            PROJECT_NOT_IN_DB: { target: 'loadProject', actions: 'forwardToParent' },
           },
         },
         loadProject: {
           on: {
             LOADED: {
-              target: 'putProject',
-              actions: 'loadProject',
-            },
-          },
-        },
-        putProject: {
-          invoke: { src: 'putProject', onDone: 'idle' },
-          on: {
-            EDITED_SEGMENT: {
-              target: 'putProject',
-              actions: 'updateSegment',
-            },
-            CELLS: {
-              target: 'putProject',
-              actions: 'updateCells',
-            },
-            DIVISIONS: {
-              target: 'putProject',
-              actions: 'updateDivisions',
+              target: 'idle',
+              actions: ['setProject', 'putProject'],
             },
           },
         },
         idle: {
-          on: {
-            EDITED_SEGMENT: {
-              target: 'putProject',
-              actions: 'updateSegment',
-            },
-            CELLS: {
-              target: 'putProject',
-              actions: 'updateCells',
-            },
-            DIVISIONS: {
-              target: 'putProject',
-              actions: 'updateDivisions',
-            },
+          EDITED_SEGMENT: {
+            target: 'putProject',
+            actions: ['updateSegment', 'putProject'],
+          },
+          CELLS: {
+            target: 'putProject',
+            actions: ['updateCells', 'putProject'],
+          },
+          DIVISIONS: {
+            target: 'putProject',
+            actions: ['updateDivisions', 'putProject'],
           },
         },
       },
     },
     {
-      guards: {
-        projectInDb: (ctx, evt) => evt.data !== undefined,
-      },
-      services: {
-        putProject: (ctx) => ctx.db.put('projects', ctx.project, ctx.projectId),
-        openDB: () =>
-          openDB('deepcell-label', 2, {
-            upgrade(db) {
-              const store = db.createObjectStore('projects');
-            },
-          }),
-        getProject: (ctx) => ctx.db.get('projects', ctx.projectId),
-      },
       actions: {
         updateSegment: assign({
           project: (ctx, evt) => {
@@ -119,16 +80,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         updateDivisions: assign({
           project: (ctx, evt) => ({ ...ctx.project, divisions: evt.divisions }),
         }),
-        setDb: assign({ db: (ctx, evt) => evt.data }),
         setProject: assign((ctx, evt) => ({
-          project: {
-            raw: evt.data.raw,
-            labeled: evt.data.labeled,
-            cells: evt.data.cells,
-            divisions: evt.data.divisions,
-          },
-        })),
-        loadProject: assign((ctx, evt) => ({
           project: {
             raw: evt.raw,
             labeled: evt.labeled,
@@ -136,16 +88,12 @@ function createIDBMachine({ projectId, eventBuses }) {
             divisions: evt.divisions,
           },
         })),
-        sendProjectNotInDB: sendParent('PROJECT_NOT_IN_DB'),
-        sendLoaded: sendParent((ctx) => ({
-          type: 'LOADED',
-          raw: ctx.project.raw,
-          labeled: ctx.project.labeled,
-          spots: ctx.project.spots, // TODO: include spots in IDB
-          divisions: ctx.project.divisions,
-          cells: new Cells(ctx.project.cells),
-          message: 'from idb machine',
-        })),
+        forwardLoadedToParent: sendParent((ctx, evt) => ({ ...evt, cells: new Cells(evt.cells) })),
+        forwardToParent: sendParent((ctx, evt) => evt),
+        putProject: send(
+          (ctx) => ({ type: 'PUT_PROJECT', projectId: ctx.projectId, project: ctx.project }),
+          { to: 'idb' }
+        ),
       },
     }
   );

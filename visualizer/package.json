@@ -91,7 +91,8 @@
     "eslint-plugin-prettier": "^4.0.0",
     "fake-indexeddb": "^3.1.7",
     "prettier": "^2.3.1",
-    "prettier-plugin-organize-imports": "^2.1.0"
+    "prettier-plugin-organize-imports": "^2.1.0",
+    "worker-loader": "^3.0.8"
   },
   "husky": {
     "hooks": {
