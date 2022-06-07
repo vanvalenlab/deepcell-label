@@ -79,7 +79,7 @@ export const GrayscaleCanvas = ({ setBitmaps }) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, raw: bitmap }));
       });
     }
-  }, [kernelCanvas, rawArray, min, max, brightness, contrast, invert, setBitmaps]);
+  }, [rawArray, min, max, brightness, contrast, invert, kernelCanvas, setBitmaps, height, width]);
 
   return null;
 };
