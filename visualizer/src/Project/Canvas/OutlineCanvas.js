@@ -108,7 +108,7 @@ const OutlineCanvas = ({ setCanvases }) => {
     if (labeledArray && cellMatrix) {
       const numLabels = cellMatrix[0].length;
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, cellMatrix, numLabels, opacity, cell, invert);
+      kernelRef.current(labeledArray, cellMatrix, numLabels, [opacity, opacity], cell, invert);
       // Rerender the parent canvas
       setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
     }

@@ -101,7 +101,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
       kernelRef.current(
         labeledArray,
         cellMatrix,
-        opacity,
+        [opacity, opacity],
         colormap,
         cell,
         numLabels,
