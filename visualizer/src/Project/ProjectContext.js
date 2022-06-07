@@ -356,40 +356,36 @@ const gl2 = !!document.createElement('canvas').getContext('webgl2');
 const gl = !!document.createElement('canvas').getContext('webgl');
 
 /** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
+const alphaKernelCanvas = document.createElement('canvas');
+if (gl2) {
+  alphaKernelCanvas.getContext('webgl2', { premultipliedAlpha: false });
+} else if (gl) {
+  alphaKernelCanvas.getContext('webgl', { premultipliedAlpha: false });
+}
 export function useAlphaKernelCanvas() {
   const project = useProject();
   const width = useSelector(useCanvas(), (state) => state.context.width);
   const height = useSelector(useCanvas(), (state) => state.context.height);
-  const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    if (gl2) {
-      canvas.getContext('webgl2', { premultipliedAlpha: false });
-    } else if (gl) {
-      canvas.getContext('webgl', { premultipliedAlpha: false });
-    }
-    setCanvas(canvas);
+    alphaKernelCanvas.width = width;
+    alphaKernelCanvas.height = height;
   }, [project, width, height]);
 
-  return canvas;
+  return alphaKernelCanvas;
 }
 
 /** Creates a canvas with the same dimensions as the project. */
 export function usePixelatedCanvas() {
-  const [canvas, setCanvas] = useState(document.createElement('canvas'));
+  const [canvas] = useState(document.createElement('canvas'));
 
   const canvasMachine = useCanvas();
   const width = useSelector(canvasMachine, (state) => state.context.width);
   const height = useSelector(canvasMachine, (state) => state.context.height);
 
   useEffect(() => {
-    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    setCanvas(canvas);
   }, [height, width]);
 
   return canvas;
