@@ -4,7 +4,7 @@ import OutlineCellCanvas from './OutlineCellCanvas';
 
 const red = [1, 0, 0, 1];
 
-function SwapCanvas({ setCanvases }) {
+function SwapCanvas({ setBitmaps }) {
   const swap = useSwap();
   const cell = useSelector(swap, (state) => state.context.swapCell);
 
@@ -12,7 +12,7 @@ function SwapCanvas({ setCanvases }) {
     return null;
   }
 
-  return <OutlineCellCanvas setCanvases={setCanvases} cell={cell} color={red} />;
+  return <OutlineCellCanvas setBitmaps={setBitmaps} cell={cell} color={red} />;
 }
 
 export default SwapCanvas;

@@ -11,7 +11,7 @@ import {
   useLabeled,
 } from '../../ProjectContext';
 
-function OutlineCellCanvas({ setCanvases, cell, color }) {
+function OutlineCellCanvas({ setBitmaps, cell, color }) {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -82,24 +82,26 @@ function OutlineCellCanvas({ setCanvases, cell, color }) {
     // Cell beyond the cell matrix, so it's not in the frame
     if (cell > cellMatrix[0].length) {
       // Remove the tool canvas
-      setCanvases((canvases) => {
-        const { tool, ...rest } = canvases;
+      setBitmaps((bitmaps) => {
+        const { tool, ...rest } = bitmaps;
         return rest;
       });
     } else if (labeledArray && cellMatrix) {
       kernelRef.current(labeledArray, cellMatrix, cell, color);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
+      createImageBitmap(kernelCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
+      });
     }
-  }, [labeledArray, cellMatrix, cell, color, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, cellMatrix, cell, color, setBitmaps, kernelCanvas, width, height]);
 
   useEffect(
     () => () =>
-      setCanvases((canvases) => {
-        const { tool, ...rest } = canvases;
+      setBitmaps((bitmaps) => {
+        const { tool, ...rest } = bitmaps;
         return rest;
       }),
-    [setCanvases]
+    [setBitmaps]
   );
 
   return null;

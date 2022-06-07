@@ -5,7 +5,7 @@ import { useAlphaKernelCanvas, useCanvas, useWatershed } from '../../ProjectCont
 
 const crossColor = [255, 0, 255, 128];
 
-const WatershedCanvas = ({ setCanvases }) => {
+const WatershedCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -66,16 +66,18 @@ const WatershedCanvas = ({ setCanvases }) => {
     // Draw the watershed crosses with the kernel
     kernelRef.current(x1, y1, x2, y2, crossColor, state);
     // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
-  }, [setCanvases, x1, y1, x2, y2, crossColor, kernelCanvas, width, height, state]);
+    createImageBitmap(kernelCanvas).then((bitmap) => {
+      setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
+    });
+  }, [setBitmaps, x1, y1, x2, y2, crossColor, kernelCanvas, width, height, state]);
 
   useEffect(
     () => () =>
-      setCanvases((canvases) => {
-        delete canvases['tool'];
-        return { ...canvases };
+      setBitmaps((bitmaps) => {
+        const { tool, ...rest } = bitmaps;
+        return rest;
       }),
-    [setCanvases]
+    [setBitmaps]
   );
 
   return null;

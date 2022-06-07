@@ -10,7 +10,7 @@ import {
   useRaw,
 } from '../../ProjectContext';
 
-export const GrayscaleCanvas = ({ setCanvases }) => {
+export const GrayscaleCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -75,9 +75,11 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
     if (rawArray) {
       kernelRef.current(rawArray, min, max, brightness, contrast, invert);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, raw: kernelCanvas }));
+      createImageBitmap(kernelCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, raw: bitmap }));
+      });
     }
-  }, [kernelCanvas, rawArray, min, max, brightness, contrast, invert, setCanvases]);
+  }, [kernelCanvas, rawArray, min, max, brightness, contrast, invert, setBitmaps]);
 
   return null;
 };

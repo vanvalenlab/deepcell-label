@@ -4,7 +4,7 @@ import OutlineCellCanvas from './OutlineCellCanvas';
 
 const white = [1, 1, 1, 1];
 
-function AddDaughterCanvas({ setCanvases }) {
+function AddDaughterCanvas({ setBitmaps }) {
   const editDivisions = useEditDivisions();
   const daughter = useSelector(editDivisions, (state) => state.context.daughter);
 
@@ -12,7 +12,7 @@ function AddDaughterCanvas({ setCanvases }) {
     return null;
   }
 
-  return <OutlineCellCanvas setCanvases={setCanvases} cell={daughter} color={white} />;
+  return <OutlineCellCanvas setBitmaps={setBitmaps} cell={daughter} color={white} />;
 }
 
 export default AddDaughterCanvas;

@@ -14,7 +14,7 @@ import {
   useSelectedCell,
 } from '../ProjectContext';
 
-const OutlineCanvas = ({ setCanvases }) => {
+const OutlineCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -110,9 +110,11 @@ const OutlineCanvas = ({ setCanvases }) => {
       // Compute the outline of the labels with the kernel
       kernelRef.current(labeledArray, cellMatrix, numLabels, [opacity, opacity], cell, invert);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
+      createImageBitmap(kernelCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, outline: bitmap }));
+      });
     }
-  }, [labeledArray, cellMatrix, opacity, cell, invert, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, cellMatrix, opacity, cell, invert, setBitmaps, kernelCanvas, width, height]);
 
   return null;
 };

@@ -6,7 +6,7 @@ import { useCanvas, usePixelatedCanvas } from '../ProjectContext';
 
 const Canvas = styled('canvas')``;
 
-export const ComposeCanvas = ({ canvases }) => {
+export const ComposeCanvas = ({ bitmaps }) => {
   const canvas = useCanvas();
   const { sx, sy, zoom, sw, sh, scale } = useSelector(
     canvas,
@@ -38,23 +38,23 @@ export const ComposeCanvas = ({ canvases }) => {
   useEffect(() => {
     const ctx = composeCanvas.getContext('2d');
     ctx.clearRect(0, 0, sw, sh);
-    // pixelated canvases
-    for (let key in canvases) {
+    // pixelated bitmaps
+    for (let key in bitmaps) {
       if (key !== 'spots') {
-        ctx.drawImage(canvases[key], 0, 0);
+        ctx.drawImage(bitmaps[key], 0, 0);
       }
     }
-  }, [canvases, sh, sw, composeCanvas]);
+  }, [bitmaps, sh, sw, composeCanvas]);
 
   useEffect(() => {
     const ctx = canvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(composeCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
     // full resoltuion canvas(es)
-    if ('spots' in canvases) {
-      ctx.drawImage(canvases['spots'], 0, 0);
+    if ('spots' in bitmaps) {
+      ctx.drawImage(bitmaps['spots'], 0, 0);
     }
-  }, [canvases, sx, sy, sw, sh, zoom, width, height, composeCanvas]);
+  }, [bitmaps, sx, sy, sw, sh, zoom, width, height, composeCanvas]);
 
   return (
     <Canvas

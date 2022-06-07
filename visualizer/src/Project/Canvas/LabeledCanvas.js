@@ -14,7 +14,7 @@ import {
 
 const highlightColor = [255, 0, 0];
 
-export const LabeledCanvas = ({ setCanvases }) => {
+export const LabeledCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -108,8 +108,10 @@ export const LabeledCanvas = ({ setCanvases }) => {
         highlight,
         highlightColor
       );
-      // Rerender the parent canvas with the kernel output
-      setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
+      createImageBitmap(kernelCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, labeled: bitmap }));
+      });
+      // Rerender with the new bitmap
     }
   }, [
     labeledArray,
@@ -119,7 +121,7 @@ export const LabeledCanvas = ({ setCanvases }) => {
     cell,
     highlight,
     kernelCanvas,
-    setCanvases,
+    setBitmaps,
     width,
     height,
   ]);

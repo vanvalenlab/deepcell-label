@@ -6,7 +6,7 @@ import { useAlphaKernelCanvas, useBrush, useCanvas } from '../../ProjectContext'
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
 
-const BrushCanvas = ({ setCanvases }) => {
+const BrushCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -79,16 +79,18 @@ const BrushCanvas = ({ setCanvases }) => {
       kernelRef.current(trace, trace.length, size, x, y, color);
     }
     // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
-  }, [setCanvases, size, color, x, y, trace, kernelCanvas]);
+    createImageBitmap(kernelCanvas).then((bitmap) => {
+      setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
+    });
+  }, [setBitmaps, size, color, x, y, trace, kernelCanvas]);
 
   useEffect(
     () => () =>
-      setCanvases((canvases) => {
-        delete canvases['tool'];
-        return { ...canvases };
+      setBitmaps((bitmaps) => {
+        const { tool, ...rest } = bitmaps;
+        return rest;
       }),
-    [setCanvases]
+    [setBitmaps]
   );
 
   return null;

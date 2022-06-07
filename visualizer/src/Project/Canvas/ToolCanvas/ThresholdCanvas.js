@@ -3,7 +3,7 @@ import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import { useAlphaKernelCanvas, useCanvas, useThreshold } from '../../ProjectContext';
 
-const ThresholdCanvas = ({ setCanvases }) => {
+const ThresholdCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -55,15 +55,17 @@ const ThresholdCanvas = ({ setCanvases }) => {
       // Compute threshold box with the kernel
       kernelRef.current(x1, y1, x2, y2);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
+      createImageBitmap(kernelCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
+      });
     } else {
       // Remove this component's canvas from the parent canvas
-      setCanvases((canvases) => {
-        delete canvases['tool'];
-        return { ...canvases };
+      setBitmaps((bitmaps) => {
+        const { tool, ...rest } = bitmaps;
+        return rest;
       });
     }
-  }, [setCanvases, show, x1, y1, x2, y2, kernelCanvas]);
+  }, [setBitmaps, show, x1, y1, x2, y2, kernelCanvas]);
 
   return null;
 };

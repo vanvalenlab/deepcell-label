@@ -4,7 +4,7 @@ import OutlineCellCanvas from './OutlineCellCanvas';
 
 const red = [1, 0, 0, 1];
 
-function ReplaceCanvas({ setCanvases }) {
+function ReplaceCanvas({ setBitmaps }) {
   const replace = useReplace();
   const cell = useSelector(replace, (state) => state.context.replaceCell);
 
@@ -12,7 +12,7 @@ function ReplaceCanvas({ setCanvases }) {
     return null;
   }
 
-  return <OutlineCellCanvas setCanvases={setCanvases} cell={cell} color={red} />;
+  return <OutlineCellCanvas setBitmaps={setBitmaps} cell={cell} color={red} />;
 }
 
 export default ReplaceCanvas;

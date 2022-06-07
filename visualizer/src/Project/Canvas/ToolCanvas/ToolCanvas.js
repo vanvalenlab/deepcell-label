@@ -9,7 +9,7 @@ import SwapCanvas from './SwapCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
 
-function ToolCanvas({ setCanvases }) {
+function ToolCanvas({ setBitmaps }) {
   const editSegment = useEditSegment();
   const segmentTool = useSelector(editSegment, (state) => state.context.tool);
 
@@ -34,28 +34,28 @@ function ToolCanvas({ setCanvases }) {
     case 'segment':
       switch (segmentTool) {
         case 'brush':
-          return <BrushCanvas setCanvases={setCanvases} />;
+          return <BrushCanvas setBitmaps={setBitmaps} />;
         case 'flood':
-          return <FloodCanvas setCanvases={setCanvases} />;
+          return <FloodCanvas setBitmaps={setBitmaps} />;
         case 'threshold':
-          return <ThresholdCanvas setCanvases={setCanvases} />;
+          return <ThresholdCanvas setBitmaps={setBitmaps} />;
         case 'watershed':
-          return <WatershedCanvas setCanvases={setCanvases} />;
+          return <WatershedCanvas setBitmaps={setBitmaps} />;
         default:
           return null;
       }
     case 'cells':
       switch (cellsTool) {
         case 'swap':
-          return <SwapCanvas setCanvases={setCanvases} />;
+          return <SwapCanvas setBitmaps={setBitmaps} />;
         case 'replace':
-          return <ReplaceCanvas setCanvases={setCanvases} />;
+          return <ReplaceCanvas setBitmaps={setBitmaps} />;
         default:
           return null;
       }
     case 'divisions':
       if (addingDaughter) {
-        return <AddDaughterCanvas setCanvases={setCanvases} />;
+        return <AddDaughterCanvas setBitmaps={setBitmaps} />;
       }
     default:
       return null;

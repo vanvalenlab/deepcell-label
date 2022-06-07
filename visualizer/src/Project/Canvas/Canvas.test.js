@@ -46,7 +46,7 @@ jest.mock('../ProjectContext', () => ({
   useEditing: () => true,
 }));
 
-jest.mock('./ComposeCanvases', () => () => 'ComposeCanvases');
+jest.mock('./ComposeCanvas', () => () => 'ComposeCanvas');
 jest.mock('./LabeledCanvas', () => () => 'LabeledCanvas');
 jest.mock('./OutlineCanvas', () => () => 'OutlineCanvas');
 jest.mock('./RawCanvas', () => () => 'RawCanvas');
