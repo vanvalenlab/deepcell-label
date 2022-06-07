@@ -1,4 +1,4 @@
-import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
+import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
 import createSelectMachine from '../segment/selectMachine';
 import createDeleteMachine from './deleteMachine';
 import createNewCellMachine from './newCellMachine';
@@ -22,12 +22,7 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
         SET_TOOL: [
           { cond: 'sameTool', actions: send('ENTER') },
           {
-            actions: [
-              'setTool',
-              send('ENTER'),
-              (c, e) => console.log(c, e),
-              sendParent((c, e) => e),
-            ],
+            actions: ['setTool', send('ENTER')],
           },
         ],
         ENTER: { actions: 'forwardToTool' },

@@ -15,24 +15,19 @@ const idbMachine = createMachine(
       PUT_PROJECT: 'putProject',
     },
     initial: 'getId',
-    entry: (c, e) => console.log(c, e),
     states: {
       getId: {
-        entry: (c, e) => console.log(c, e),
         on: {
           PROJECT_ID: { target: 'openDb', actions: 'setProjectId' },
         },
       },
       openDb: {
-        entry: (c, e) => console.log(c, e),
         invoke: {
           src: 'openDB',
           onDone: { target: 'getProject', actions: 'setDb' },
         },
       },
-      idle: {
-        entry: (c, e) => console.log(c, e),
-      },
+      idle: {},
       putProject: {
         invoke: { src: 'putProject', onDone: 'idle' },
       },
@@ -84,4 +79,3 @@ const idbMachine = createMachine(
 
 const service = interpretInWebWorker(idbMachine);
 service.start();
-console.log(service);

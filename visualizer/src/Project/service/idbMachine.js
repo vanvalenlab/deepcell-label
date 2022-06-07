@@ -26,10 +26,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         { src: fromEventBus('IDB', () => eventBuses.divisions, 'DIVISIONS') },
         { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
-      entry: [
-        (c, e) => console.log(c, e),
-        send((ctx) => ({ type: 'PROJECT_ID', projectId: ctx.projectId }), { to: 'idb' }),
-      ],
+      entry: send((ctx) => ({ type: 'PROJECT_ID', projectId: ctx.projectId }), { to: 'idb' }),
       on: {},
       initial: 'getProject',
       states: {

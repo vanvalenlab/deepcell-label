@@ -62,7 +62,6 @@ export function interpretInWebWorker<
   _self.addEventListener('message', (event: MessageEvent<TEvent>) => {
     try {
       // Will error out if the data is not a valid event
-      console.log(event);
       getEventType(event.data);
       service.send(event.data);
     } catch {}
