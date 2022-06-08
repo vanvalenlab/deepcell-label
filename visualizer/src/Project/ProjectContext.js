@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import { GPU } from 'gpu.js';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 export const Context = createContext();
@@ -362,7 +363,9 @@ if (gl2) {
 } else if (gl) {
   alphaKernelCanvas.getContext('webgl', { premultipliedAlpha: false });
 }
-export function useAlphaKernelCanvas() {
+const alphaGpu = new GPU({ canvas: alphaKernelCanvas });
+
+export function useAlphaGpu() {
   const project = useProject();
   const width = useSelector(useCanvas(), (state) => state.context.width);
   const height = useSelector(useCanvas(), (state) => state.context.height);
@@ -372,7 +375,7 @@ export function useAlphaKernelCanvas() {
     alphaKernelCanvas.height = height;
   }, [project, width, height]);
 
-  return alphaKernelCanvas;
+  return alphaGpu;
 }
 
 /** Creates a canvas with the same dimensions as the project. */

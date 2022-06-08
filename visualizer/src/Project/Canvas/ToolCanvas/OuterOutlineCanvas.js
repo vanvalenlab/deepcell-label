@@ -1,9 +1,8 @@
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
-  useAlphaKernelCanvas,
+  useAlphaGpu,
   useArrays,
   useCanvas,
   useCells,
@@ -31,11 +30,10 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
   const cells = useCells();
   const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(t), equal);
 
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       `function (data, cells, cell, color) {
         const x = this.thread.x;
@@ -72,13 +70,10 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
       }
     );
     kernelRef.current = kernel;
-    // return () => {
-    //   kernel.destroy();
-    //   gpu.destroy();
-    // };
-  }, [kernelCanvas, width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
+    const kernel = kernelRef.current;
     // Cell beyond the cell matrix, so it's not in the frame
     if (cell > cellMatrix[0].length) {
       // Remove the tool canvas
@@ -87,13 +82,13 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
         return rest;
       });
     } else if (labeledArray && cellMatrix) {
-      kernelRef.current(labeledArray, cellMatrix, cell, color);
+      kernel(labeledArray, cellMatrix, cell, color);
       // Rerender the parent canvas
-      createImageBitmap(kernelCanvas).then((bitmap) => {
+      createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
       });
     }
-  }, [labeledArray, cellMatrix, cell, color, setBitmaps, kernelCanvas, width, height]);
+  }, [labeledArray, cellMatrix, cell, color, setBitmaps, width, height]);
 
   useEffect(
     () => () =>

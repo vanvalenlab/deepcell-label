@@ -1,9 +1,8 @@
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
-  useAlphaKernelCanvas,
+  useAlphaGpu,
   useArrays,
   useCanvas,
   useCells,
@@ -39,11 +38,10 @@ export const LabeledCanvas = ({ setBitmaps }) => {
 
   const cell = useSelectedCell();
 
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       `function (labelArray, cellMatrix, opacity, colormap, cell, numLabels, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
@@ -88,17 +86,14 @@ export const LabeledCanvas = ({ setBitmaps }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [width, height, kernelCanvas]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
+    const kernel = kernelRef.current;
     if (labeledArray && cellMatrix) {
       const numLabels = cellMatrix[0].length;
       // Compute the label image with the kernel
-      kernelRef.current(
+      kernel(
         labeledArray,
         cellMatrix,
         [opacity, opacity],
@@ -108,23 +103,12 @@ export const LabeledCanvas = ({ setBitmaps }) => {
         highlight,
         highlightColor
       );
-      createImageBitmap(kernelCanvas).then((bitmap) => {
+      // Rerender with the new bitmap
+      createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, labeled: bitmap }));
       });
-      // Rerender with the new bitmap
     }
-  }, [
-    labeledArray,
-    cellMatrix,
-    opacity,
-    colormap,
-    cell,
-    highlight,
-    kernelCanvas,
-    setBitmaps,
-    width,
-    height,
-  ]);
+  }, [labeledArray, cellMatrix, opacity, colormap, cell, highlight, setBitmaps, width, height]);
 
   return null;
 };

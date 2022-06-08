@@ -1,7 +1,6 @@
 import { useSelector } from '@xstate/react';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useAlphaKernelCanvas, useBrush, useCanvas } from '../../ProjectContext';
+import { useAlphaGpu, useBrush, useCanvas } from '../../ProjectContext';
 
 const red = [255, 0, 0, 255];
 const white = [255, 255, 255, 255];
@@ -19,11 +18,10 @@ const BrushCanvas = ({ setBitmaps }) => {
   const erase = useSelector(brush, (state) => state.context.erase);
   const color = erase ? red : white;
 
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       // TODO: research how to work around minification
       `function (trace, traceLength, size, brushX, brushY, color) {
@@ -61,11 +59,7 @@ const BrushCanvas = ({ setBitmaps }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [kernelCanvas, width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
     // Draw the brush with the kernel
@@ -73,16 +67,17 @@ const BrushCanvas = ({ setBitmaps }) => {
     // passing [] as trace causes this error
     // gpu-browser.js:18662 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
     // at Object.isArray (gpu-browser.js:18662:1)
+    const kernel = kernelRef.current;
     if (trace.length === 0) {
-      kernelRef.current([[0, 0]], trace.length, size, x, y, color);
+      kernel([[0, 0]], trace.length, size, x, y, color);
     } else {
-      kernelRef.current(trace, trace.length, size, x, y, color);
+      kernel(trace, trace.length, size, x, y, color);
     }
     // Rerender the parent canvas
-    createImageBitmap(kernelCanvas).then((bitmap) => {
+    createImageBitmap(kernel.canvas).then((bitmap) => {
       setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
     });
-  }, [setBitmaps, size, color, x, y, trace, kernelCanvas]);
+  }, [trace, size, x, y, color, setBitmaps]);
 
   useEffect(
     () => () =>
