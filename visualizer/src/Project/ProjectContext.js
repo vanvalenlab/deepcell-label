@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import { GPU } from 'gpu.js';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
@@ -397,9 +398,11 @@ export function useFullResolutionCanvas() {
   const [canvas] = useState(document.createElement('canvas'));
 
   const canvasMachine = useCanvas();
-  const sw = useSelector(canvasMachine, (state) => state.context.width);
-  const sh = useSelector(canvasMachine, (state) => state.context.height);
-  const scale = useSelector(canvasMachine, (state) => state.context.scale);
+  const [sw, sh, scale] = useSelector(
+    canvasMachine,
+    (state) => [state.context.width, state.context.height, state.context.scale],
+    equal
+  );
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
