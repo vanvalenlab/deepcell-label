@@ -6,7 +6,8 @@ import ToolButton from './ToolButton';
 function WatershedButton(props) {
   const segment = useEditSegment();
   const tool = useSelector(segment, (state) => state.context.tool);
-  const grayscale = useSelector(segment, (state) => state.matches('idle.display.grayscale'));
+  const grayscale = useSelector(segment, (state) => state.matches('display.grayscale'));
+  console.log(segment);
 
   const onClick = useCallback(
     () => segment.send({ type: 'SET_TOOL', tool: 'watershed' }),
