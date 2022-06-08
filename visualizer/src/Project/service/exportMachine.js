@@ -48,7 +48,6 @@ async function download(context) {
   const { projectId } = context;
   const form = new FormData();
   const zipBlob = await makeExportZip(context);
-  console.log(zipBlob, projectId);
   form.append('labels', zipBlob, 'labels.zip');
   form.append('id', projectId);
 
