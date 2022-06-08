@@ -77,7 +77,6 @@ function updateFromCells(divisions, cells) {
         let { parent, daughters, t } = d;
         // check parent exists before division
         if (!cells.cells.some((cell) => cell.cell === parent && cell.t < t)) {
-          console.log('no parent in cells', d);
           return { ...d, parent: null };
         }
         // check daughters exist after division
