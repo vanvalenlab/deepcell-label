@@ -100,6 +100,9 @@ class Edit(object):
         f = io.BytesIO()
         with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr('labeled.dat', self.labels.tobytes())
+            # Remove cell labels that are not in the segmentation
+            values = np.unique(self.labels)
+            self.cells = list(filter(lambda c: c['value'] in values, self.cells))
             zf.writestr('cells.json', json.dumps(self.cells))
         f.seek(0)
         self.response_zip = f
