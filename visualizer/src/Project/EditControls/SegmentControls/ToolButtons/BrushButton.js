@@ -19,7 +19,7 @@ function BrushButton(props) {
     if (cell === 0) {
       select.send('SELECT_NEW');
     }
-  }, [segment, select, cell]);
+  }, [segment, brush, select, cell]);
 
   const tooltipText = (
     <span>

@@ -64,7 +64,7 @@ const WatershedCanvas = ({ setBitmaps }) => {
     createImageBitmap(kernel.canvas).then((bitmap) => {
       setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
     });
-  }, [setBitmaps, x1, y1, x2, y2, crossColor, width, height, state]);
+  }, [setBitmaps, x1, y1, x2, y2, width, height, state]);
 
   useEffect(
     () => () =>

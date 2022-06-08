@@ -13,7 +13,7 @@ function EraserButton(props) {
   const onClick = useCallback(() => {
     segment.send({ type: 'SET_TOOL', tool: 'brush' });
     brush.send({ type: 'SET_ERASE', erase: true });
-  }, [segment]);
+  }, [segment, brush]);
 
   const tooltipText = (
     <span>

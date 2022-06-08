@@ -99,8 +99,6 @@ export function useDivisions() {
 export function useParentDivisions(cell) {
   const divisionsMachine = useDivisions();
   const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
-  const editing = useEditing();
-
   return divisions.filter((d) => d.parent === cell);
 }
 
@@ -389,7 +387,7 @@ export function usePixelatedCanvas() {
   useEffect(() => {
     canvas.width = width;
     canvas.height = height;
-  }, [height, width]);
+  }, [canvas, height, width]);
 
   return canvas;
 }

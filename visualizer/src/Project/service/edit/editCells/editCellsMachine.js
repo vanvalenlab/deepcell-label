@@ -11,13 +11,12 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
   return Machine(
     {
       id: 'editCells',
-      entry: [send('REGISTER_UI', { to: undoRef })],
+      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
       context: {
         tool: 'select',
         tools: null,
         eventBuses,
       },
-      entry: 'spawnTools',
       on: {
         SET_TOOL: [
           { cond: 'sameTool', actions: send('ENTER') },

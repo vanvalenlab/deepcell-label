@@ -1,8 +1,6 @@
 import { openDB } from 'idb';
-import { actions, assign, createMachine, sendParent } from 'xstate';
+import { assign, createMachine, sendParent } from 'xstate';
 import { interpretInWebWorker } from './from-web-worker';
-
-const { respond } = actions;
 
 const idbMachine = createMachine(
   {
