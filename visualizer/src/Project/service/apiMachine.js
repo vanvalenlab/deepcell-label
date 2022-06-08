@@ -1,16 +1,13 @@
 import * as zip from '@zip.js/zip.js';
+import { flattenDeep } from 'lodash';
 import { assign, forwardTo, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
-async function edit(context, event) {
+/** Creates a blob for a zip file with all project . */
+async function makeEditZip(context, event) {
   const { labeled, raw, overlaps, writeMode, lineage } = context;
   const { action, args } = event;
-  const editRoute = `${document.location.origin}/api/edit`;
-  const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
-  // const usesLineage = action === 'handle_draw' || action === 'threshold' || action === 'watershed';
-  const width = labeled[0].length;
-  const height = labeled.length;
-  const edit = { width, height, action, args, writeMode };
+  const edit = { width: labeled[0].length, height: labeled.length, action, args, writeMode };
 
   const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
   // Required files
@@ -18,6 +15,7 @@ async function edit(context, event) {
   await zipWriter.add('overlaps.json', new zip.TextReader(JSON.stringify(overlaps)));
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files
+  const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
   if (usesRaw) {
     await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(raw)));
   }
@@ -26,7 +24,37 @@ async function edit(context, event) {
   }
 
   const zipBlob = await zipWriter.close();
+  return zipBlob;
+}
+
+/** Creates a blob for a zip file with all project data. */
+async function makeExportZip(context) {
+  const { rawArrays, labeledArrays, overlaps, lineage } = context;
+  const dimensions = {
+    width: rawArrays[0][0][0].length,
+    height: rawArrays[0][0].length,
+    numFrames: rawArrays[0].length,
+    numChannels: rawArrays.length,
+    numFeatures: labeledArrays.length,
+  };
+  console.log(labeledArrays);
+  const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
+  await zipWriter.add('dimensions.json', new zip.TextReader(JSON.stringify(dimensions)));
+  await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeledArrays))));
+  await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(rawArrays))));
+  await zipWriter.add('overlaps.json', new zip.TextReader(JSON.stringify(overlaps)));
+  if (lineage) {
+    await zipWriter.add('lineage.json', new zip.TextReader(JSON.stringify(lineage)));
+  }
+
+  const zipBlob = await zipWriter.close();
+  return zipBlob;
+}
+
+/** Sends a zip with labels to edit and to the DeepCell Label API for editing the labels in the zip. */
+async function edit(context, event) {
   const form = new FormData();
+  const zipBlob = await makeEditZip(context, event);
   form.append('labels', zipBlob, 'labels.zip');
 
   const options = {
@@ -34,46 +62,48 @@ async function edit(context, event) {
     body: form,
     'Content-Type': 'multipart/form-data',
   };
-  return fetch(editRoute, options).then(checkResponseCode);
+  return fetch(`${document.location.origin}/api/edit`, options)
+    .then(checkResponseCode)
+    .then(parseResponseZip);
 }
 
-function upload(context, event) {
-  const { bucket, projectId } = context;
-  const url = new URL(`${document.location.origin}/api/upload`);
-  const track = new URLSearchParams(window.location.search).get('track');
+/** Sends a zip to the DeepCell Label API to be repackaged for upload to an S3 bucket. */
+async function upload(context) {
+  const { projectId, bucket } = context;
   const form = new FormData();
+  const zipBlob = await makeExportZip(context);
+  form.append('labels', zipBlob, 'labels.zip');
   form.append('id', projectId);
   form.append('bucket', bucket);
-  form.append('format', track ? 'trk' : 'npz');
-  return fetch(url.toString(), {
+
+  const options = {
     method: 'POST',
     body: form,
-  }).then(checkResponseCode);
+    'Content-Type': 'multipart/form-data',
+  };
+  return fetch(`${document.location.origin}/api/upload`, options).then(checkResponseCode);
 }
 
-function download(context, event) {
+/** Sends a zip to the DeepCell Label API to be repackaged for download by the user.
+ * @return {Promise.<URL>} A promise that resolves to an object URL for the repackaged zipfile.
+ */
+async function download(context) {
   const { projectId } = context;
-  const format = new URLSearchParams(window.location.search).get('track') ? 'trk' : 'npz';
-  const url = new URL(`${document.location.origin}/api/download`);
-  url.search = new URLSearchParams({ id: projectId, format: format }).toString();
-  const promise = fetch(url.toString());
-  promise.then((response) => console.log(response));
-  const filename = promise.then((response) => {
-    const regex = /filename=(.*)$/;
-    const header = response.headers.get('content-disposition');
-    let filename = header.match(regex)[1] ?? `${projectId}.npz`;
-    // Strip quotes
-    filename = filename.replaceAll('"', '');
-    // Remove leading folders
-    if (filename.includes('/')) {
-      filename = filename.slice(filename.lastIndexOf('/') + 1);
-    }
-    return filename;
-  });
-  const blobUrl = promise
+  const form = new FormData();
+  const zipBlob = await makeExportZip(context);
+  console.log(zipBlob, projectId);
+  form.append('labels', zipBlob, 'labels.zip');
+  form.append('id', projectId);
+
+  const options = {
+    method: 'POST',
+    body: form,
+    'Content-Type': 'multipart/form-data',
+  };
+  return fetch(`${document.location.origin}/api/download`, options)
+    .then(checkResponseCode)
     .then((response) => response.blob())
     .then((blob) => URL.createObjectURL(blob));
-  return Promise.all([filename, blobUrl]);
 }
 
 function checkResponseCode(response) {
@@ -105,14 +135,18 @@ const createApiMachine = ({ projectId, eventBuses }) =>
       ],
       context: {
         projectId,
+        bucket:
+          new URLSearchParams(window.location.search).get('bucket') ?? 'deepcell-label-output',
         frame: 0,
         feature: 0,
-        labeled: null,
-        raw: null,
+        labeled: null, // current frame on display (for edit route)
+        raw: null, // current frame on display (for edit route)
+        rawArrays: null, // all frames and channels (for upload/download route)
+        labeledArrays: null, // all frames and features (for upload/download route)
         overlaps: null,
         writeMode: 'overlap',
         initialLabels: null,
-        historyRef: null,
+        historyRef: null, // to send snapshots for undo/redo history
       },
       initial: 'waitForLabels',
       on: {
@@ -133,17 +167,7 @@ const createApiMachine = ({ projectId, eventBuses }) =>
         },
         idle: {
           on: {
-            EDIT: {
-              target: 'loading',
-              actions: assign((ctx) => ({
-                initialLabels: {
-                  frame: ctx.frame,
-                  feature: ctx.feature,
-                  labeled: ctx.labeled,
-                  overlaps: ctx.overlaps,
-                },
-              })),
-            },
+            EDIT: { target: 'loading', actions: 'setInitialLabels' },
             UPLOAD: 'uploading',
             DOWNLOAD: 'downloading',
           },
@@ -152,48 +176,65 @@ const createApiMachine = ({ projectId, eventBuses }) =>
           invoke: {
             id: 'labelAPI',
             src: edit,
-            onDone: 'parseResponse',
-            onError: 'idle',
-          },
-        },
-        parseResponse: {
-          invoke: {
-            src: (ctx, evt) => parseResponseZip(evt.data),
-            onDone: {
-              target: 'idle',
-              actions: ['sendEdited', 'sendSnapshot'],
-            },
-            onError: {
-              target: 'idle',
-              actions: (context, event) => console.log(event),
-            },
+            onDone: { target: 'idle', actions: ['sendEdited', 'sendSnapshot'] },
           },
         },
         uploading: {
-          invoke: {
-            src: upload,
-            onDone: 'idle',
-            onError: 'idle',
+          initial: 'getArrays',
+          states: {
+            getArrays: {
+              entry: 'getArrays',
+              on: { ARRAYS: { target: 'upload', actions: 'setArrays' } },
+            },
+            upload: {
+              invoke: {
+                src: upload,
+                onDone: 'uploaded',
+              },
+            },
+            uploaded: { type: 'final' },
           },
+          onDone: 'idle',
         },
         downloading: {
-          invoke: {
-            src: download,
-            onDone: { target: 'idle', actions: 'download' },
-            onError: 'idle',
+          entry: (c, e) => console.log(e),
+          initial: 'getArrays',
+          states: {
+            getArrays: {
+              entry: ['getArrays', (c, e) => console.log(e)],
+              on: { ARRAYS: { target: 'download', actions: 'setArrays' } },
+            },
+            download: {
+              entry: (c, e) => console.log(e),
+              invoke: {
+                src: download,
+                onDone: { target: 'done', actions: [(c, e) => console.log(e), 'download'] },
+                onError: 'done',
+              },
+            },
+            done: { entry: (c, e) => console.log(e), type: 'final' },
           },
+          onDone: 'idle',
         },
       },
     },
     {
       actions: {
-        download: (_, event) => {
-          const [filename, url] = event.data;
+        download: (ctx, event) => {
+          const url = event.data;
           const link = document.createElement('a');
           link.href = url;
-          link.download = filename;
+          link.download = `${ctx.projectId}.zip`;
           link.click();
         },
+        setInitialLabels: assign((ctx) => ({
+          initialLabels: {
+            frame: ctx.frame,
+            feature: ctx.feature,
+            labeled: ctx.labeled,
+            overlaps: ctx.overlaps,
+          },
+        })),
         sendEdited: send(
           (ctx, evt) => ({
             type: 'EDITED',
@@ -204,6 +245,11 @@ const createApiMachine = ({ projectId, eventBuses }) =>
           }),
           { to: 'eventBus' }
         ),
+        getArrays: send('GET_ARRAYS', { to: 'arrays' }),
+        setArrays: assign((ctx, evt) => ({
+          rawArrays: evt.rawArrays,
+          labeledArrays: evt.labeledArrays,
+        })),
         setRaw: assign((_, { raw }) => ({ raw })),
         setLabeled: assign((_, { labeled }) => ({ labeled })),
         setOverlaps: assign((_, { overlaps }) => ({ overlaps })),
