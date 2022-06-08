@@ -45,17 +45,10 @@ function createIDBMachine({ projectId, eventBuses }) {
           },
         },
         idle: {
-          EDITED_SEGMENT: {
-            target: 'putProject',
-            actions: ['updateSegment', 'putProject'],
-          },
-          CELLS: {
-            target: 'putProject',
-            actions: ['updateCells', 'putProject'],
-          },
-          DIVISIONS: {
-            target: 'putProject',
-            actions: ['updateDivisions', 'putProject'],
+          on: {
+            EDITED_SEGMENT: { actions: ['updateSegment', 'putProject'] },
+            CELLS: { actions: ['updateCells', 'putProject'] },
+            DIVISIONS: { actions: ['updateDivisions', 'putProject'] },
           },
         },
       },
