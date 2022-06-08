@@ -4,13 +4,13 @@ import { useImage } from '../../ProjectContext';
 
 function TimeBox({ t, duration, color }) {
   const image = useImage();
-
+  const width = (1 / (duration - 1)) * 100;
   const boxStyle = {
     position: 'absolute',
     backgroundColor: color,
     height: '0.5rem',
-    width: `${(1 / duration) * 100}%`,
-    left: `${(t / duration) * 100}%`,
+    width: t == 0 || t == duration - 1 ? `${width / 2}%` : `${width}%`,
+    left: t == 0 ? 0 : `${width * (t - 0.5)}%`,
   };
 
   const onClick = (event, newValue) => {
