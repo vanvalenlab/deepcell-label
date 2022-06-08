@@ -12,12 +12,14 @@ const createWatershedMachine = (context) =>
         { src: fromEventBus('watershed', () => context.eventBuses.hovering, 'HOVERING') },
         { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
         { id: 'arrays', src: fromEventBus('watershed', () => context.eventBuses.arrays, []) },
+        { src: fromEventBus('watershed', () => context.eventBuses.cells, 'CELLS') },
       ],
       context: {
         x: 0,
         y: 0,
         hovering: null,
         cell: null,
+        newCell: null,
         x1: 0,
         y1: 0,
         x2: 0,
@@ -27,6 +29,7 @@ const createWatershedMachine = (context) =>
         COORDINATES: { actions: 'setCoordinates' },
         HOVERING: { actions: 'setHovering' },
         SELECTED: { actions: 'setCell' },
+        CELLS: { actions: 'setNewCell' },
       },
       initial: 'idle',
       states: {
@@ -95,6 +98,7 @@ const createWatershedMachine = (context) =>
         setFirstPoint: assign({ x1: (ctx) => ctx.x, y1: (ctx) => ctx.y }),
         setSecondPoint: assign({ x2: (ctx) => ctx.x, y2: (ctx) => ctx.y }),
         setCell: assign({ cell: (_, evt) => evt.selected }),
+        setNewCell: assign({ newCell: (_, evt) => evt.cells.getNewCell() }),
         select: send('SELECT', { to: 'select' }),
         watershed: send(
           (ctx) => ({
@@ -102,6 +106,7 @@ const createWatershedMachine = (context) =>
             action: 'watershed',
             args: {
               cell: ctx.cell,
+              new_cell: ctx.newCell,
               x1: ctx.x1,
               y1: ctx.y1,
               x2: ctx.x2,

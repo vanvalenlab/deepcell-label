@@ -253,9 +253,8 @@ class Edit(object):
         flooded = flood(mask, (y, x), connectivity=2)
         self.add_mask(flooded, foreground)
 
-    def action_watershed(self, cell, x1, y1, x2, y2):
+    def action_watershed(self, cell, new_cell, x1, y1, x2, y2):
         """Use watershed to segment different objects"""
-        new_cell = self.new_cell
         # Create markers for to seed watershed labels
         markers = np.zeros(self.labels.shape)
         markers[y1, x1] = cell
