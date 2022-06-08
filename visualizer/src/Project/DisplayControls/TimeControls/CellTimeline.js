@@ -22,7 +22,7 @@ function CellTimeline({ cell }) {
         display: 'flex',
         height: '0.5rem',
         width: '100%',
-        zIndex: -1,
+        zIndex: 0,
       }}
     >
       {[...Array(duration).keys()].map((t) => (

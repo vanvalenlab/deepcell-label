@@ -44,7 +44,7 @@ function TimeSlider() {
   }, [t]);
 
   return (
-    <Tooltip title={tooltipText}>
+    <Tooltip title={tooltipText} placement='top'>
       <Slider
         value={t}
         valueLabelDisplay={display}
@@ -53,7 +53,7 @@ function TimeSlider() {
         min={0}
         max={duration - 1}
         onChange={handleChange}
-        sx={{ p: 0 }}
+        sx={{ p: 0, zIndex: 1 }}
         componentsProps={{ input: { ref: inputRef } }}
       />
     </Tooltip>

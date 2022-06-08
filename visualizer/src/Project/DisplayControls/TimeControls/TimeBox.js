@@ -11,13 +11,10 @@ function TimeBox({ t, duration, color }) {
     height: '0.5rem',
     width: `${(1 / duration) * 100}%`,
     left: `${(t / duration) * 100}%`,
-    pointerEvents: 'none',
   };
 
   const onClick = (event, newValue) => {
-    if (newValue !== t) {
-      image.send({ type: 'SET_T', t: newValue });
-    }
+    image.send({ type: 'SET_T', t });
   };
 
   return <Box sx={boxStyle} onClick={onClick}></Box>;
