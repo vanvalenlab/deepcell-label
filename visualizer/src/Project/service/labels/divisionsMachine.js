@@ -1,5 +1,6 @@
 /** Manages division labels. */
 
+import equal from 'fast-deep-equal';
 import { assign, Machine, send } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
@@ -33,14 +34,15 @@ function replace(divisions, a, b) {
 /** Removes cell from the divisions. */
 function remove(divisions, cell) {
   return divisions
-    .map((division) => {
-      if (division.parent === cell) {
-        return { ...division, parent: null };
+    .map((d) => {
+      const { parent, daughters } = d;
+      if (parent === cell) {
+        return { ...d, parent: null };
       }
-      if (division.daughters.includes(cell)) {
-        return { ...division, daughters: division.daughters.filter((d) => d !== cell) };
+      if (daughters.includes(cell)) {
+        return { ...d, daughters: daughters.filter((daughter) => daughter !== cell) };
       }
-      return division;
+      return d;
     })
     .filter((d) => d.parent !== null && d.daughters.length !== 0);
 }
@@ -49,22 +51,43 @@ function remove(divisions, cell) {
 function swap(divisions, a, b) {
   return (
     divisions
-      .map((division) => {
-        let { parent, daughters } = division;
+      .map((d) => {
+        let { parent, daughters } = d;
         if (parent === a) {
           parent = b;
         } else if (parent === b) {
           parent = a;
         }
         daughters = daughters
-          .map((d) => (d === a ? b : d === b ? a : d))
+          .map((daughter) => (daughter === a ? b : daughter === b ? a : daughter))
           // remove duplicate daughters
           .reduce((prev, curr) => (prev.includes(curr) ? prev : [...prev, curr]), []);
 
-        return { ...division, parent, daughters };
+        return { ...d, parent, daughters };
       })
       // remove divisions with same cell as parent and daughters
-      .filter((division) => !division.daughters.includes(division.parent))
+      .filter((d) => !d.daughters.includes(d.parent))
+  );
+}
+
+function updateFromCells(divisions, cells) {
+  return (
+    divisions
+      .map((d) => {
+        let { parent, daughters, t } = d;
+        // check parent exists before division
+        if (!cells.cells.some((cell) => cell.cell === parent && cell.t < t)) {
+          console.log('no parent in cells', d);
+          return { ...d, parent: null };
+        }
+        // check daughters exist after division
+        daughters = daughters.filter((daughter) =>
+          cells.cells.some((cell) => cell.cell === daughter && cell.t >= t)
+        );
+        return { ...d, daughters };
+      })
+      // remove divisions with no parent or no daughters
+      .filter((d) => d.parent !== null && d.daughters.length !== 0)
   );
 }
 
@@ -81,7 +104,7 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
       invoke: [
         { id: 'eventBus', src: fromEventBus('divisions', () => eventBuses.divisions) },
         { src: fromEventBus('divisions', () => eventBuses.load, 'LOADED') },
-        { src: fromEventBus('divisions', () => eventBuses.cells) }, // listen for all edit events
+        { src: fromEventBus('divisions', () => eventBuses.cells) }, // listen for edit events (REPLACE, SWAP, REMOVE) and CELLS (generic updates)
       ],
       id: 'divisions',
       initial: 'loading',
@@ -168,6 +191,8 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
                 REPLACE: { actions: ['replace', 'sendDivisions'] },
                 DELETE: { actions: ['delete', 'sendDivisions'] },
                 SWAP: { actions: ['swap', 'sendDivisions'] },
+                EDITED_CELLS: { actions: 'updateFromCells' },
+                RESTORE: { actions: 'restore' },
               },
             },
           },
@@ -232,21 +257,49 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
           divisions = combine(ctx.divisions, divisions, evt.t, evt.mode);
           const before = { type: 'RESTORE', divisions: ctx.divisions };
           const after = { type: 'RESTORE', divisions: divisions };
-          return [assign({ divisions }), send({ type: 'SNAPSHOT', edit: evt.edit, before, after })];
+          return [
+            assign({ divisions }),
+            send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),
+          ];
         }),
         delete: pure((ctx, evt) => {
           let divisions = remove(ctx.divisions, evt.cell);
           divisions = combine(ctx.divisions, divisions, evt.t, evt.mode);
           const before = { type: 'RESTORE', divisions: ctx.divisions };
           const after = { type: 'RESTORE', divisions: divisions };
-          return [assign({ divisions }), send({ type: 'SNAPSHOT', edit: evt.edit, before, after })];
+          return [
+            assign({ divisions }),
+            send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),
+          ];
         }),
         swap: pure((ctx, evt) => {
           let divisions = swap(ctx.divisions, evt.a, evt.b);
           divisions = combine(ctx.divisions, divisions, evt.t, evt.mode);
           const before = { type: 'RESTORE', divisions: ctx.divisions };
           const after = { type: 'RESTORE', divisions: divisions };
-          return [assign({ divisions }), send({ type: 'SNAPSHOT', edit: evt.edit, before, after })];
+          return [
+            assign({ divisions }),
+            send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),
+          ];
+        }),
+        updateFromCells: pure((ctx, evt) => {
+          let divisions = updateFromCells(ctx.divisions, evt.cells);
+          if (!equal(divisions, ctx.divisions)) {
+            const before = { type: 'RESTORE', divisions: ctx.divisions };
+            const after = { type: 'RESTORE', divisions: divisions };
+            return [
+              assign({ divisions }),
+              send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),
+              send({ type: 'DIVISIONS', divisions }, { to: 'eventBus' }),
+            ];
+          }
+          return [];
+        }),
+        restore: pure((ctx, evt) => {
+          return [
+            assign({ divisions: evt.divisions }),
+            send({ type: 'DIVISIONS', divisions: evt.divisions }, { to: 'eventBus' }),
+          ];
         }),
       },
     }
