@@ -59,6 +59,7 @@ class Export:
             self.labels_zip
         ) as input_zf:
             for item in input_zf.infolist():
+                # Writes all other files (cells.json, divisions.json, etc.) to export zip
                 if item.filename not in ['dimensions.json', 'labeled.dat', 'raw.dat']:
                     buffer = input_zf.read(item.filename)
                     export_zf.writestr(item, buffer)
