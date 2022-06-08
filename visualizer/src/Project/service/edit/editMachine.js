@@ -28,9 +28,12 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         { src: fromEventBus('tool', () => eventBuses.select, 'SELECTED') },
         { src: fromEventBus('tool', () => eventBuses.load, 'LOADED') },
       ],
-      initial: 'loading',
-      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
+      initial: 'setUp',
       states: {
+        setUp: {
+          entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
+          always: 'loading',
+        },
         loading: {
           on: {
             LOADED: 'checkTool',
