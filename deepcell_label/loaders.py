@@ -210,6 +210,7 @@ def load_divisions(f):
         divisions = convert_lineage(lineage)
     if divisions is None:
         return []
+    return divisions
 
 
 def load_cells(f):
