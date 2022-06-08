@@ -34,7 +34,7 @@ function OutlineOpacitySlider() {
       <Grid item xs={8} sx={{ display: 'flex', alignItems: 'center' }}>
         <Slider
           value={opacity}
-          valueLabelDisplay='auto'
+          valueLabelDisplay='off'
           min={0}
           max={1}
           // track={false}

@@ -26,7 +26,7 @@ const InvertToggle = ({ channel }) => {
   }, [channel]);
 
   return (
-    <Tooltip title={tooltip}>
+    <Tooltip title={tooltip} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={

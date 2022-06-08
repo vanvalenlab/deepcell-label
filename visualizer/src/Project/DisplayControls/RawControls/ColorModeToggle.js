@@ -26,7 +26,7 @@ function ColorModeToggle() {
   );
 
   return (
-    <Tooltip title={toggleTooltip}>
+    <Tooltip title={toggleTooltip} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
