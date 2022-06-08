@@ -11,7 +11,10 @@ const createWatershedMachine = (context) =>
         },
         { src: fromEventBus('watershed', () => context.eventBuses.hovering, 'HOVERING') },
         { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
-        { id: 'arrays', src: fromEventBus('watershed', () => context.eventBuses.arrays, []) },
+        {
+          id: 'arrays',
+          src: fromEventBus('watershed', () => context.eventBuses.arrays, 'EDITED_SEGMENT'),
+        },
         { src: fromEventBus('watershed', () => context.eventBuses.cells, 'CELLS') },
       ],
       context: {
@@ -62,7 +65,7 @@ const createWatershedMachine = (context) =>
               {
                 cond: 'validSecondSeed',
                 target: 'waiting',
-                actions: ['setSecondPoint', 'watershed', 'newBackground'],
+                actions: ['setSecondPoint', 'watershed'],
               },
               {
                 cond: 'notOnCell',
