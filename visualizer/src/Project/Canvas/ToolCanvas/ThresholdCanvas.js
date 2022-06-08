@@ -44,10 +44,10 @@ const ThresholdCanvas = ({ setBitmaps }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
+    // return () => {
+    //   kernel.destroy();
+    //   gpu.destroy();
+    // };
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {

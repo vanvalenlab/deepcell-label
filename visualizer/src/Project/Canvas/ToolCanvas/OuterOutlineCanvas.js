@@ -72,10 +72,10 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
+    // return () => {
+    //   kernel.destroy();
+    //   gpu.destroy();
+    // };
   }, [kernelCanvas, width, height]);
 
   useEffect(() => {
