@@ -46,8 +46,8 @@ def cells_equal(a, b):
 
 
 class TestEdit:
-    def test_action_flood_background(self, app):
-        """Flooding background does no spread to diagonal areas."""
+    def test_action_flood_holes(self, app):
+        """Flooding holes does not spread to diagonal areas."""
         # fmt: off
         labels = np.array([
             [0, 1, 0],
@@ -90,6 +90,7 @@ class TestEdit:
                 cells=cells,
                 action='flood',
                 args={'foreground': 2, 'background': 1, 'x': 1, 'y': 0},
+                write_mode='overwrite',
             )
             np.testing.assert_array_equal(edit.labels, expected_labels)
 
@@ -220,7 +221,6 @@ class TestEdit:
         cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]
         expected_cells = [
             {'cell': 1, 'value': 1},
-            {'cell': 2, 'value': 2},
             {'cell': 1, 'value': 3},
             {'cell': 2, 'value': 3},
         ]

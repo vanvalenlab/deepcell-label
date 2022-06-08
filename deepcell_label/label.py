@@ -103,7 +103,7 @@ class Edit(object):
             # Remove cell labels that are not in the segmentation
             values = np.unique(self.labels)
             self.cells = list(filter(lambda c: c['value'] in values, self.cells))
-            zf.writestr('cells.json', json.dumps(self.cells))
+            zf.writestr('cells.j son', json.dumps(self.cells))
         f.seek(0)
         self.response_zip = f
 
@@ -253,7 +253,7 @@ class Edit(object):
             y (int): y coordinate of region to flood
         """
         mask = self.get_mask(background)
-        flooded = flood(mask, (y, x), connectivity=2)
+        flooded = flood(mask, (y, x), connectivity=2 if background != 0 else 1)
         self.add_mask(flooded, foreground)
 
     def action_watershed(self, cell, new_cell, x1, y1, x2, y2):
