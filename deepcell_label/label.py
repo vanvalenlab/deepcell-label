@@ -103,7 +103,7 @@ class Edit(object):
             # Remove cell labels that are not in the segmentation
             values = np.unique(self.labels)
             self.cells = list(filter(lambda c: c['value'] in values, self.cells))
-            zf.writestr('cells.j son', json.dumps(self.cells))
+            zf.writestr('cells.json', json.dumps(self.cells))
         f.seek(0)
         self.response_zip = f
 
