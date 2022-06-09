@@ -6,7 +6,7 @@ import { useHexColormap } from '../../../ProjectContext';
 const Cell = React.forwardRef(({ cell, onClick }, ref) => {
   const colors = useHexColormap();
   const color = colors[cell] ?? '#000000';
-  const textColor = contrast(color, '#000000') > contrast(color, '#FFFFFF') ? '#000000' : '#FFFFFF';
+  const textColor = contrast(color, '#000000') > contrast(color, '#ffffff') ? '#000000' : '#ffffff';
 
   return (
     <Avatar
@@ -18,6 +18,8 @@ const Cell = React.forwardRef(({ cell, onClick }, ref) => {
         width: '2.5rem',
         backgroundColor: color,
         color: textColor,
+        border: color === '#ffffff' ? '0.1px solid black' : 'none',
+        boxSizing: 'border-box',
       }}
       onClick={onClick}
     >
