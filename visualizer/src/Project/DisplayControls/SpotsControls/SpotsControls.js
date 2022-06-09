@@ -1,5 +1,7 @@
 import { Box, FormLabel, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { useSelector } from '@xstate/react';
+import { useSpots } from '../../ProjectContext';
 import SpotColorToggle from './SpotColorToggle';
 import SpotOpacitySlider from './SpotOpacitySlider';
 import SpotOutlineToggle from './SpotOutlineToggle';
@@ -7,6 +9,12 @@ import SpotRadiusSlider from './SpotRadiusSlider';
 import SpotsCheckbox from './SpotsCheckbox';
 
 function SpotsControls() {
+  const spots = useSelector(useSpots(), (state) => state.context.spots);
+
+  if (!spots) {
+    return null;
+  }
+
   return (
     <Grid container direction='column' justifyContent='center' sx={{ pt: 1 }}>
       <Grid container direction='row'>
