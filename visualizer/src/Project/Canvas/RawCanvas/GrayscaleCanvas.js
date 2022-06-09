@@ -1,7 +1,14 @@
 import { useSelector } from '@xstate/react';
 import { GPU } from 'gpu.js';
-import { useEffect, useRef, useState } from 'react';
-import { useArrays, useCanvas, useChannel, useImage, useRaw } from '../../ProjectContext';
+import { useEffect, useRef } from 'react';
+import {
+  useArrays,
+  useCanvas,
+  useChannel,
+  useImage,
+  usePixelatedCanvas,
+  useRaw,
+} from '../../ProjectContext';
 
 export const GrayscaleCanvas = ({ setCanvases }) => {
   const canvas = useCanvas();
@@ -22,11 +29,11 @@ export const GrayscaleCanvas = ({ setCanvases }) => {
   const arrays = useArrays();
   const rawArray = useSelector(
     arrays,
-    (state) => state.context.rawArrays && state.context.rawArrays[channelIndex][frame]
+    (state) => state.context.raw && state.context.raw[channelIndex][frame]
   );
 
   const kernelRef = useRef();
-  const [kernelCanvas] = useState(document.createElement('canvas'));
+  const kernelCanvas = usePixelatedCanvas();
 
   useEffect(() => {
     const gpu = new GPU({ canvas: kernelCanvas });

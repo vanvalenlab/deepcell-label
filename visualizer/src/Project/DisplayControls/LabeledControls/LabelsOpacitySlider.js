@@ -43,7 +43,6 @@ function LabelsOpacitySlider() {
             onDoubleClick={handleDoubleClick}
             componentsProps={{ input: { ref: inputRef } }}
             sx={{ py: 0 }}
-            size='small'
           />
         </Grid>
       </Grid>

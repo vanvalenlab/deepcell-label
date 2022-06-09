@@ -8,7 +8,7 @@ PORT = config('PORT', cast=int, default=5000)
 
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
-S3_BUCKET = config('S3_BUCKET', default='caliban-visualizer')
+S3_BUCKET = config('S3_BUCKET', default='deepcell-label-input')
 
 TEMPLATES_AUTO_RELOAD = config('TEMPLATES_AUTO_RELOAD', cast=bool, default=True)
 

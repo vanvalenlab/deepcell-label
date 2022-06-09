@@ -7,32 +7,22 @@ import FeatureSelect from './FeatureSelect';
 import HighlightToggle from './HighlightToggle';
 import LabelsOpacitySlider from './LabelsOpacitySlider';
 import OutlineOpacitySlider from './OutlineOpacitySlider';
-import OutlineToggle from './OutlineToggle';
 
 const LabeledControls = () => {
   return (
     <>
       <Grid container direction='column'>
         <Grid item>
-          <Box display='flex' flexDirection='row' justifyContent='space-between'>
-            <FormLabel component='legend'>Segmentations</FormLabel>
-            <OutlineToggle />
-          </Box>
+          <FormLabel component='legend'>Segmentations</FormLabel>
         </Grid>
         <Grid item>
-          <Box
-            display='flex'
-            flexDirection='row'
-            justifyContent='space-between'
-            sx={{ width: '100%' }}
-          >
-            <FeatureSelect />
-            <div />
+          <FeatureSelect />
+        </Grid>
+        <Grid item>
+          <Box display='flex' flexDirection='row' justifyContent='space-between'>
+            <Typography>Opacity</Typography>
             <HighlightToggle />
           </Box>
-        </Grid>
-        <Grid item>
-          <Typography>Opacity</Typography>
         </Grid>
         <Grid item>
           <LabelsOpacitySlider />

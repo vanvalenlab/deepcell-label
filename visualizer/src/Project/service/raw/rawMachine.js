@@ -5,12 +5,12 @@ import createLayerMachine from './layerMachine';
 
 const { pure, respond } = actions;
 
-const createRawMachine = ({ projectId, eventBuses }) =>
+const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
   Machine(
     {
       invoke: [
         { id: 'eventBus', src: fromEventBus('raw', () => eventBuses.raw) },
-        { src: fromEventBus('raw', () => eventBuses.load) },
+        { src: fromEventBus('raw', () => eventBuses.load, 'DIMENSIONS') },
       ],
       context: {
         projectId,
@@ -21,7 +21,7 @@ const createRawMachine = ({ projectId, eventBuses }) =>
         layers: [],
         isGrayscale: true,
       },
-      entry: ['spawnLayers', 'spawnChannels'],
+      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnLayers', 'spawnChannels'],
       initial: 'checkDisplay',
       states: {
         checkDisplay: {

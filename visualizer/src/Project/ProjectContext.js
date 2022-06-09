@@ -17,20 +17,51 @@ function useReturnContext(contextType) {
 
 export function useSelectedCell() {
   // Get selected cell from each labeling mode
-  const lineage = useLineage();
-  const lineageLabel = useSelector(lineage, (state) => state.context.selected);
   const select = useSelect();
-  const selectLabel = useSelector(select, (state) => state.context.foreground);
-  // Get labeling mode
+  const cell = useSelector(select, (state) => state.context.selected);
+  return cell;
+}
+
+/** Returns a list of the cells under the cursor. */
+export function useHovering() {
+  const project = useProject();
+  const hoveringRef = useSelector(project, (state) => state.context.hoveringRef);
+  const hovering = useSelector(hoveringRef, (state) => state.context.hovering);
+  return hovering;
+}
+
+/** Returns the other selected cell when using the flood, replace, or swap tools.
+ * When these tools are not in use, returns null instead.
+ */
+export function useOtherSelectedCell() {
+  const segment = useSegment();
+  const segmentTool = useSelector(segment, (state) => state.context.tool);
+
+  const editCells = useEditCells();
+  const cellsTool = useSelector(editCells, (state) => state.context.tool);
+
   const labelMode = useLabelMode();
-  const mode = useSelector(labelMode, (state) => {
-    return state.matches('segment') ? 0 : state.matches('editLineage') ? 1 : false;
-  });
-  // Switch between selections
-  if (mode === 1 || process.env.REACT_APP_CALIBAN_VISUALIZER === 'true') {
-    return lineageLabel;
+  const mode = useSelector(labelMode, (state) =>
+    state.matches('editSegment') ? 'segment' : state.matches('editCells') ? 'cells' : false
+  );
+
+  const flood = useFlood();
+  const floodCell = useSelector(flood, (state) => state.context.floodCell);
+  const replace = useReplace();
+  const replaceCell = useSelector(replace, (state) => state.context.replaceCell);
+  const swap = useSwap();
+  const swapCell = useSelector(swap, (state) => state.context.swapCell);
+
+  if (segmentTool === 'flood' && mode === 'segment') {
+    return floodCell;
   }
-  return selectLabel;
+  if (cellsTool === 'replace' && mode === 'cells') {
+    return replaceCell;
+  }
+  if (cellsTool === 'swap' && mode === 'cells') {
+    return swapCell;
+  }
+  return null;
 }
 
 /**
@@ -38,16 +69,11 @@ export function useSelectedCell() {
  * By default keyboard events will not fire inside of a textarea, input, or select.
  * Elements with the mousetrap class will fire keybinds. */
 export function useMousetrapRef() {
-  const ref = useRef();
-  const [hasClass, setHasClass] = useState(false);
-
-  if (ref.current && !hasClass) {
-    setHasClass(true);
-    const inputEl = ref.current;
-    inputEl.className = `${inputEl.className} mousetrap`;
-  }
-
-  return ref;
+  return (input) => {
+    if (input && !input?.className?.includes('mousetrap')) {
+      input.className = `${input?.className} mousetrap`;
+    }
+  };
 }
 
 export function useEditing() {
@@ -89,19 +115,13 @@ export function useArrays() {
   return arrays;
 }
 
-export function useLabels() {
-  const project = useProject();
-  const labels = useSelector(project, (state) => state.context.labelsRef);
-  return labels;
-}
-
 export function useSelect() {
   const project = useProject();
   const select = useSelector(project, (state) => state.context.selectRef);
   return select;
 }
 
-export function useEditLineage(label) {
+export function useEditLineage() {
   const project = useProject();
   const editLineage = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
@@ -110,10 +130,29 @@ export function useEditLineage(label) {
   return editLineage;
 }
 
-export function useApi() {
+export function useEditCells() {
   const project = useProject();
-  const api = useSelector(project, (state) => state.context.apiRef);
+  const editCells = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    return labelMode.state.context.editCellsRef;
+  });
+  return editCells;
+}
+
+export function useSegmentApi() {
+  const project = useProject();
+  const api = useSelector(project, (state) => {
+    const arrays = state.context.arraysRef;
+    const api = arrays.children.get('api');
+    return api;
+  });
   return api;
+}
+
+export function useExport() {
+  const project = useProject();
+  const export_ = useSelector(project, (state) => state.context.exportRef);
+  return export_;
 }
 
 export function useUndo() {
@@ -225,7 +264,7 @@ export function useSegment() {
   const project = useProject();
   const segment = useSelector(project, (state) => {
     const tool = state.context.toolRef;
-    const segment = tool.state.context.segmentRef;
+    const segment = tool.state.context.editSegmentRef;
     return segment;
   });
   return segment;
@@ -235,7 +274,7 @@ export function useBrush() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.brush;
   });
@@ -246,7 +285,7 @@ export function useThreshold() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.threshold;
   });
@@ -257,7 +296,7 @@ export function useWatershed() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.watershed;
   });
@@ -268,9 +307,31 @@ export function useFlood() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    const segment = labelMode.state.context.segmentRef;
+    const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.flood;
+  });
+  return tool;
+}
+
+export function useSwap() {
+  const project = useProject();
+  const tool = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    const editCells = labelMode.state.context.editCellsRef;
+    const tools = editCells.state.context.tools;
+    return tools.swap;
+  });
+  return tool;
+}
+
+export function useReplace() {
+  const project = useProject();
+  const tool = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    const editCells = labelMode.state.context.editCellsRef;
+    const tools = editCells.state.context.tools;
+    return tools.replace;
   });
   return tool;
 }
@@ -285,7 +346,7 @@ function rgbToHex(rgb) {
 }
 
 export function useHexColormap() {
-  const labels = useLabels();
+  const labels = useCells();
   const colormap = useSelector(labels, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
 }
@@ -296,33 +357,39 @@ const gl = !!document.createElement('canvas').getContext('webgl');
 /** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
 export function useAlphaKernelCanvas() {
   const project = useProject();
+  const width = useSelector(useCanvas(), (state) => state.context.width);
+  const height = useSelector(useCanvas(), (state) => state.context.height);
   const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
     const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
     if (gl2) {
       canvas.getContext('webgl2', { premultipliedAlpha: false });
     } else if (gl) {
       canvas.getContext('webgl', { premultipliedAlpha: false });
     }
     setCanvas(canvas);
-  }, [project]);
+  }, [project, width, height]);
 
   return canvas;
 }
 
 /** Creates a canvas with the same dimensions as the project. */
 export function usePixelatedCanvas() {
-  const [canvas] = useState(document.createElement('canvas'));
+  const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   const canvasMachine = useCanvas();
   const width = useSelector(canvasMachine, (state) => state.context.width);
   const height = useSelector(canvasMachine, (state) => state.context.height);
 
   useEffect(() => {
+    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-  }, [canvas, height, width]);
+    setCanvas(canvas);
+  }, [height, width]);
 
   return canvas;
 }
@@ -346,10 +413,10 @@ export function useFullResolutionCanvas() {
   return canvas;
 }
 
-export function useOverlaps() {
+export function useCells() {
   const project = useProject();
-  const overlaps = useSelector(project, (state) => state.context.overlapsRef);
-  return overlaps;
+  const cells = useSelector(project, (state) => state.context.cellsRef);
+  return cells;
 }
 
 function ProjectContext({ project, children }) {

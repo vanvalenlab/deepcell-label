@@ -1,14 +1,18 @@
-import UndoRedo from '../SegmentControls/UndoRedo';
+import { Box } from '@mui/material';
+import React from 'react';
+import { useEditing } from '../../ProjectContext';
 import DivisionAlerts from './Alerts/DivisionAlerts';
-import Timeline from './Timeline';
+import Divisions from './Divisions';
+import EditingPrompt from './EditingPrompt';
 
 function TrackingControls() {
+  const editing = useEditing();
   return (
-    <>
-      <UndoRedo />
+    <Box display='flex'>
       <DivisionAlerts />
-      <Timeline />
-    </>
+      <Divisions />
+      {editing && <EditingPrompt />}
+    </Box>
   );
 }
 

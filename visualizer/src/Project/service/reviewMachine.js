@@ -2,7 +2,6 @@
  * Root statechart for DeepCell Label in XState.
  */
 import { assign, Machine, spawn } from 'xstate';
-import createLoadMachine from './loadMachine';
 import createProjectMachine from './projectMachine';
 
 function createReviewMachine(projectIds) {
@@ -31,8 +30,6 @@ function createReviewMachine(projectIds) {
         spawnProjects: assign({
           projects: ({ projectIds: ids }) =>
             Object.fromEntries(ids.map((id) => [id, spawn(createProjectMachine(id))])),
-          loaders: ({ projectIds: ids }) =>
-            Object.fromEntries(ids.map((id) => [id, spawn(createLoadMachine(id))])),
         }),
         setProject: assign({
           projectId: (_, { projectId }) => projectId,

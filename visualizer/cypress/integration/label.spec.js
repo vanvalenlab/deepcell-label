@@ -1,5 +1,11 @@
 /* eslint-disable jest/expect-expect */
 /* eslint-disable no-undef */
+import { deleteDB } from 'idb';
+import { getUniqueId } from './utils';
+
+after(() => {
+  deleteDB('deepcell-label');
+});
 
 it('finds DeepCell Label homepage text', () => {
   cy.visit('/');
@@ -33,7 +39,7 @@ it('Create a project from an example file', () => {
 });
 
 it('shows loading spinner', () => {
-  cy.visit('/project?projectId=fakefakefake');
+  cy.visit(`/project?projectId=${getUniqueId()}`);
   cy.get('.MuiCircularProgress-svg');
 });
 
@@ -54,9 +60,10 @@ it('shows loading spinner', () => {
 // });
 
 it('updates state with keybinds', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
+  const id = getUniqueId();
+  cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
-  cy.visit('/project?projectId=fakefakefake');
+  cy.visit(`/project?projectId=${id}`);
   cy.get('.MuiCircularProgress-svg').should('not.exist');
   cy.get('body').type('b');
   cy.contains('Brush').should('have.attr', 'aria-pressed', 'true');
@@ -74,9 +81,10 @@ it('updates state with keybinds', () => {
 });
 
 it('opens instructions', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
+  const id = getUniqueId();
+  cy.intercept('GET', `/api/project${id}`, { fixture: 'rgb.zip' });
 
-  cy.visit('/project?projectId=fakefakefake');
+  cy.visit(`/project?projectId=${id}`);
   cy.contains('Instructions').click();
   cy.contains('Display').click();
   cy.contains('Canvas').click();
@@ -86,18 +94,21 @@ it('opens instructions', () => {
 });
 
 it('shows quality control interface', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
+  const [id1, id2] = [getUniqueId(), getUniqueId()];
+  cy.intercept('GET', `/api/project/${id1}`, { fixture: 'rgb.zip' });
+  cy.intercept('GET', `/api/project/${id2}`, { fixture: 'rgb.zip' });
 
-  cy.visit('/project?projectId=fakefakefake,fakefakefake');
+  cy.visit(`project?projectId=${id1},${id2}`);
   cy.contains('Accept').click();
   cy.contains('Reject').click();
   cy.contains('Download QC').click();
 });
 
 it('removes channel', () => {
-  cy.intercept('GET', '/api/project/fakefakefake', { fixture: 'rgb.zip' });
+  const id = getUniqueId();
+  cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
-  cy.visit('/project?projectId=fakefakefake');
+  cy.visit(`project?projectId=${id}`);
   cy.contains('channel 0');
   cy.get('[data-testid="layer0-options"]').click();
   cy.contains('Remove').click();

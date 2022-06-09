@@ -2,14 +2,14 @@ import { Box, FormLabel, ToggleButton, Tooltip } from '@mui/material';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useApi } from '../../../ProjectContext';
+import { useSegmentApi } from '../../../ProjectContext';
 import ExcludeIcon from './ExcludeIcon';
 import OverlapIcon from './OverlapIcon';
 import OverwriteIcon from './OverwriteIcon';
 
 function WriteModeButtons() {
   // write state machine
-  const api = useApi();
+  const api = useSegmentApi();
   const writeMode = useSelector(api, (state) => state.context.writeMode);
 
   const handleWriteMode = (event, newWriteMode) => {
