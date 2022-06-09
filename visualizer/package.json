@@ -82,7 +82,7 @@
     ]
   },
   "devDependencies": {
-    "@cypress/code-coverage": "^3.9.12",
+    "@cypress/code-coverage": "^3.10.0",
     "@cypress/instrument-cra": "^1.4.0",
     "@testing-library/user-event": "^14.0.0-beta",
     "canvas": "^2.9.0",
