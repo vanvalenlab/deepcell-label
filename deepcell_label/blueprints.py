@@ -60,7 +60,13 @@ def create_project():
     Create a new Project from URL.
     """
     start = timeit.default_timer()
-    images_url = request.form['images'] if 'images' in request.form else None
+    if 'images' in request.form:
+        images_url = request.form['images']
+    else:
+        return abort(
+            400,
+            description='Include "images" in the request form with a URL to download the project data.',
+        )
     labels_url = request.form['labels'] if 'labels' in request.form else None
     # dimension_order = (
     #     request.form['dimension_order']
