@@ -29,15 +29,16 @@ const createProjectMachine = (projectId) =>
           // UI state
           canvas: new EventBus('canvas'), // COORDINATES, mouseup, mousedown
           hovering: new EventBus('hovering'), // HOVERING
-          image: new EventBus('image'), // SET_T (and FEATURE and CHANNEL?)
-          labeled: new EventBus('labeled'), // SET_FEATURE (?)
-          raw: new EventBus('raw'), // SET_CHANNEL (?)
-          select: new EventBus('select'), // SELECTED // also receives GET_SELECTED and responds with SELECTED
+          image: new EventBus('image'), // SET_T
+          labeled: new EventBus('labeled'), // SET_FEATURE
+          raw: new EventBus('raw'), // SET_CHANNEL
+          select: new EventBus('select'), // SELECTED, receives GET_SELECTED and responds with SELECTED
           // EDIT events and label changes
           // TODO: rename to segment and separate raw arrays
           arrays: new EventBus('arrays'), // also receives GET_ARRAYS and responds with ARRAYS
           cells: new EventBus('cells'),
           divisions: new EventBus('divisions'),
+          spots: new EventBus('spots'),
         },
       },
       invoke: {

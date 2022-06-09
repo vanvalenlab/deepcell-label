@@ -36,7 +36,7 @@ const idbMachine = createMachine(
             {
               cond: 'projectInDb',
               target: 'idle',
-              actions: 'sendLoaded',
+              actions: [(c, e) => console.log(c, e), 'sendLoaded'],
             },
             { target: 'idle', actions: 'sendProjectNotInDB' },
           ],
@@ -64,11 +64,7 @@ const idbMachine = createMachine(
       sendProjectNotInDB: sendParent('PROJECT_NOT_IN_DB'),
       sendLoaded: sendParent((ctx, evt) => ({
         type: 'LOADED',
-        raw: evt.data.raw,
-        labeled: evt.data.labeled,
-        cells: evt.data.cells,
-        divisions: evt.data.divisions,
-        // spots: ctx.project.spots, // TODO: include spots in IDB
+        ...evt.data,
         message: 'from idb web worker machine',
       })),
     },

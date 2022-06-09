@@ -24,6 +24,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         { src: fromEventBus('IDB', () => eventBuses.arrays, 'EDITED_SEGMENT') },
         { src: fromEventBus('IDB', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('IDB', () => eventBuses.divisions, 'DIVISIONS') },
+        { src: fromEventBus('IDB', () => eventBuses.spots, 'SPOTS') },
         { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
       entry: send((ctx) => ({ type: 'PROJECT_ID', projectId: ctx.projectId }), { to: 'idb' }),
@@ -49,6 +50,7 @@ function createIDBMachine({ projectId, eventBuses }) {
             EDITED_SEGMENT: { actions: ['updateSegment', 'putProject'] },
             CELLS: { actions: ['updateCells', 'putProject'] },
             DIVISIONS: { actions: ['updateDivisions', 'putProject'] },
+            SPOTS: { actions: ['updateSpots', 'putProject'] },
           },
         },
       },
@@ -70,12 +72,16 @@ function createIDBMachine({ projectId, eventBuses }) {
         updateDivisions: assign({
           project: (ctx, evt) => ({ ...ctx.project, divisions: evt.divisions }),
         }),
+        updateSpots: assign({
+          project: (ctx, evt) => ({ ...ctx.project, spots: evt.spots }),
+        }),
         setProject: assign((ctx, evt) => ({
           project: {
             raw: evt.raw,
             labeled: evt.labeled,
             cells: evt.cells.cells, // LOADED sends Cells object, need to get cells list
             divisions: evt.divisions,
+            spots: evt.spots,
           },
         })),
         forwardLoadedToParent: sendParent((ctx, evt) => ({ ...evt, cells: new Cells(evt.cells) })),
