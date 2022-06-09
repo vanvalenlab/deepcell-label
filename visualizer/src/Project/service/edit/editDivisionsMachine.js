@@ -14,6 +14,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
       context: {
         selected: null,
         hovering: null,
+        parent: null,
         daughter: null,
         t: null,
       },
@@ -28,7 +29,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
         idle: {
           on: {
             mouseup: { actions: 'select' },
-            ADD: 'addingDaughter',
+            ADD: { target: 'addingDaughter', actions: 'setParent' },
           },
         },
         addingDaughter: {
@@ -64,7 +65,7 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
           }),
           { to: 'divisions' }
         ),
-        resetDaughter: assign({ daughter: null }),
+        setParent: assign({ parent: (_, evt) => evt.parent }),
         setDaughter: assign({
           daughter: (ctx) => {
             const { hovering, daughter } = ctx;
@@ -72,10 +73,11 @@ const createEditDivisionsMachine = ({ eventBuses }) =>
             return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
           },
         }),
+        resetDaughter: assign({ daughter: null }),
         addDaughter: send(
           (ctx) => ({
             type: 'ADD_DAUGHTER',
-            parent: ctx.selected,
+            parent: ctx.parent,
             daughter: ctx.daughter,
             t: ctx.t,
           }),
