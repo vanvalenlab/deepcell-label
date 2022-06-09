@@ -10,7 +10,7 @@ type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : nev
 
 type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
-type Spots = number[][];
+type Spots = [number, number][];
 type Divisions = { parent: number; daughters: number[]; t: number }[];
 type Files = {
   [filename: string]: OmeTiff | Spots | Cells | Divisions;
@@ -32,7 +32,12 @@ async function parseZip(response: Response) {
     if (entry.filename === 'spots.csv') {
       // @ts-ignore
       const csv = await entry.getData(new zip.TextWriter());
-      const spots: Spots = csv.split('\n').map((row: string) => row.split(',').map(Number));
+      let spots: Spots = csv
+        .split('\n')
+        .map((row: string) => row.split(',').map(Number))
+        .map(([x, y]: number[]) => [x, y]); // Use only x and y columns
+      spots.shift(); // Remove header row
+      spots.pop(); // Remove last empty row from final newline
       files[entry.filename] = spots;
     }
     if (entry.filename === 'divisions.json') {
