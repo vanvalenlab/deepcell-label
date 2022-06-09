@@ -3,6 +3,7 @@ import { styled } from '@mui/system';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer';
 import Load from './Load';
+import Loading from './Loading';
 import NavBar from './Navbar';
 import Label from './Project';
 
@@ -31,6 +32,7 @@ function App() {
           <Router>
             <Routes>
               <Route path='/' element={<Load />} />
+              <Route path='/loading' element={<Loading />} />
               <Route path='/project' element={<Label />} />
             </Routes>
           </Router>
