@@ -1,7 +1,7 @@
 import { Box, Grid } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import React from 'react';
-import SelectedBox from '../DisplayControls/Cells/Selected/Selected';
+import Selected from '../DisplayControls/Cells/Selected/Selected';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function SelectShortcuts() {
@@ -22,7 +22,7 @@ function SelectInstructions() {
         <Typography variant='h5'>Selected Label Palette</Typography>
         <Grid container spacing={3}>
           <Grid item xs={6} sm={4} md={2}>
-            <SelectedBox />
+            <Selected />
           </Grid>
           <Grid item xs={6} sm={8} md={10}>
             <Typography>

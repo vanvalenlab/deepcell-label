@@ -29,7 +29,7 @@ function DisplayShortcuts() {
   );
 }
 
-function DisplayInstructions() {
+function OverviewInstructions() {
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
@@ -112,4 +112,4 @@ function DisplayInstructions() {
   );
 }
 
-export default DisplayInstructions;
+export default OverviewInstructions;
