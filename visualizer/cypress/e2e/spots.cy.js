@@ -20,8 +20,9 @@ it('removes loading spinner after loading data', () => {
 });
 
 it('shows spots controls', () => {
-  cy.visit(`/project?projectId=${getUniqueId()}`);
-  cy.contains('Spots');
+  const id = getUniqueId();
+  cy.intercept('GET', `/api/project/${id}`, { fixture: 'spots.zip' });
+  cy.visit(`/project?projectId=${id}`);
   cy.contains('Outline');
   cy.contains('Color');
   cy.contains('Radius');
