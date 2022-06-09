@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import {
   useArrays,
   useCanvas,
+  useCells,
   useFullResolutionCanvas,
-  useLabels,
   useSpots,
 } from '../ProjectContext';
 
@@ -42,8 +42,8 @@ function SpotsCanvas({ setCanvases }) {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const labels = useLabels();
-  const colormap = useSelector(labels, (state) => state.context.colormap);
+  const cells = useCells();
+  const colormap = useSelector(cells, (state) => state.context.colormap);
 
   const drawCanvas = useFullResolutionCanvas();
   const movingCanvas = useFullResolutionCanvas();
@@ -51,8 +51,8 @@ function SpotsCanvas({ setCanvases }) {
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    ({ context: { frame, feature, labeledArrays } }) =>
-      labeledArrays && labeledArrays[feature][frame]
+    (state) =>
+      state.context.labeled && state.context.labeled[state.context.feature][state.context.frame]
   );
 
   const spots = useSpots();

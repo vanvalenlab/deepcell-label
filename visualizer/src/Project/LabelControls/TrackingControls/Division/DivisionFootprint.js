@@ -1,4 +1,4 @@
-import { Box, FormLabel } from '@mui/material';
+import { Box } from '@mui/material';
 import React from 'react';
 import { ArcherContainer } from 'react-archer';
 import Daughters from './Daughters';
@@ -16,15 +16,14 @@ const dummyDivision = {
 
 function DivisionFootprint() {
   return (
-    <ArcherContainer>
-      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-        <FormLabel>Division</FormLabel>
+    <Box sx={{ visibility: 'hidden ' }}>
+      <ArcherContainer>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Parent division={dummyDivision} />
           <Daughters division={dummyDivision} />
         </Box>
-      </Box>
-    </ArcherContainer>
+      </ArcherContainer>
+    </Box>
   );
 }
 

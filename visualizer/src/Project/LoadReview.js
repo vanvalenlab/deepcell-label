@@ -1,6 +1,6 @@
 import { useInterpret, useSelector } from '@xstate/react';
 import { useState } from 'react';
-import Display from './Display';
+import Project from './Project';
 import ProjectContext from './ProjectContext';
 import ReviewContext from './ReviewContext';
 import createReviewMachine from './service/reviewMachine';
@@ -17,7 +17,7 @@ function LoadReview({ ids }) {
   return (
     <ReviewContext review={review}>
       <ProjectContext project={project}>
-        <Display review={true} track={track} />
+        <Project review={true} track={track} />
       </ProjectContext>
     </ReviewContext>
   );

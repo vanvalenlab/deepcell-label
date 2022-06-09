@@ -26,13 +26,24 @@ class Edit(object):
 
         self.valid_modes = ['overlap', 'overwrite', 'exclude']
         self.raw_required = ['watershed', 'active_contour', 'threshold']
-        self.lineage_required = []
-
-        self.lineage = None
 
         self.load(labels_zip)
         self.dispatch_action()
         self.write_response_zip()
+
+    @property
+    def new_value(self):
+        """Returns a value not in the segmentation."""
+        if len(self.cells) == 0:
+            return 1
+        return max(map(lambda c: c['value'], self.cells)) + 1
+
+    @property
+    def new_cell(self):
+        """Returns a cell not in the segmentation."""
+        if len(self.cells) == 0:
+            return 1
+        return max(map(lambda c: c['cell'], self.cells)) + 1
 
     def load(self, labels_zip):
         """
@@ -53,10 +64,11 @@ class Edit(object):
             self.height = edit['height']
             self.width = edit['width']
             self.args = edit.get('args', None)
+            # TODO: specify write mode per cell?
             self.write_mode = edit.get('writeMode', 'overlap')
             if self.write_mode not in self.valid_modes:
                 raise ValueError(
-                    f'Invalid writeMode {self.write_mode} in edit.json. Choose from overlap, overwrite, or exclude.'
+                    f'Invalid writeMode {self.write_mode} in edit.json. Choose from cell, overwrite, or exclude.'
                 )
 
         # Load label array
@@ -67,13 +79,11 @@ class Edit(object):
             self.initial_labels = np.reshape(labels, (self.width, self.height))
             self.labels = self.initial_labels.copy()
 
-        # Load overlaps array
-        if 'overlaps.json' not in zf.namelist():
-            raise ValueError('zip must contain overlaps.json.')
-        with zf.open('overlaps.json') as f:
-            self.overlaps = np.array(json.load(f))
-            self.new_value = self.overlaps.shape[0]
-            self.new_label = self.overlaps.shape[1]
+        # Load cells array
+        if 'cells.json' not in zf.namelist():
+            raise ValueError('zip must contain cells.json.')
+        with zf.open('cells.json') as f:
+            self.cells = json.load(f)
 
         # Load raw image
         if 'raw.dat' in zf.namelist():
@@ -85,98 +95,91 @@ class Edit(object):
                 f'Include raw array in raw.json to use action {self.action}.'
             )
 
-        # Load lineage
-        if 'lineage.json' in zf.namelist():
-            with zf.open('lineage.json') as f:
-                self.lineage = json.load(f)
-        elif self.action in self.lineage_required:
-            raise ValueError(
-                f'Include lineage in lineage.json for action {self.action}.'
-            )
-
     def write_response_zip(self):
-        """Write edited labels to zip."""
+        """Write edited segmentation to zip."""
         f = io.BytesIO()
         with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-            zf.writestr('labeled.json', str(self.labels.tolist()))
-            zf.writestr('overlaps.json', str(self.overlaps.tolist()))
-            if self.lineage is not None:
-                zf.writestr('lineage.json', json.dumps(self.lineage))
+            zf.writestr('labeled.dat', self.labels.tobytes())
+            zf.writestr('cells.json', json.dumps(self.cells))
         f.seek(0)
         self.response_zip = f
 
-    def add_label(self, label):
-        if label == self.new_label:
-            # TODO: error handling if new label is too large (or negative or 0 or non integer)
-            new_column = np.zeros((self.overlaps.shape[0], 1))
-            self.overlaps = np.append(self.overlaps, new_column, axis=1)
+    def get_cells(self, value):
+        """
+        Returns a list of cells encoded by the value
+        """
+        return list(
+            map(lambda c: c['cell'], filter(lambda c: c['value'] == value, self.cells))
+        )
 
-    def get_value(self, labels):
+    def get_values(self, cell):
         """
-        Returns the value that encodes the vector of labels
+        Returns a list of values that encode a cell
         """
-        matching_values = np.where(np.all(labels == self.overlaps, axis=1))[0]
-        if matching_values.size == 0:  # No matching value
-            new_value = self.new_value
-            self.new_value += 1
-            self.overlaps = np.append(
-                self.overlaps, np.expand_dims(labels, axis=0), axis=0
-            )
-            return new_value
-        else:
-            return matching_values[0]
+        return list(
+            map(lambda c: c['value'], filter(lambda c: c['cell'] == cell, self.cells))
+        )
 
-    def get_mask(self, label):
+    def get_value(self, cells):
         """
-        Returns a boolean mask of the label.
+        Returns the value that encodes the list of cells
         """
-        if label == 0:
+        if cells == []:
+            return 0
+        values = set(map(lambda c: c['value'], self.cells))
+        for cell in cells:
+            values = values & set(self.get_values(cell))
+        if len(values) == 0:
+            value = self.new_value
+            for cell in cells:
+                self.cells.append({'value': value, 'cell': cell})
+            return value
+        return values.pop()
+
+    def get_mask(self, cell):
+        """
+        Returns a boolean mask of the cell (or the background when cell == 0)
+        """
+        if cell == 0:
             return self.labels == 0
         mask = np.zeros(self.labels.shape, dtype=bool)
-        for value, encodes_label in enumerate(self.overlaps[:, label]):
-            if encodes_label:
-                mask[self.labels == value] = True
+        for value in self.get_values(cell):
+            mask[self.labels == value] = True
         return mask
 
-    def add_mask(self, mask, label):
+    def add_mask(self, mask, cell):
         if self.write_mode == 'overwrite':
-            if np.any(mask):
-                self.add_label(label)
-            labels = np.zeros(self.overlaps.shape[1])
-            labels[label] = True
-            self.labels[mask] = self.get_value(labels)
+            self.labels[mask] = self.get_value([cell])
         elif self.write_mode == 'exclude':
             mask = mask & (self.labels == 0)
-            if np.any(mask):
-                self.add_label(label)
-            labels = np.zeros(self.overlaps.shape[1])
-            labels[label] = True
-            self.labels[mask] = self.get_value(labels)
+            self.labels[mask] = self.get_value([cell])
         else:  # self.write_mode == 'overlap'
-            self.overlap_mask(mask, label)
+            self.overlap_mask(mask, cell)
 
-    def remove_mask(self, mask, label):
-        self.overlap_mask(mask, label, remove=True)
+    def remove_mask(self, mask, cell):
+        self.overlap_mask(mask, cell, remove=True)
 
-    def overlap_mask(self, mask, label, remove=False):
+    def overlap_mask(self, mask, cell, remove=False):
         """
-        Adds the label to the label image in the mask area,
-        overlapping with existing labels.
+        Adds the cell to the segmentation in the mask area,
+        overlapping with existing cells.
         """
-        if np.any(mask):
-            self.add_label(label)
         # Rewrite values inside mask to encode label
         values = np.unique(self.labels[mask])
         for value in values:
             # Get value to encode new set of labels
-            labels = np.copy(self.overlaps[value])
-            labels[label] = not remove
-            new_value = self.get_value(labels)
+            cells = self.get_cells(value)
+            if remove:
+                if cell in cells:
+                    cells.remove(cell)
+            else:
+                cells.append(cell)
+            new_value = self.get_value(cells)
             self.labels[mask & (self.labels == value)] = new_value
 
-    def clean_label(self, label):
-        """Ensures that a label is a valid integer between 0 and an unused label"""
-        return int(min(self.new_label, max(0, label)))
+    def clean_cell(self, cell):
+        """Ensures that a cell is a positive integer"""
+        return int(max(0, cell))
 
     def dispatch_action(self):
         """
@@ -190,27 +193,11 @@ class Edit(object):
         attr_name = 'action_{}'.format(self.action)
         try:
             action_fn = getattr(self, attr_name)
-            action_fn(**self.args)
         except AttributeError:
             raise ValueError('Invalid action "{}"'.format(self.action))
+        action_fn(**self.args)
 
-    def action_replace(self, a, b):
-        """
-        Replaces b with a in the current frame.
-        """
-        a = self.clean_label(a)
-        b = self.clean_label(b)
-
-        for value in np.unique(self.labels):
-            labels = self.overlaps[value]
-            if labels[b] == 1:
-                new_labels = np.copy(labels)
-                new_labels[b] = 0
-                new_labels[a] = 1 if a != 0 else 0
-                new_value = self.get_value(new_labels)
-                self.labels[self.labels == value] = new_value
-
-    def action_draw(self, trace, brush_size, label, erase=False):
+    def action_draw(self, trace, brush_size, cell, erase=False):
         """
         Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
@@ -218,19 +205,10 @@ class Edit(object):
         Args:
             trace (list): list of (x, y) coordinates where the brush has painted
             brush_size (int): radius of the brush in pixels
-            label (int): label to edit with the brush
+            cell (int): cell to edit with the brush
             erase (bool): whether to add or remove label from brush stroke area
         """
         trace = json.loads(trace)
-
-        # TODO: handle new labels (add column to overlaps)
-        # TODO: switch between overwriting, overlapping, and excluding
-        # overwrite: replace labels with label
-        # exclude: prevent drawing over labels with label
-        # overlap: keep both labels when drawing over labels
-        # currently always uses over
-        # TODO: specify behavior per label?
-
         # Create mask for brush stroke
         brush_mask = np.zeros(self.labels.shape, dtype=bool)
         for loc in trace:
@@ -240,25 +218,23 @@ class Edit(object):
             brush_mask[disk] = True
 
         if erase:
-            self.remove_mask(brush_mask, label)
+            self.remove_mask(brush_mask, cell)
         else:
-            self.add_mask(brush_mask, label)
+            self.add_mask(brush_mask, cell)
 
-    def action_trim_pixels(self, label, x, y):
+    def action_trim_pixels(self, cell, x, y):
         """
-        Removes label area that are not connected to (x, y).
+        Removes parts of cell not connected to (x, y).
 
         Args:
-            label (int): label to trim
+            cell (int): cell to trim
             x (int): x position of seed
-                              remove label that is not connect to this seed
             y (int): y position of seed
         """
-        seed_value = self.labels[y, x]
-        if self.overlaps[seed_value][label]:
-            label_mask = self.get_mask(label)
-            connected_label_mask = flood(label_mask, (y, x))
-            self.remove_mask(~connected_label_mask, label)
+        mask = self.get_mask(cell)
+        if mask[y, x]:
+            connected_mask = flood(mask, (y, x))
+            self.remove_mask(~connected_mask, cell)
 
     # TODO: come back to flooding with overlaps...
     def action_flood(self, foreground, background, x, y):
@@ -283,16 +259,16 @@ class Edit(object):
             self.remove_mask(flooded, background)
             self.add_mask(flooded, foreground)
 
-    def action_watershed(self, label, x1, y1, x2, y2):
+    def action_watershed(self, cell, x1, y1, x2, y2):
         """Use watershed to segment different objects"""
-        new_label = self.new_label
+        new_cell = self.new_cell
         # Create markers for to seed watershed labels
         markers = np.zeros(self.labels.shape)
-        markers[y1, x1] = label
-        markers[y2, x2] = new_label
+        markers[y1, x1] = cell
+        markers[y2, x2] = new_cell
 
-        # Cut images to label bounding box
-        mask = self.get_mask(label)
+        # Cut images to cell bounding box
+        mask = self.get_mask(cell)
         props = regionprops(mask.astype(np.uint8))
         top, left, bottom, right = props[0].bbox
         raw = np.copy(self.raw[top:bottom, left:right])
@@ -304,24 +280,24 @@ class Edit(object):
         # Apply watershed
         results = watershed(raw, markers, mask=mask)
 
-        # Dilate small labels to prevent "dimmer" label from being eroded by the "brighter" label
-        if np.sum(results == new_label) < 5:
-            dilated = dilation(results == new_label, disk(3))
-            results[dilated] = new_label
-        if np.sum(results == label) < 5:
-            dilated = dilation(results == label, disk(3))
-            results[dilated] = label
+        # Dilate small cells to prevent "dimmer" cell from being eroded by the "brighter" cell
+        if np.sum(results == new_cell) < 5:
+            dilated = dilation(results == new_cell, disk(3))
+            results[dilated] = new_cell
+        if np.sum(results == cell) < 5:
+            dilated = dilation(results == cell, disk(3))
+            results[dilated] = cell
 
-        # Update labels where watershed changed label
-        new_label_mask = np.zeros(self.labels.shape, dtype=bool)
-        label_mask = np.zeros(self.labels.shape, dtype=bool)
-        new_label_mask[top:bottom, left:right] = results == new_label
-        label_mask[top:bottom, left:right] = results == label
-        self.remove_mask(self.get_mask(label), label)
-        self.add_mask(label_mask, label)
-        self.add_mask(new_label_mask, new_label)
+        # Update cells where watershed changed cell
+        new_cell_mask = np.zeros(self.labels.shape, dtype=bool)
+        cell_mask = np.zeros(self.labels.shape, dtype=bool)
+        new_cell_mask[top:bottom, left:right] = results == new_cell
+        cell_mask[top:bottom, left:right] = results == cell
+        self.remove_mask(self.get_mask(cell), cell)
+        self.add_mask(cell_mask, cell)
+        self.add_mask(new_cell_mask, new_cell)
 
-    def action_threshold(self, y1, x1, y2, x2, label):
+    def action_threshold(self, y1, x1, y2, x2, cell):
         """
         Threshold the raw image for annotation prediction within the
         user-determined bounding box.
@@ -331,9 +307,9 @@ class Edit(object):
             x1 (int): first x coordinate to bound threshold area
             y2 (int): second y coordinate to bound threshold area
             x2 (int): second x coordinate to bound threshold area
-            label (int): label drawn in threshold area
+            cell (int): cell drawn in threshold area
         """
-        label = self.clean_label(label)
+        cell = self.clean_cell(cell)
         # Make bounding box from coordinates
         top = min(y1, y2)
         bottom = max(y1, y2) + 1
@@ -349,26 +325,26 @@ class Edit(object):
         thresholded = filters.apply_hysteresis_threshold(image, low, high)
         mask = np.zeros(self.labels.shape, dtype=bool)
         mask[top:bottom, left:right] = thresholded
-        self.add_mask(mask, label)
+        self.add_mask(mask, cell)
 
-    def action_active_contour(self, label, min_pixels=20, iterations=100, dilate=0):
+    def action_active_contour(self, cell, min_pixels=20, iterations=100, dilate=0):
         """
-        Uses active contouring to reshape a label to match the raw image.
+        Uses active contouring to reshape a cell to match the raw image.
         """
-        mask = self.get_mask(label)
-        # Limit contouring to a bounding box twice the size of the label
+        mask = self.get_mask(cell)
+        # Limit contouring to a bounding box twice the size of the cell
         props = regionprops(mask.astype(np.uint8))[0]
         top, left, bottom, right = props.bbox
-        height = bottom - top
-        width = right - left
+        cell_height = bottom - top
+        cell_width = right - left
         # Double size of bounding box
-        labels_height, labels_width = self.labels.shape
+        height, width = self.labels.shape
         top = max(0, top - height // 2)
-        bottom = min(labels_height, bottom + height // 2)
+        bottom = min(height, bottom + cell_height // 2)
         left = max(0, left - width // 2)
-        right = min(labels_width, right + width // 2)
+        right = min(width, right + cell_width // 2)
 
-        # Contour the label
+        # Contour the cell
         init_level_set = mask[top:bottom, left:right]
         image = Normalize()(self.raw)[top:bottom, left:right]
         contoured = morphological_chan_vese(
@@ -387,23 +363,23 @@ class Edit(object):
             mask = np.zeros(self.labels.shape, dtype=bool)
             mask[top:bottom, left:right] = largest_component
 
-        # Throw away small contoured labels
+        # Throw away small contoured cells
         if np.count_nonzero(mask) >= min_pixels:
-            self.remove_mask(~mask, label)
-            self.add_mask(mask, label)
+            self.remove_mask(~mask, cell)
+            self.add_mask(mask, cell)
 
-    def action_erode(self, label):
+    def action_erode(self, cell):
         """
-        Shrink the selected label.
+        Shrink the selected cell.
         """
-        mask = self.get_mask(label)
+        mask = self.get_mask(cell)
         eroded = erosion(mask, square(3))
-        self.remove_mask(mask & ~eroded, label)
+        self.remove_mask(mask & ~eroded, cell)
 
-    def action_dilate(self, label):
+    def action_dilate(self, cell):
         """
-        Expand the selected label.
+        Expand the selected cell.
         """
-        mask = self.get_mask(label)
+        mask = self.get_mask(cell)
         dilated = dilation(mask, square(3))
-        self.add_mask(dilated, label)
+        self.add_mask(dilated, cell)

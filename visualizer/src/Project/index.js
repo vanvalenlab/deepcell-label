@@ -1,3 +1,3 @@
-import Project from './Project';
+import Label from './Label';
 
-export default Project;
+export default Label;

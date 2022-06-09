@@ -79,7 +79,10 @@ function Canvas() {
       height={scale * sh}
       onMouseMove={canvas.send}
       onWheel={canvas.send}
-      onMouseDown={canvas.send}
+      onMouseDown={(e) => {
+        canvas.send(e);
+        e.preventDefault(); // avoid selecting copyright text when double clicking
+      }}
       onMouseUp={canvas.send}
     >
       {loading ? (

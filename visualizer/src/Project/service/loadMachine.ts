@@ -3,6 +3,7 @@
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine, sendParent } from 'xstate';
 import { loadOmeTiff } from '@hms-dbmi/viv';
+import Cells from '../cells';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
@@ -10,14 +11,6 @@ type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : nev
 type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
 type Spots = number[][];
-type Cells = {
-  [feature: number]: {
-    [cell: number]: {
-      label: number;
-      frames: number[];
-    };
-  };
-};
 type Lineage = {
   [cell: number]: {
     label: number;
@@ -29,9 +22,8 @@ type Lineage = {
     parent: number | null;
   };
 };
-type Overlaps = (0 | 1)[][];
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells | Lineage | Overlaps;
+  [filename: string]: OmeTiff | Spots | Cells | Lineage | Cells;
 };
 
 async function parseZip(response: Response) {
@@ -53,23 +45,17 @@ async function parseZip(response: Response) {
       const spots: Spots = csv.split('\n').map((row: string) => row.split(',').map(Number));
       files[entry.filename] = spots;
     }
-    if (entry.filename === 'cells.json') {
-      // @ts-ignore
-      const json = await entry.getData(new zip.TextWriter());
-      const cells: Cells = JSON.parse(json);
-      files[entry.filename] = cells;
-    }
     if (entry.filename === 'lineage.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
       const lineage: Lineage = JSON.parse(json);
       files[entry.filename] = lineage;
     }
-    if (entry.filename === 'overlaps.json') {
+    if (entry.filename === 'cells.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
-      const overlaps: Overlaps = JSON.parse(json);
-      files[entry.filename] = overlaps;
+      const cells = new Cells(JSON.parse(json));
+      files[entry.filename] = cells;
     }
   }
   return { files };
@@ -153,7 +139,7 @@ interface Context {
   labels: Cells | null;
   spots: Spots | null;
   lineage: Lineage | null;
-  overlaps: Overlaps | null;
+  cells: Cells | null;
 }
 
 const createLoadMachine = (projectId: string) =>
@@ -173,7 +159,7 @@ const createLoadMachine = (projectId: string) =>
         labels: null,
         spots: null,
         lineage: null,
-        overlaps: null,
+        cells: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
       schema: {
@@ -200,7 +186,7 @@ const createLoadMachine = (projectId: string) =>
             src: 'fetch project zip',
             onDone: {
               target: 'splitArrays',
-              actions: ['set spots', 'set cells', 'set lineage', 'set overlaps', 'set metadata'],
+              actions: ['set spots', 'set lineage', 'set cells', 'set metadata'],
             },
           },
         },
@@ -226,17 +212,13 @@ const createLoadMachine = (projectId: string) =>
           // @ts-ignore
           spots: (context, event) => event.data.files['spots.csv'] as Spots,
         }),
-        'set cells': assign({
-          // @ts-ignore
-          labels: (context, event) => event.data.files['cells.json'] as Cells,
-        }),
         'set lineage': assign({
           // @ts-ignore
           lineage: (context, event) => event.data.files['lineage.json'] as Lineage,
         }),
-        'set overlaps': assign({
+        'set cells': assign({
           // @ts-ignore
-          overlaps: (context, event) => event.data.files['overlaps.json'] as Overlaps,
+          cells: (context, event) => event.data.files['cells.json'] as Cells,
         }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
@@ -262,10 +244,9 @@ const createLoadMachine = (projectId: string) =>
           type: 'LOADED',
           raw: ctx.raw,
           labeled: ctx.labeled,
-          labels: ctx.labels,
           spots: ctx.spots,
           lineage: ctx.lineage,
-          overlaps: ctx.overlaps,
+          cells: ctx.cells,
         })),
       },
     }

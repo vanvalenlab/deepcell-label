@@ -2,21 +2,20 @@
  * Root statechart for DeepCell Label in XState.
  */
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
-import { pure } from 'xstate/lib/actions';
-import createApiMachine from './apiMachine';
-import createArraysMachine from './arraysMachine';
 import createCanvasMachine from './canvasMachine';
+import createToolMachine from './edit/editMachine';
 import { EventBus, fromEventBus } from './eventBus';
+import createExportMachine from './exportMachine';
+import createHoveringMachine from './hoveringMachine';
 import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
-import createLabelsMachine from './labelsMachine';
-import createLineageMachine from './lineageMachine';
+import createArraysMachine from './labels/arraysMachine';
+import createCellsMachine from './labels/cellsMachine';
+import createLineageMachine from './labels/lineageMachine';
+import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
-import createOverlapsMachine from './overlapsMachine';
 import createSelectMachine from './selectMachine';
-import createSpotsMachine from './spotsMachine';
-import createToolMachine from './tools/toolMachine';
-import createUndoMachine from './undoMachine';
+import createUndoMachine from './undo';
 
 const createProjectMachine = (projectId) =>
   Machine(
@@ -25,51 +24,46 @@ const createProjectMachine = (projectId) =>
       context: {
         projectId,
         eventBuses: {
-          canvas: new EventBus('canvas'),
-          image: new EventBus('image'),
-          labeled: new EventBus('labeled'),
-          raw: new EventBus('raw'),
-          select: new EventBus('select'),
-          undo: new EventBus('undo'),
-          api: new EventBus('api'),
-          arrays: new EventBus('arrays'),
-          labels: new EventBus('labels'),
-          load: new EventBus('load'),
-          overlaps: new EventBus('overlaps'),
+          undo: new EventBus('undo'), // receives START_EDIT and responds with SAVE with edit ID // TODO: remove
+          load: new EventBus('load'), // LOADED
+          // UI state
+          canvas: new EventBus('canvas'), // COORDINATES, mouseup, mousedown
+          hovering: new EventBus('hovering'), // HOVERING
+          image: new EventBus('image'), // FRAME (and FEATURE and CHANNEL?)
+          labeled: new EventBus('labeled'), // FEATURE (?)
+          raw: new EventBus('raw'), // CHANNEL (?)
+          select: new EventBus('select'), // SELECTED // also receives GET_SELECTED and responds with SELECTED
+          // EDIT events and label changes
+          // TODO: rename to segment and separate raw arrays
+          arrays: new EventBus('arrays'), // also receives GET_ARRAYS and responds with ARRAYS
+          cells: new EventBus('cells'),
         },
         track: false,
       },
-      initial: 'setUpActors',
       invoke: {
         id: 'loadEventBus',
         src: 'loadEventBus',
       },
+      initial: 'spawnUndo',
       states: {
-        setUpActors: {
+        spawnUndo: {
+          entry: 'spawnUndo',
+          always: 'spawnActors',
+        },
+        spawnActors: {
           entry: 'spawnActors',
-          always: [
-            {
-              cond: () => process.env.REACT_APP_SPOTS_VISUALIZER === 'true',
-              target: 'loadProjectFromDB',
-            },
-            {
-              cond: () => process.env.REACT_APP_CALIBAN_VISUALIZER === 'true',
-              target: 'loadProjectFromDB',
-            },
-            { target: 'setUpUndo' },
-          ],
+          always: 'loadFromDB',
         },
-        setUpUndo: {
-          entry: 'addActorsToUndo',
-          always: 'loadProjectFromDB',
-        },
-        loadProjectFromDB: {
+        loadFromDB: {
           on: {
-            PROJECT_NOT_IN_DB: 'loadProjectFromServer',
-            LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
+            PROJECT_NOT_IN_DB: 'loadFromServer',
+            LOADED: {
+              target: 'idle',
+              actions: [forwardTo('loadEventBus'), 'sendDimensions'],
+            },
           },
         },
-        loadProjectFromServer: {
+        loadFromServer: {
           invoke: { src: 'loadMachine' },
           on: {
             LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
@@ -83,36 +77,26 @@ const createProjectMachine = (projectId) =>
     {
       services: {
         loadMachine: (ctx) => createLoadMachine(ctx.projectId),
-        loadEventBus: fromEventBus('project', (context) => context.eventBuses.load),
+        loadEventBus: fromEventBus('project', (ctx) => ctx.eventBuses.load),
       },
       actions: {
-        spawnActors: assign((context) => {
+        spawnUndo: assign({ undoRef: (ctx) => spawn(createUndoMachine(ctx), 'undo') }),
+        spawnActors: assign((ctx) => {
           const actors = {};
-          actors.idbRef = spawn(createIDBMachine(context), 'idb');
-          actors.canvasRef = spawn(createCanvasMachine(context), 'canvas');
-          actors.imageRef = spawn(createImageMachine(context), 'image');
-          actors.arraysRef = spawn(createArraysMachine(context), 'arrays');
-          actors.labelsRef = spawn(createLabelsMachine(context), 'labels');
-          actors.apiRef = spawn(createApiMachine(context), 'api');
-          actors.selectRef = spawn(createSelectMachine(context), 'select');
-          actors.lineageRef = spawn(createLineageMachine(context), 'lineage');
-          actors.overlapsRef = spawn(createOverlapsMachine(context), 'overlaps');
-          actors.toolRef = spawn(createToolMachine(context), 'tool');
+          actors.idbRef = spawn(createIDBMachine(ctx), 'idb');
+          actors.canvasRef = spawn(createCanvasMachine(ctx), 'canvas');
+          actors.hoveringRef = spawn(createHoveringMachine(ctx), 'hovering');
+          actors.imageRef = spawn(createImageMachine(ctx), 'image');
+          actors.arraysRef = spawn(createArraysMachine(ctx), 'arrays');
+          actors.exportRef = spawn(createExportMachine(ctx), 'export');
+          actors.selectRef = spawn(createSelectMachine(ctx), 'select');
+          actors.lineageRef = spawn(createLineageMachine(ctx), 'lineage');
+          actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
+          actors.toolRef = spawn(createToolMachine(ctx), 'tool');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
-            actors.spotsRef = spawn(createSpotsMachine(context), 'spots');
-          } else {
-            actors.undoRef = spawn(createUndoMachine(context), 'undo');
+            actors.spotsRef = spawn(createSpotsMachine(ctx), 'spots');
           }
           return actors;
-        }),
-        addActorsToUndo: pure((ctx) => {
-          return [
-            send({ type: 'ADD_ACTOR', actor: ctx.canvasRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: ctx.imageRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: ctx.toolRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: ctx.selectRef }, { to: 'undo' }),
-            send({ type: 'ADD_LABEL_ACTOR', actor: ctx.apiRef }, { to: 'undo' }),
-          ];
         }),
         sendDimensions: send(
           (c, e) => {
@@ -128,6 +112,7 @@ const createProjectMachine = (projectId) =>
           },
           { to: 'loadEventBus' }
         ),
+        // TODO: dynamically add track labels and show UI
         setTrack: assign({
           track: (ctx, evt) => evt.lineage !== null && evt.lineage !== undefined,
         }),

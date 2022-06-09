@@ -3,6 +3,7 @@
  */
 import { openDB } from 'idb';
 import { assign, Machine, sendParent } from 'xstate';
+import Cells from '../cells';
 import { fromEventBus } from './eventBus';
 
 function createIDBMachine({ projectId, eventBuses }) {
@@ -14,18 +15,15 @@ function createIDBMachine({ projectId, eventBuses }) {
         project: {
           raw: null,
           labeled: null,
-          overlaps: null,
+          cells: null, // list of cells, not the Cells object
           lineage: null,
-          labels: null,
         },
       },
       invoke: [
-        { src: fromEventBus('IDB', () => eventBuses.api) }, // Listen for EDITED
-        { src: fromEventBus('IDB', () => eventBuses.load) }, // Listen for LOADED
+        { src: fromEventBus('IDB', () => eventBuses.arrays, 'EDITED_SEGMENT') },
+        { src: fromEventBus('IDB', () => eventBuses.cells, 'EDITED_CELLS') },
+        { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
-      on: {
-        EDITED: { target: '.putProject', actions: 'updateProject' },
-      },
       initial: 'openDb',
       states: {
         openDb: {
@@ -57,8 +55,29 @@ function createIDBMachine({ projectId, eventBuses }) {
         },
         putProject: {
           invoke: { src: 'putProject', onDone: 'idle' },
+          on: {
+            EDITED_SEGMENT: {
+              target: 'putProject',
+              actions: 'updateSegment',
+            },
+            EDITED_CELLS: {
+              target: 'putProject',
+              actions: 'updateCells',
+            },
+          },
         },
-        idle: {},
+        idle: {
+          on: {
+            EDITED_SEGMENT: {
+              target: 'putProject',
+              actions: 'updateSegment',
+            },
+            EDITED_CELLS: {
+              target: 'putProject',
+              actions: 'updateCells',
+            },
+          },
+        },
       },
     },
     {
@@ -76,30 +95,33 @@ function createIDBMachine({ projectId, eventBuses }) {
         getProject: (ctx) => ctx.db.get('projects', ctx.projectId),
       },
       actions: {
-        updateProject: assign({
+        updateSegment: assign({
           project: (ctx, evt) => {
-            const { frame, feature, labeled, overlaps } = evt;
-            ctx.project.labeled[feature][frame] = labeled;
-            return { ...ctx.project, labeled: ctx.project.labeled, overlaps };
+            const { frame, feature } = evt;
+            const labeled = ctx.project.labeled.map((arr, i) =>
+              i === feature ? arr.map((arr, j) => (j === frame ? evt.labeled : arr)) : arr
+            );
+            return { ...ctx.project, labeled };
           },
+        }),
+        updateCells: assign({
+          project: (ctx, evt) => ({ ...ctx.project, cells: evt.cells.cells }),
         }),
         setDb: assign({ db: (ctx, evt) => evt.data }),
         setProject: assign((ctx, evt) => ({
           project: {
             raw: evt.data.raw,
             labeled: evt.data.labeled,
-            overlaps: evt.data.overlaps,
+            cells: evt.data.cells,
             lineage: evt.data.lineage,
-            labels: evt.data.labels,
           },
         })),
         loadProject: assign((ctx, evt) => ({
           project: {
             raw: evt.raw,
             labeled: evt.labeled,
-            overlaps: evt.overlaps,
+            cells: evt.cells.cells, // LOADED sends Cells object, need to get cells list
             lineage: evt.lineage,
-            labels: evt.labels,
           },
         })),
         sendProjectNotInDB: sendParent('PROJECT_NOT_IN_DB'),
@@ -107,10 +129,9 @@ function createIDBMachine({ projectId, eventBuses }) {
           type: 'LOADED',
           raw: ctx.project.raw,
           labeled: ctx.project.labeled,
-          labels: ctx.project.labels, // TODO: swap labels for cells?
           spots: ctx.project.spots, // TODO: include spots in IDB
           lineage: ctx.project.lineage,
-          overlaps: ctx.project.overlaps,
+          cells: new Cells(ctx.project.cells),
           message: 'from idb machine',
         })),
       },

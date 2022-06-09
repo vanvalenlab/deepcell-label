@@ -2,46 +2,27 @@ import { assign, Machine, send } from 'xstate';
 import { pure, respond } from 'xstate/lib/actions';
 import { fromEventBus } from './eventBus';
 
-function prevLabel(label, overlaps) {
-  const numLabels = overlaps[0].length - 1;
-  const prevLabel = label - 1;
-  if (prevLabel === 0) {
-    return numLabels;
-  }
-  return prevLabel;
-}
-
-function nextLabel(label, overlaps) {
-  const numLabels = overlaps[0].length - 1;
-  const nextLabel = label + 1;
-  if (nextLabel > numLabels) {
-    return 1;
-  }
-  return nextLabel;
-}
-
-const createSelectMachine = ({ eventBuses }) =>
+const createSelectMachine = ({ eventBuses, undoRef }) =>
   Machine(
     {
       id: 'select',
       invoke: [
         { id: 'eventBus', src: fromEventBus('select', () => eventBuses.select) },
-        { src: fromEventBus('select', () => eventBuses.canvas) },
-        { src: fromEventBus('select', () => eventBuses.labeled) },
-        { src: fromEventBus('select', () => eventBuses.overlaps) },
+        { src: fromEventBus('select', () => eventBuses.cells, 'CELLS') },
+        { src: fromEventBus('select', () => eventBuses.hovering, 'HOVERING') },
       ],
+      entry: send('REGISTER_UI', { to: undoRef }),
       context: {
         selected: 1,
         hovering: null,
-        overlaps: null,
+        cells: null,
       },
       on: {
         GET_SELECTED: { actions: 'sendSelected' },
 
         HOVERING: { actions: 'setHovering' },
-        OVERLAPS: { actions: 'setOverlaps' },
+        CELLS: { actions: 'setCells' },
         SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
-        SET_SELECTED: { actions: send((_, { selected }) => ({ type: 'SELECTED', selected })) },
         SELECT: { actions: 'select' },
         SELECT_NEW: { actions: 'selectNew' },
         RESET: { actions: 'reset' },
@@ -54,34 +35,35 @@ const createSelectMachine = ({ eventBuses }) =>
     {
       actions: {
         sendSelected: send(({ selected }) => ({ type: 'SELECTED', selected }), { to: 'eventBus' }),
-        select: pure(({ selected, hovering, overlaps }) => {
-          const labels = overlaps[hovering];
-          if (labels[selected]) {
-            // Get next label that hovering value encodes
-            const copy = [...labels];
-            copy[0] = 1; // Reset (select 0) after cycling through all labels
-            const reordered = copy.slice(selected + 1).concat(copy.slice(0, selected + 1));
-            const nextLabel = (reordered.findIndex((i) => !!i) + selected + 1) % labels.length;
-            return send({ type: 'SELECTED', selected: nextLabel });
+        select: pure(({ selected, hovering }) => {
+          const i = hovering.indexOf(selected);
+          let newCell;
+          if (hovering.length === 0 || i === hovering.length - 1) {
+            newCell = 0;
+          } else if (i === -1) {
+            newCell = hovering[0];
+          } else {
+            newCell = hovering[i + 1];
           }
-          const firstLabel = labels.findIndex((i) => i === 1);
-          return send({ type: 'SELECTED', selected: firstLabel === -1 ? 0 : firstLabel });
+          return send({ type: 'SELECTED', selected: newCell });
         }),
         reset: send({ type: 'SELECTED', selected: 0 }),
-        selectNew: send(({ overlaps }) => ({
+        selectNew: send(({ cells }) => ({
           type: 'SELECTED',
-          selected: overlaps[0].length,
+          selected: cells.getNewCell(),
         })),
-        selectPrevious: send(({ selected, overlaps }) => ({
+        selectPrevious: send(({ selected, cells }) => ({
           type: 'SELECTED',
-          selected: prevLabel(selected, overlaps),
+          selected: selected - 1 < 1 ? cells.getNewCell() : selected - 1,
         })),
-        selectNext: send(({ selected, overlaps }) => ({
-          type: 'SELECTED',
-          selected: nextLabel(selected, overlaps),
-        })),
+        selectNext: send(({ selected, cells }) => {
+          return {
+            type: 'SELECTED',
+            selected: selected + 1 > cells.getNewCell() ? 1 : selected + 1,
+          };
+        }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setOverlaps: assign({ overlaps: (_, { overlaps }) => overlaps }),
+        setCells: assign({ cells: (_, { cells }) => cells }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
         save: respond(({ selected }) => ({ type: 'RESTORE', selected })),
         restore: pure((_, { selected }) => [

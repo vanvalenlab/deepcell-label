@@ -5,14 +5,14 @@ import createRawMachine from './raw/rawMachine';
 
 const { pure, respond } = actions;
 
-const createImageMachine = ({ projectId, eventBuses }) =>
+const createImageMachine = ({ projectId, eventBuses, undoRef }) =>
   Machine(
     {
       id: 'image',
+      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnActors'],
       invoke: [
         { id: 'eventBus', src: fromEventBus('image', () => eventBuses.image) },
-        { id: 'undo', src: fromEventBus('image', () => eventBuses.undo) },
-        { src: fromEventBus('labeled', () => eventBuses.load) },
+        { src: fromEventBus('labeled', () => eventBuses.load, 'DIMENSIONS') },
       ],
       context: {
         projectId,
@@ -23,26 +23,16 @@ const createImageMachine = ({ projectId, eventBuses }) =>
         rawRef: null,
         labeledRef: null,
         eventBuses,
+        undoRef,
       },
-      initial: 'setUpActors',
-      states: {
-        setUpActors: {
-          always: { target: 'setUpUndo', actions: 'spawnActors' },
-        },
-        setUpUndo: {
-          always: { target: 'idle', actions: 'addActorsToUndo' },
-        },
-        idle: {
-          on: {
-            DIMENSIONS: { actions: 'setDimensions' },
-            SET_FRAME: { actions: ['setFrame', 'sendToEventBus'] },
-            SAVE: { actions: 'save' },
-            RESTORE: { actions: 'restore' },
-            // Needed to rerender canvas
-            ADD_LAYER: { actions: sendParent((c, e) => e) },
-            REMOVE_LAYER: { actions: sendParent((c, e) => e) },
-          },
-        },
+      on: {
+        DIMENSIONS: { actions: 'setDimensions' },
+        SET_FRAME: { actions: ['setFrame', 'sendToEventBus'] },
+        SAVE: { actions: 'save' },
+        RESTORE: { actions: 'restore' },
+        // Needed to rerender canvas
+        ADD_LAYER: { actions: sendParent((c, e) => e) },
+        REMOVE_LAYER: { actions: sendParent((c, e) => e) },
       },
     },
     {
@@ -58,13 +48,6 @@ const createImageMachine = ({ projectId, eventBuses }) =>
           rawRef: spawn(createRawMachine(context), 'raw'),
           labeledRef: spawn(createLabeledMachine(context), 'labeled'),
         })),
-        addActorsToUndo: pure((context) => {
-          const { rawRef, labeledRef } = context;
-          return [
-            send({ type: 'ADD_ACTOR', actor: labeledRef }, { to: 'undo' }),
-            send({ type: 'ADD_ACTOR', actor: rawRef }, { to: 'undo' }),
-          ];
-        }),
         save: respond(({ frame }) => ({ type: 'RESTORE', frame })),
         restore: pure((_, { frame }) => {
           return [send({ type: 'SET_FRAME', frame }), respond('RESTORED')];
