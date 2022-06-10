@@ -5,7 +5,22 @@ import React from 'react';
 import { useCells, useHexColormap, useImage } from '../../ProjectContext';
 import TimeBox from './TimeBox';
 
-function CellTimeline({ cell }) {
+export function getRanges(array) {
+  let ranges = [];
+  for (let i = 0; i < array.length; i++) {
+    let start = array[i];
+    let end = start;
+    // increment end index while array elements are consecutive
+    while (array[i + 1] - array[i] === 1) {
+      end = array[i + 1];
+      i++;
+    }
+    ranges.push([start, end + 1]);
+  }
+  return ranges;
+}
+
+function CellTimeline({ cell, height }) {
   const image = useImage();
   const duration = useSelector(image, (state) => state.context.duration);
 
@@ -14,6 +29,7 @@ function CellTimeline({ cell }) {
 
   const cells = useCells();
   const times = useSelector(cells, (state) => state.context.cells.getTimes(cell), equal);
+  const ranges = getRanges(times);
 
   return (
     <Box
@@ -25,8 +41,15 @@ function CellTimeline({ cell }) {
         zIndex: 0,
       }}
     >
-      {[...Array(duration).keys()].map((t) => (
-        <TimeBox t={t} duration={duration} color={times.includes(t) ? color : '#FFFFFF'} key={t} />
+      {ranges.map(([start, end]) => (
+        <TimeBox
+          height={height}
+          start={start}
+          end={end}
+          duration={duration}
+          color={color}
+          key={`${start},${end}`}
+        />
       ))}
     </Box>
   );

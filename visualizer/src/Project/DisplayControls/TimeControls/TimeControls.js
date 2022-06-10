@@ -13,24 +13,18 @@ function TimeControls() {
   if (otherCell) {
     numCells += 1;
   }
+  const height = '0.5rem';
 
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Time</FormLabel>
       <TimeSlider />
-      <CellTimeline cell={cell} />
+      <CellTimeline cell={cell} height={height} />
       {hoveringCells.map((c) => (
-        <CellTimeline cell={c} key={c} />
+        <CellTimeline cell={c} height={height} key={c} />
       ))}
-      {/* Render hidden timelines to reserve space for them */}
-      {numCells < 3 &&
-        Array(3 - numCells)
-          .fill(0)
-          .map((_, i) => (
-            <Box sx={{ visibility: 'hidden' }} key={i}>
-              <CellTimeline cell={cell} />
-            </Box>
-          ))}
+      {/* Reserve space for 3 timelines*/}
+      {numCells < 3 && <Box sx={{ height: `calc(${3 - numCells} * ${height})` }} />}
       {!!otherCell && <CellTimeline cell={otherCell} />}
     </Box>
   );

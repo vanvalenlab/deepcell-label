@@ -1,23 +1,25 @@
 import { Box } from '@mui/material';
 import React from 'react';
-import { useImage } from '../../ProjectContext';
 
-function TimeBox({ t, duration, color }) {
-  const image = useImage();
-  const width = (1 / (duration - 1)) * 100;
+function TimeBox({ start, end, duration, color, height }) {
+  const boxWidth = (1 / (duration - 1)) * 100;
+  let numBoxes = end - start;
+  if (start === 0) {
+    numBoxes -= 0.5;
+  }
+  if (end === duration) {
+    numBoxes -= 0.5;
+  }
+
   const boxStyle = {
     position: 'absolute',
     backgroundColor: color,
-    height: '0.5rem',
-    width: t === 0 || t === duration - 1 ? `calc(${width / 2}% + 1px)` : `calc(${width}% + 1px)`,
-    left: t === 0 ? 0 : `${width * (t - 0.5)}%`,
+    height,
+    width: `${numBoxes * boxWidth}%`,
+    left: start === 0 ? 0 : `${boxWidth * (start - 0.5)}%`,
   };
 
-  const onClick = (event, newValue) => {
-    image.send({ type: 'SET_T', t });
-  };
-
-  return <Box sx={boxStyle} onClick={onClick}></Box>;
+  return <Box sx={boxStyle}></Box>;
 }
 
 export default TimeBox;
