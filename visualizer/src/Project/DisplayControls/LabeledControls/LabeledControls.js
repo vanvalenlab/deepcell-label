@@ -3,9 +3,9 @@ import Box from '@mui/material/Box';
 import FormLabel from '@mui/material/FormLabel';
 import Grid from '@mui/material/Grid';
 import React from 'react';
+import LabelsOpacitySlider from './CellsOpacitySlider';
 import FeatureSelect from './FeatureSelect';
 import HighlightToggle from './HighlightToggle';
-import LabelsOpacitySlider from './LabelsOpacitySlider';
 import OutlineOpacitySlider from './OutlineOpacitySlider';
 
 const LabeledControls = () => {

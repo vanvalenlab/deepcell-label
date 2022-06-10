@@ -1,18 +1,20 @@
 import { Box, Grid } from '@mui/material';
 import Typography from '@mui/material/Typography';
+import { useSelector } from '@xstate/react';
 import React from 'react';
 import LabeledControls from '../DisplayControls/LabeledControls/LabeledControls';
 import ColorModeToggle from '../DisplayControls/RawControls/ColorModeToggle';
 import GrayscaleControls from '../DisplayControls/RawControls/GrayscaleControls';
 import RGBControls from '../DisplayControls/RawControls/RGBControls';
+import { useLabeled } from '../ProjectContext';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function DisplayShortcuts() {
   return (
     <Shortcuts>
-      <Shortcut text='Toggle outlines' shortcut='O' />
       <Shortcut text='Toggle highlight' shortcut='H' />
-      <Shortcut text='Cycle opacity' shortcut='Z' />
+      <Shortcut text='Cycle cells opacity' shortcut='Z' />
+      <Shortcut text='Cycle outline opacity' shortcut='O' />
       <Shortcut text='Toggle multi-channel' shortcut='Y' />
       <Shortcut text='Next feature' shortcut='F' />
       <Shortcut text='Previous feature' shortcut='Shift+F' />
@@ -30,29 +32,35 @@ function DisplayShortcuts() {
 }
 
 function DisplayInstructions() {
+  const labeled = useLabeled();
+  const numFeatures = useSelector(labeled, (state) => state.context.numFeatures);
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
         <Typography>
-          DeepCell Label can display a raw image and labels that segment the image into object. On
-          the far left, you'll find controls to adjust how the images and labels are displayed. On
-          top, you'll see segmentation controls to change how to show the labels, and on bottom,
-          there are channels controls to change how to show the image.
+          The canvas on the right shows segmentations overlaid on multi-channel images. These
+          controls adjust how the images and segmentations.
         </Typography>
         <br />
-        <Typography variant='h5'>Segmentations</Typography>
         <Grid container spacing={3}>
-          <Grid item xs={4}>
+          <Grid item xs={6}>
             <LabeledControls />
             <br />
           </Grid>
-          <Grid item xs={8}>
+          <Grid item xs={6}>
             <Typography component={'span'}>
               <ul style={{ margin: 0 }}>
-                <li>Feature switches segmentations, like whole-cell and nuclear</li>
-                <li>Outline toggles outlining all labels or only selected labels</li>
-                <li>Opacity overlays the labels on the channels</li>
-                <li>Highlight colors the selected label red</li>
+                {numFeatures > 1 && (
+                  <li>Feature switches between segmentations, like whole-cell and nuclear</li>
+                )}
+                <li>Red Highlight toggles making the selected cell red</li>
+                <li>
+                  Under Opacity,
+                  <ul>
+                    <li>Cells sets the opacity of the segmentation</li>
+                    <li>Outline sets the opacity of cell outlines </li>
+                  </ul>
+                </li>
               </ul>
             </Typography>
           </Grid>
