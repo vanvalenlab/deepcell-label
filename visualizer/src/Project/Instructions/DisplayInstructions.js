@@ -54,25 +54,20 @@ function DisplayInstructions() {
           controls adjust how the images and segmentations.
         </Typography>
         <br />
-        <Grid container spacing={3}>
-          <Grid item xs={6}>
+        <Grid container spacing={3} justify='flex-start'>
+          <Grid item xs={12} md={4}>
             <LabeledControls />
             <br />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={12} md={8}>
             <Typography component={'span'}>
               <ul style={{ margin: 0 }}>
                 {numFeatures > 1 && (
-                  <li>Feature switches between segmentations, like whole-cell and nuclear</li>
+                  <li>Feature selects a segmentation, like whole-cell or nuclear</li>
                 )}
-                <li>Red Highlight toggles making the selected cell red</li>
-                <li>
-                  Under Opacity,
-                  <ul>
-                    <li>Cells sets the opacity of the segmentation</li>
-                    <li>Outline sets the opacity of cell outlines </li>
-                  </ul>
-                </li>
+                <li>Red Highlight toggles coloring the selected cell red</li>
+                <li>Cells sets the opacity of the segmentation</li>
+                <li>Outline sets the opacity of cell outlines </li>
               </ul>
             </Typography>
           </Grid>
@@ -84,44 +79,43 @@ function DisplayInstructions() {
           </Grid>
           <Grid item xs={9}>
             <Typography>
-              The multi-channel switch toggles showing a single channel in grayscale or multiple
-              channels in color.
+              Toggles showing a single grayscale channel or multiple color channels
             </Typography>
           </Grid>
         </Grid>
         <br />
-        <Typography variant='h6'> Multi-channel mode </Typography>
+        <Typography variant='h6'>Color mode</Typography>
         <Grid container spacing={3}>
-          <Grid item xs={4}>
+          <Grid item xs={12} md={4}>
             <RGBControls />
           </Grid>
-          <Grid item xs={8}>
+          <Grid item xs={12} md={8}>
             <Typography component={'span'}>
-              In multi-channel mode,
+              When color is on,
               <ul>
-                {numChannels > 1 && <li>switch channels with the dropdown,</li>}
-                <li>adjust the dynamic range with the slider,</li>
-                <li>double click the slider to reset the range,</li>
-                <li>toggle the channel with the checkbox, and</li>
-                <li>change colors and remove channels with the pop-up menu.</li>
+                {numChannels > 1 && <li>the dropdown selects a channel</li>}
+                <li>the slider adjusts the channels dynamic range</li>
+                <li>double click the slider to reset the dynamic range</li>
+                <li>the checkbox toggles the channel</li>
+                <li>the pop-up menu picks a color colors or removes the channel</li>
               </ul>
             </Typography>
           </Grid>
         </Grid>
         <br />
-        <Typography variant='h6'>Single-channel mode </Typography>
+        <Typography variant='h6'>Grayscale mode</Typography>
         <Grid container spacing={3}>
-          <Grid item xs={4}>
+          <Grid item xs={12} md={4}>
             <GrayscaleControls />
           </Grid>
-          <Grid item xs={8}>
+          <Grid item xs={12} md={8}>
             <Typography component={'span'}>
-              In single channel mode,
+              When color is off,
               <ul>
-                {numChannels > 1 && <li>switch channels with the dropdown,</li>}
-                <li>adjust range, brightness and contrast with the sliders, </li>
-                <li>double click a slider to reset it, and </li>
-                <li>invert the channel with the toggle.</li>
+                {numChannels > 1 && <li>the dropdown selects a channel</li>}
+                <li>the toggle invert the channel</li>
+                <li>sliders adjust range, brightness and contrast </li>
+                <li>double click a slider to reset it </li>
               </ul>
             </Typography>
           </Grid>
