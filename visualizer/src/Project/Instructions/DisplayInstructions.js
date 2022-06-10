@@ -65,26 +65,23 @@ function DisplayInstructions() {
                 {numFeatures > 1 && (
                   <li>Feature selects a segmentation, like whole-cell or nuclear</li>
                 )}
-                <li>Red Highlight toggles coloring the selected cell red</li>
+                <li>Highlight toggles coloring the selected cell red</li>
                 <li>Cells sets the opacity of the segmentation</li>
                 <li>Outline sets the opacity of cell outlines </li>
               </ul>
             </Typography>
           </Grid>
         </Grid>
-        <Typography variant='h5'>Channels </Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={3}>
+        <Grid container spacing={4}>
+          <Grid item xs={4}>
             <ColorModeToggle />
           </Grid>
-          <Grid item xs={9}>
+          <Grid item xs={8}>
             <Typography>
               Toggles showing a single grayscale channel or multiple color channels
             </Typography>
           </Grid>
         </Grid>
-        <br />
-        <Typography variant='h6'>Color mode</Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <RGBControls />
@@ -102,8 +99,6 @@ function DisplayInstructions() {
             </Typography>
           </Grid>
         </Grid>
-        <br />
-        <Typography variant='h6'>Grayscale mode</Typography>
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <GrayscaleControls />
