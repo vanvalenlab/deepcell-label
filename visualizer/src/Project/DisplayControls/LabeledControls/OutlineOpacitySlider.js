@@ -25,13 +25,13 @@ function OutlineOpacitySlider() {
         labeled.send('CYCLE_OUTLINE_OPACITY');
       }
     };
-    if (numMounted == 0) {
+    if (numMounted === 0) {
       document.addEventListener('keydown', listener);
     }
     numMounted++;
     return () => {
       numMounted--;
-      if (numMounted == 0) {
+      if (numMounted === 0) {
         document.removeEventListener('keydown', listener);
       }
     };

@@ -19,14 +19,8 @@ function ColorModeToggle() {
     bind('y', onClick);
   }, [onClick]);
 
-  const toggleTooltip = (
-    <span>
-      Toggle with <kbd>Y</kbd>
-    </span>
-  );
-
   return (
-    <Tooltip title={toggleTooltip} placement='right'>
+    <Tooltip title={<kbd>Y</kbd>} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
@@ -37,7 +31,7 @@ function ColorModeToggle() {
               inputRef={inputRef}
             />
           }
-          label='Multi-channel'
+          label='Color'
           labelPlacement='start'
         />
       </FormGroup>

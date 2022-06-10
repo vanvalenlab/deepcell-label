@@ -77,11 +77,14 @@ function LayerSlider({ layer }) {
 }
 
 function LayerController({ layer }) {
+  const raw = useRaw();
+  const numChannels = useSelector(layer, (state) => state.context.numChannels);
+
   return (
     <Grid container direction='column' justifyContent='center'>
       <Grid container direction='row' justifyContent='space-between'>
         <Grid item xs={10}>
-          <LayerSelector layer={layer} />
+          {numChannels > 1 && <LayerSelector layer={layer} />}
         </Grid>
         <Grid item>
           <LayerOptions layer={layer} />

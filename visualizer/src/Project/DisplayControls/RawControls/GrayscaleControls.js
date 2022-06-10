@@ -15,18 +15,12 @@ const InvertToggle = ({ channel }) => {
 
   const inputRef = useMousetrapRef();
 
-  const tooltip = (
-    <span>
-      Toggle with <kbd>I</kbd>
-    </span>
-  );
-
   useEffect(() => {
     bind('i', () => channel.send('TOGGLE_INVERT'));
   }, [channel]);
 
   return (
-    <Tooltip title={tooltip} placement='right'>
+    <Tooltip title={<kbd>I</kbd>} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
@@ -57,7 +51,7 @@ const ChannelSelector = () => {
 
   const tooltip = (
     <span>
-      Cycle with <kbd>C</kbd> or <kbd>Shift</kbd> + <kbd>C</kbd>
+      <kbd>C</kbd> / <kbd>Shift</kbd> + <kbd>C</kbd>
     </span>
   );
 
@@ -158,6 +152,7 @@ const RangeSlider = ({ channel }) => {
 
 const GrayscaleControls = () => {
   const raw = useRaw();
+  const numChannels = useSelector(raw, (state) => state.context.numChannels);
   const channel = useSelector(raw, (state) => state.context.channels[state.context.channel]);
 
   useEffect(() => {
@@ -168,7 +163,8 @@ const GrayscaleControls = () => {
     <Grid sx={{ width: '100%' }} item>
       <Grid container direction='column'>
         <Grid item xs={12} container direction='row' sx={{ justifyContent: 'space-between' }}>
-          <ChannelSelector />
+          {numChannels > 1 && <ChannelSelector />}
+          <div />
           <InvertToggle channel={channel} />
         </Grid>
         <Grid item xs={12} container direction='column'>

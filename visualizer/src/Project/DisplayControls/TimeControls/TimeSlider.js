@@ -28,12 +28,6 @@ function TimeSlider() {
     }
   };
 
-  const tooltipText = (
-    <span>
-      Cycle with <kbd>A</kbd> and <kbd>D</kbd>.
-    </span>
-  );
-
   const [display, setDisplay] = useState('on');
 
   // Display label for a second after the label changes
@@ -44,7 +38,14 @@ function TimeSlider() {
   }, [t]);
 
   return (
-    <Tooltip title={tooltipText} placement='top'>
+    <Tooltip
+      title={
+        <span>
+          <kbd>A</kbd> / <kbd>D</kbd>
+        </span>
+      }
+      placement='right'
+    >
       <Slider
         value={t}
         valueLabelDisplay={display}

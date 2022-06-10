@@ -13,18 +13,12 @@ function HighlightToggle() {
 
   const inputRef = useMousetrapRef();
 
-  const tooltipText = (
-    <span>
-      Toggle with <kbd>H</kbd>
-    </span>
-  );
-
   useEffect(() => {
     bind('h', () => labeled.send('TOGGLE_HIGHLIGHT'));
   }, [labeled]);
 
   return (
-    <Tooltip title={tooltipText} placement='right'>
+    <Tooltip title={<kbd>H</kbd>} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
