@@ -151,16 +151,16 @@ export default function Instructions() {
           <TabPanel value={value} index={2}>
             <DisplayInstructions />
           </TabPanel>
-          <TabPanel value={value} index={2}>
+          <TabPanel value={value} index={3}>
             <CanvasInstructions />
           </TabPanel>
-          <TabPanel value={value} index={3}>
+          <TabPanel value={value} index={4}>
             <SegmentInstructions />
           </TabPanel>
-          <TabPanel value={value} index={4}>
+          <TabPanel value={value} index={5}>
             <CellsInstructions />
           </TabPanel>
-          <TabPanel value={value} index={5}>
+          <TabPanel value={value} index={6}>
             <ActionInstructions />
           </TabPanel>
         </AccordionDetails>
