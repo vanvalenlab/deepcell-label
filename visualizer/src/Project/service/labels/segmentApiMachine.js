@@ -99,7 +99,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
         labeled: null, // currently displayed labeled frame (Int32Array[][])
         raw: null, // current displayed raw frame (Uint8Array[][])
         cells: null,
-        writeMode: 'overlap',
+        writeMode: 'exclude',
       },
       initial: 'waitForLabels',
       on: {

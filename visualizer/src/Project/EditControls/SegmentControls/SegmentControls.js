@@ -6,13 +6,9 @@ import WriteModeButtons from './WriteModeButtons';
 function SegmentControls() {
   return (
     <Box display='flex' flexDirection='column'>
-      <Box display='flex' flexDirection='row'>
-        <Box display='flex' flexDirection='column'>
-          <WriteModeButtons />
-          <ToolButtons />
-          <ActionButtons />
-        </Box>
-      </Box>
+      <WriteModeButtons />
+      <ToolButtons />
+      <ActionButtons />
     </Box>
   );
 }
