@@ -1,8 +1,8 @@
 import { styled } from '@mui/material/styles';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import React, { useEffect, useRef } from 'react';
-import { useCanvas, usePixelatedCanvas } from '../ProjectContext';
+import React, { useEffect, useRef, useState } from 'react';
+import { useCanvas } from '../ProjectContext';
 
 const Canvas = styled('canvas')``;
 
@@ -25,20 +25,19 @@ export const ComposeCanvas = ({ bitmaps }) => {
   const height = sh * scale * window.devicePixelRatio;
 
   const canvasRef = useRef();
-  const composeCanvas = usePixelatedCanvas();
-
-  useEffect(() => {
-    composeCanvas.getContext('2d').globalCompositeOperation = 'source-over';
-  }, [composeCanvas]);
+  const [composeCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
     canvasRef.current.getContext('2d').imageSmoothingEnabled = false;
-  }, [height, width]);
+    composeCanvas.getContext('2d').globalCompositeOperation = 'source-over';
+    composeCanvas.width = sw;
+    composeCanvas.height = sh;
+  }, [composeCanvas, sw, sh]);
 
   useEffect(() => {
     const ctx = composeCanvas.getContext('2d');
     ctx.clearRect(0, 0, sw, sh);
-    // pixelated bitmaps
+    // image sized canvases
     for (let key in bitmaps) {
       if (key !== 'spots') {
         ctx.drawImage(bitmaps[key], 0, 0);
@@ -50,7 +49,7 @@ export const ComposeCanvas = ({ bitmaps }) => {
     const ctx = canvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(composeCanvas, sx, sy, sw / zoom, sh / zoom, 0, 0, width, height);
-    // full resoltuion canvas(es)
+    // display sized canvases
     if ('spots' in bitmaps) {
       ctx.drawImage(bitmaps['spots'], 0, 0);
     }
