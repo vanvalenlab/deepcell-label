@@ -61,7 +61,7 @@ function SelectInstructions() {
               <Grid item xs={8}>
                 <Typography>
                   Move between frames in a timelapse with this slider. Below the slider, there is a
-                  timeline of which times the selected and hovering cells are present in.s
+                  timeline of which times the selected and hovering cells are present in.
                 </Typography>
               </Grid>
             </>
