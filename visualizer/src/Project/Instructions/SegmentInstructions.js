@@ -26,34 +26,39 @@ function SegmentInstructions() {
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
-        <Typography>These tools update the segmentation of the selected cell.</Typography>
+        <Typography>Update the segmentation with controls in the Segment tab.</Typography>
         <Grid container spacing={3} justify='flex-start'>
           <Grid item sx={12}>
             <Typography variant='h5'>Write Mode</Typography>
             <Typography>
-              Write mode controls how to combine changes with the existing segmentation.
-              <br />
-              Exclude, the default mode, only adds the selected cell where there are no other cells.
-              <br />
-              Overwrite replaces any existing cells with the selected cell.
-              <br />
-              Overlap adds the selected cell on top of existing cells.
+              Controls how changes are added to the existing segmentation.
+              <ul>
+                <li>
+                  <strong>Exclude</strong> adds the selected cell only in the background where there
+                  are no other cells.
+                </li>
+                <li>
+                  <strong>Overwrite</strong> replaces existing cells with the selected cell.
+                </li>
+                <li>
+                  <strong>Overlap</strong> adds the selected cell on top of existing cells.
+                </li>
+              </ul>
             </Typography>
           </Grid>
         </Grid>
+        <br />
         <Typography variant='h5'>Tools</Typography>
         <Typography>
-          Tools are used by pressing its button, pressing the shortcut key, pressing Enter, or by
-          clicking on the selected cell on the canvas.
+          Select a tool with the toolbar, then click on the canvas to use the tool
         </Typography>
         <Typography variant='h6'>Select</Typography>
         <Typography>Click on a cell with the Select tool to select it.</Typography>
         <Typography variant='h6'>Brush and Erase</Typography>
         <Typography>
-          Brush and Erase enable pixel-level changes to cells, like correcting borders or adding a
-          missing cell.
+          Updates the segmentation with brush strokes
           <br />
-          Brush adds the selected cell and Erase removes it.
+          Brush adds the selected cell and Erase removes it
           <br />
           Click and drag with Brush or Erase to edit the selected cell.
           <br />
@@ -61,13 +66,13 @@ function SegmentInstructions() {
         </Typography>
         <Typography variant='h6'>Trim</Typography>
         <Typography>
-          Trim removes disconnected parts of a cell.
+          Removes disconnected parts of a cell
           <br />
           Click on cell to trim the pixels not connected to the clicked area.
         </Typography>
         <Typography variant='h6'>Flood</Typography>
         <Typography>
-          Flood replaces a connected region of one cell with another cell.
+          Replaces a connected region of one cell with another cell
           <br />
           Click on any cell to select it to flood, outlining the cell in red. Click again to flood
           it with the selected cell.
@@ -76,7 +81,7 @@ function SegmentInstructions() {
         </Typography>
         <Typography variant='h6'>Threshold</Typography>
         <Typography>
-          Threshold fills the brightest uncelled pixels within a box with the selected cell.
+          Fills the brightest uncelled pixels within a box with the selected cell.
           <br />
           Click and drag to make a bounding box for thresholding.
           <br />
@@ -84,7 +89,7 @@ function SegmentInstructions() {
         </Typography>
         <Typography variant='h6'>Watershed</Typography>
         <Typography>
-          Watershed splits a cell into multiple along the contours of the image with the{' '}
+          Splits a cell into multiple along the contours of the image with the{' '}
           <Link href={'wikipedia.org/wiki/Watershed_(image_processing)'}>watershed transform</Link>.
           <br />
           Click on a click to place seed point, then click elsewhere in the same cell to place
@@ -96,17 +101,15 @@ function SegmentInstructions() {
         <Typography>
           Actions edit the cell when pressing the action button or the keyboard shortcut.
         </Typography>
-        <Typography variant='h5'>Autofit</Typography>
+        <Typography variant='h6'>Autofit</Typography>
         <Typography>
-          Autofit adjusts a cell to hug the nearest edges in the raw image, fixing an existing
-          cell's boundary.
+          Adjusts a cell to hug the nearest edges in the raw image, fixing an existing cell's
+          boundary.
           <br />
-          Autofit cannot be used when color is on.
+          Cannot be used when color is on.
         </Typography>
-        <Typography variant='h5'>Shrink and Grow</Typography>
-        <Typography>
-          Shrink and grow contracts or expands a cell's boundary by one pixel.
-        </Typography>
+        <Typography variant='h6'>Shrink and Grow</Typography>
+        <Typography>Contracts or expands a cell's boundary by one pixel.</Typography>
       </div>
       <SegmentShortcuts />
     </Box>

@@ -21,6 +21,7 @@ function CellsInstructions() {
   return (
     <Box display='flex' justifyContent='space-between'>
       <Box>
+        <Typography>Assign cells to the segmentation with the Cells tab.</Typography>
         <Typography variant='h5'>Mode</Typography>
         <Grid container spacing={3}>
           <Grid item xs={2}>
