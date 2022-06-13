@@ -77,7 +77,7 @@ class Loader:
             X = np.moveaxis(X, -1, 1)
             images = io.BytesIO()
             with TiffWriter(images, ome=True) as tif:
-                tif.save(X, metadata={'axes': 'ZCYX'})
+                tif.write(X, compression='zlib', metadata={'axes': 'ZCYX'})
             images.seek(0)
             self.zip.writestr('X.ome.tiff', images.read())
         # else:
@@ -98,7 +98,7 @@ class Loader:
 
         segmentation = io.BytesIO()
         with TiffWriter(segmentation, ome=True) as tif:
-            tif.save(y, metadata={'axes': 'ZCYX'})
+            tif.write(y, compression='zlib', metadata={'axes': 'ZCYX'})
         segmentation.seek(0)
         self.zip.writestr('y.ome.tiff', segmentation.read())
 
