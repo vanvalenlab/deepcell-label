@@ -56,57 +56,37 @@ function SegmentInstructions() {
         <Typography>Click on a cell with the Select tool to select it.</Typography>
         <Typography variant='h6'>Brush and Erase</Typography>
         <Typography>
-          Updates the segmentation with brush strokes
-          <br />
-          Brush adds the selected cell and Erase removes it
-          <br />
-          Click and drag with Brush or Erase to edit the selected cell.
-          <br />
-          Change the size of the brush with <kbd>&uarr;</kbd> and <kbd>&darr;</kbd>.
+          Adds or removes area with brush strokes. Click and drag to make a brush stroke to edit the
+          selected cell. Change the size of the brush with <kbd>&uarr;</kbd> and <kbd>&darr;</kbd>.
         </Typography>
         <Typography variant='h6'>Trim</Typography>
-        <Typography>
-          Removes disconnected parts of a cell
-          <br />
-          Click on cell to trim the pixels not connected to the clicked area.
-        </Typography>
+        <Typography>Removes disconnected parts of a cell. Click a cell to trim ot.</Typography>
         <Typography variant='h6'>Flood</Typography>
         <Typography>
-          Replaces a connected region of one cell with another cell
-          <br />
-          Click on any cell to select it to flood, outlining the cell in red. Click again to flood
-          it with the selected cell.
-          <br />
-          Hold <kbd>Shift</kbd> and click to select a different cell to flood.
+          Replaces a connected region of one cell with another cell. Click a cell to select it to
+          flood, and click again to flood it. Hold <kbd>Shift</kbd> and click to select a different
+          cell to flood.
         </Typography>
         <Typography variant='h6'>Threshold</Typography>
         <Typography>
-          Fills the brightest uncelled pixels within a box with the selected cell.
-          <br />
-          Click and drag to make a bounding box for thresholding.
-          <br />
-          Threshold cannot be used when color is on.
+          Fills the brightest pixels within a bounding box with a cell. Click and drag to create a
+          box for thresholding. Cannot be used with multiple channels.
         </Typography>
         <Typography variant='h6'>Watershed</Typography>
         <Typography>
           Splits a cell into multiple along the contours of the image with the{' '}
           <Link href={'wikipedia.org/wiki/Watershed_(image_processing)'}>watershed transform</Link>.
-          <br />
-          Click on a click to place seed point, then click elsewhere in the same cell to place
-          another seed point and split into two cells.
-          <br />
-          Watershed cannot be used when color is on.
+          Click a cell to place seed point, then click in the same cell to place another seed point
+          and split into two cells. Cannot be used with multiple channels.
         </Typography>
         <Typography variant='h5'>Actions</Typography>
         <Typography>
-          Actions edit the cell when pressing the action button or the keyboard shortcut.
+          Actions edit the cell after pressing the action button or the keyboard shortcut.
         </Typography>
         <Typography variant='h6'>Autofit</Typography>
         <Typography>
           Adjusts a cell to hug the nearest edges in the raw image, fixing an existing cell's
-          boundary.
-          <br />
-          Cannot be used when color is on.
+          boundary. Cannot be used with multiple channels.
         </Typography>
         <Typography variant='h6'>Shrink and Grow</Typography>
         <Typography>Contracts or expands a cell's boundary by one pixel.</Typography>

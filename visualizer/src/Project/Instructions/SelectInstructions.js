@@ -40,8 +40,9 @@ function SelectInstructions() {
               <Box display='inline-block'>
                 <Selected />
               </Box>{' '}
-              shows the selected cell. <PreviousCellButton /> and <NextCellButton /> cycle the
-              selected cell, <NewCellButton />
+              shows the selected cell. Hover over it to see controls to change the selected cell.{' '}
+              <PreviousCellButton /> and <NextCellButton /> cycle the selected cell,{' '}
+              <NewCellButton />
               selects a new cell, and <ResetCellButton /> resets the selected cell.
             </Typography>
           </Grid>
@@ -50,7 +51,7 @@ function SelectInstructions() {
             <Hovering />
           </Grid>
           <Grid item xs={10}>
-            <Typography>Hover over a cell on the canvas to see what cell it is.</Typography>
+            <Typography>Hover over cells on the canvas to see which cell it is.</Typography>
           </Grid>
           {duration > 1 && (
             <>
