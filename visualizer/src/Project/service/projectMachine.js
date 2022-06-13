@@ -92,9 +92,7 @@ const createProjectMachine = (projectId) =>
           actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');
           actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
           actors.toolRef = spawn(createToolMachine(ctx), 'tool');
-          if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
-            actors.spotsRef = spawn(createSpotsMachine(ctx), 'spots');
-          }
+          actors.spotsRef = spawn(createSpotsMachine(ctx), 'spots');
           return actors;
         }),
         sendDimensions: send(
