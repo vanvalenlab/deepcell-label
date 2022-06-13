@@ -24,13 +24,13 @@ function CellsOpacitySlider() {
         labeled.send('CYCLE_CELLS_OPACITY');
       }
     };
-    if (numMounted == 0) {
+    if (numMounted === 0) {
       document.addEventListener('keydown', listener);
     }
     numMounted++;
     return () => {
       numMounted--;
-      if (numMounted == 0) {
+      if (numMounted === 0) {
         document.removeEventListener('keydown', listener);
       }
     };
