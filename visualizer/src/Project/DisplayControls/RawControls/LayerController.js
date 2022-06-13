@@ -78,25 +78,35 @@ function LayerSlider({ layer }) {
 
 function LayerController({ layer }) {
   const raw = useRaw();
-  const numChannels = useSelector(layer, (state) => state.context.numChannels);
+  const numChannels = useSelector(raw, (state) => state.context.numChannels);
 
   return (
     <Grid container direction='column' justifyContent='center'>
-      <Grid container direction='row' justifyContent='space-between'>
-        <Grid item xs={10}>
-          {numChannels > 1 && <LayerSelector layer={layer} />}
-        </Grid>
-        <Grid item>
-          <LayerOptions layer={layer} />
-        </Grid>
-      </Grid>
+      {numChannels > 1 && (
+        <>
+          <Grid container direction='row' justifyContent='space-between'>
+            <Grid item xs={10}>
+              {numChannels > 1 && <LayerSelector layer={layer} />}
+            </Grid>
+            <Grid item>
+              <LayerOptions layer={layer} />
+            </Grid>
+          </Grid>
+        </>
+      )}
       <Grid container direction='row'>
         <Grid item xs={2}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid container item xs={9} sx={{ ml: 1 }} alignItems='center'>
+        <Grid item xs={1} />
+        <Grid container item xs={numChannels === 1 ? 8 : 9} alignItems='center'>
           <LayerSlider layer={layer} />
         </Grid>
+        {numChannels === 1 && (
+          <Grid container item xs={1} alignItems='center'>
+            <LayerOptions layer={layer} />
+          </Grid>
+        )}
       </Grid>
     </Grid>
   );
