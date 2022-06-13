@@ -8,10 +8,10 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import PropTypes from 'prop-types';
 import React from 'react';
-import ActionInstructions from './ActionInstructions';
 import CanvasInstructions from './CanvasInstructions';
 import CellsInstructions from './CellsInstructions';
 import DisplayInstructions from './DisplayInstructions';
+import DivisionsInstructions from './DivisionsInstructions';
 import OverviewInstructions from './OverviewInstructions';
 import SegmentInstructions from './SegmentInstructions';
 import SelectInstructions from './SelectInstructions';
@@ -161,7 +161,7 @@ export default function Instructions() {
             <CellsInstructions />
           </TabPanel>
           <TabPanel value={value} index={6}>
-            <ActionInstructions />
+            <DivisionsInstructions />
           </TabPanel>
         </AccordionDetails>
       </Accordion>
