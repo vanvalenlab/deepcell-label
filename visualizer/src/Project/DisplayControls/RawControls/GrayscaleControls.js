@@ -33,6 +33,7 @@ const InvertToggle = ({ channel }) => {
           }
           label='Invert'
           labelPlacement='start'
+          sx={{ ml: 0 }}
         />
       </FormGroup>
     </Tooltip>
