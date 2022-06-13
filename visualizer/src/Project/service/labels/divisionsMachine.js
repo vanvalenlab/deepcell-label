@@ -94,7 +94,7 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
   return Machine(
     {
       context: {
-        divisions: null,
+        divisions: [],
         undoRef,
         historyRef: null,
         edit: null,
