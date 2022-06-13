@@ -16,7 +16,7 @@ function TimeControls() {
   const height = '0.5rem';
 
   return (
-    <Box display='flex' flexDirection='column'>
+    <Box display='flex' flexDirection='column' sx={{ width: '100%' }}>
       <FormLabel>Time</FormLabel>
       <TimeSlider />
       <CellTimeline cell={cell} height={height} />
