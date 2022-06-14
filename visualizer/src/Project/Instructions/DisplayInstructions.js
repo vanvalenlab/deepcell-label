@@ -54,7 +54,7 @@ function DisplayInstructions() {
           controls adjust how the images and segmentations.
         </Typography>
         <br />
-        <Grid container spacing={3} justify='flex-start'>
+        <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <LabeledControls />
             <br />
@@ -71,8 +71,6 @@ function DisplayInstructions() {
               </ul>
             </Typography>
           </Grid>
-        </Grid>
-        <Grid container spacing={4}>
           <Grid item xs={4}>
             <ColorModeToggle />
           </Grid>
@@ -81,8 +79,6 @@ function DisplayInstructions() {
               Toggles showing a single grayscale channel or multiple color channels
             </Typography>
           </Grid>
-        </Grid>
-        <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <RGBControls />
           </Grid>
@@ -98,8 +94,6 @@ function DisplayInstructions() {
               </ul>
             </Typography>
           </Grid>
-        </Grid>
-        <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
             <GrayscaleControls />
           </Grid>
