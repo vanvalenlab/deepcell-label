@@ -1,6 +1,13 @@
 import { Paper, Tab, Tabs } from '@mui/material';
 import { useSelector } from '@xstate/react';
+import { useEffect } from 'react';
 import { useLabelMode, useSpots } from '../ProjectContext';
+
+const tabKeybinds = {
+  display: ['c', 'f', 'y', 'i', '0', 'z', 'o'],
+  segment: ['v', 'b', 'e', 'x', 'k', 'g', 't', 'w', 'm', 'q'],
+  cells: ['Backspace', 'r', 's'],
+};
 
 function EditTabs() {
   const labelMode = useLabelMode();
@@ -38,6 +45,22 @@ function EditTabs() {
         break;
     }
   };
+
+  useEffect(() => {
+    const listener = (event) => {
+      if (tabKeybinds.display.includes(event.key)) {
+        labelMode.send('DISPLAY');
+      } else if (tabKeybinds.segment.includes(event.key)) {
+        labelMode.send('EDIT_SEGMENT');
+      } else if (tabKeybinds.cells.includes(event.key)) {
+        labelMode.send('EDIT_CELLS');
+      }
+    };
+    document.addEventListener('keydown', listener);
+    return () => {
+      document.removeEventListener('keydown', listener);
+    };
+  }, [labelMode]);
 
   const spots = useSelector(useSpots(), (state) => state.context.spots);
 
