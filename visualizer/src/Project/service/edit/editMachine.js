@@ -25,7 +25,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
           id: 'canvas',
           src: fromEventBus('tool', () => eventBuses.canvas, ['mouseup', 'mousedown']),
         },
-        { src: fromEventBus('tool', () => eventBuses.select, 'SELECTED') },
+        { id: 'select', src: fromEventBus('tool', () => eventBuses.select, 'SELECTED') },
         { src: fromEventBus('tool', () => eventBuses.load, 'LOADED') },
       ],
       initial: 'setUp',
@@ -50,6 +50,9 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         },
         display: {
           entry: [assign({ tool: 'display' }), send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true })],
+          on: {
+            mouseup: { actions: send('SELECT', { to: 'select' }) },
+          },
         },
         editSegment: {
           entry: assign({ tool: 'editSegment' }),
@@ -83,6 +86,9 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
             assign({ tool: 'editCells' }),
             send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
           ],
+          on: {
+            mouseup: { actions: send('SELECT', { to: 'select' }) },
+          },
         },
       },
       on: {
