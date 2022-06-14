@@ -44,6 +44,7 @@ function LayerCheckbox({ layer }) {
         '&.Mui-checked': {
           color: color,
         },
+        p: 0,
       }}
     />
   );
@@ -85,28 +86,22 @@ function LayerController({ layer }) {
       {numChannels > 1 && (
         <>
           <Grid container direction='row'>
-            <Grid item xs={9}>
+            <Grid item xs={12}>
               {numChannels > 1 && <LayerSelector layer={layer} />}
-            </Grid>
-            <Grid container item xs={3} justifyContent='flex-end'>
-              <LayerOptions layer={layer} />
             </Grid>
           </Grid>
         </>
       )}
-      <Grid container direction='row'>
-        <Grid item xs={2}>
+      <Grid container direction='row' alignItems='center'>
+        <Grid item xs={3}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid item xs={1} />
-        <Grid container item xs={numChannels === 1 ? 8 : 9} alignItems='center'>
+        <Grid container item xs={6} alignItems='center'>
           <LayerSlider layer={layer} />
         </Grid>
-        {numChannels === 1 && (
-          <Grid container item xs={1} alignItems='center'>
-            <LayerOptions layer={layer} />
-          </Grid>
-        )}
+        <Grid container item xs={3} justifyContent='right'>
+          <LayerOptions layer={layer} />
+        </Grid>
       </Grid>
     </Grid>
   );

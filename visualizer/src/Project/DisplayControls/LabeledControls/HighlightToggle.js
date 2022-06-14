@@ -27,6 +27,7 @@ function HighlightToggle() {
               checked={highlight}
               onChange={() => labeled.send('TOGGLE_HIGHLIGHT')}
               inputRef={inputRef}
+              sx={{ py: 0 }}
             />
           }
           label='Highlight'

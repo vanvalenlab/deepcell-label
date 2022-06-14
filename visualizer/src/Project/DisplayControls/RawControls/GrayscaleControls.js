@@ -1,4 +1,4 @@
-import { Box, Checkbox, MenuItem, TextField, Typography } from '@mui/material';
+import { Checkbox, FormLabel, MenuItem, TextField } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Grid from '@mui/material/Grid';
@@ -31,8 +31,8 @@ const InvertToggle = ({ channel }) => {
             />
           }
           label='Invert'
-          labelPlacement='start'
-          sx={{ ml: 0 }}
+          labelPlacement='end'
+          sx={{ p: 0 }}
         />
       </FormGroup>
     </Tooltip>
@@ -88,7 +88,7 @@ const BrightnessSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', p: 0 }}
+      sx={{ color: 'primary' }}
       value={brightness}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -113,7 +113,7 @@ const ContrastSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', p: 0 }}
+      sx={{ color: 'primary' }}
       value={contrast}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -136,7 +136,7 @@ const RangeSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary', p: 0 }}
+      sx={{ color: 'primary' }}
       value={range}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -160,42 +160,24 @@ const GrayscaleControls = () => {
   }, [raw]);
 
   return (
-    <Grid sx={{ width: '100%' }} item>
-      <Grid container direction='column'>
-        <Grid item xs={12} container direction='row' sx={{ justifyContent: 'space-between' }}>
-          {numChannels > 1 && <ChannelSelector />}
-          <div />
-          <InvertToggle channel={channel} />
+    // <Grid sx={{ width: '100%' }} item>
+    <Grid container direction='column'>
+      {numChannels > 1 && (
+        <Grid item xs={12}>
+          <ChannelSelector />
         </Grid>
-        <Grid item xs={12} container direction='column'>
-          <Grid item xs={12} container direction='row'>
-            <Box
-              display='flex'
-              flexDirection='column'
-              justifyContent='space-around'
-              alignItems='flex-start'
-            >
-              <Typography>Range</Typography>
-              <Typography>Brightness</Typography>
-              <Typography>Contrast</Typography>
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-around',
-                flex: 1,
-                mx: 1,
-              }}
-            >
-              <RangeSlider channel={channel} />
-              <BrightnessSlider channel={channel} />
-              <ContrastSlider channel={channel} />
-            </Box>
-          </Grid>
-        </Grid>
+      )}
+      <Grid item xs={12} container direction='column'>
+        <InvertToggle channel={channel} />
+        <FormLabel>Range</FormLabel>
+        <RangeSlider channel={channel} />
+        <FormLabel>Brightness</FormLabel>
+        <BrightnessSlider channel={channel} />
+        <FormLabel>Contrast</FormLabel>
+        <ContrastSlider channel={channel} />
       </Grid>
     </Grid>
+    // </Grid>
   );
 };
 

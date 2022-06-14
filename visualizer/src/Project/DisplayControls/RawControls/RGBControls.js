@@ -22,9 +22,9 @@ function RGBControls() {
           onClick={() => raw.send('ADD_LAYER')}
           fullWidth
           variant='outlined'
-          sx={{ borderStyle: 'dashed' }}
+          sx={{ borderStyle: 'dashed', p: 0.5 }}
           startIcon={<AddIcon />}
-          size='medium'
+          size='small'
         >
           Add Channel
         </Button>
