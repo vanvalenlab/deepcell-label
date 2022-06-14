@@ -1,6 +1,6 @@
 import { Paper, Tab, Tabs } from '@mui/material';
 import { useSelector } from '@xstate/react';
-import { useLabelMode } from '../ProjectContext';
+import { useLabelMode, useSpots } from '../ProjectContext';
 
 function EditTabs() {
   const labelMode = useLabelMode();
@@ -11,6 +11,8 @@ function EditTabs() {
       ? 1
       : state.matches('editDivisions')
       ? 2
+      : state.matches('editDivisions')
+      ? 3
       : false;
   });
   const handleChange = (event, newValue) => {
@@ -24,10 +26,15 @@ function EditTabs() {
       case 2:
         labelMode.send('EDIT_DIVISIONS');
         break;
+      case 3:
+        labelMode.send('EDIT_SPOTS');
+        break;
       default:
         break;
     }
   };
+
+  const spots = useSelector(useSpots(), (state) => state.context.spots);
 
   return (
     <Paper square>
@@ -42,6 +49,7 @@ function EditTabs() {
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cells' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Divisions' />
+        {spots && <Tab sx={{ p: 0.5, minHeight: 0 }} label='Spots' />}
       </Tabs>
     </Paper>
   );

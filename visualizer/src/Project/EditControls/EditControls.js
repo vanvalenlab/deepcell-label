@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
+import SpotsControls from '../DisplayControls/SpotsControls';
 import { useLabelMode } from '../ProjectContext';
 import CellControls from './CellControls';
 import TrackingControls from './DivisionsControls';
@@ -31,6 +32,8 @@ function EditControls() {
       ? 1
       : state.matches('editDivisions')
       ? 2
+      : state.matches('editSpots')
+      ? 3
       : false;
   });
 
@@ -50,6 +53,9 @@ function EditControls() {
       </TabPanel>
       <TabPanel value={value} index={2}>
         <TrackingControls />
+      </TabPanel>
+      <TabPanel value={value} index={3}>
+        <SpotsControls />
       </TabPanel>
     </Box>
   );

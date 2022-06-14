@@ -93,9 +93,7 @@ function Canvas() {
           <RawCanvas setBitmaps={setBitmaps} />
           <LabeledCanvas setBitmaps={setBitmaps} />
           <OutlineCanvas setBitmaps={setBitmaps} />
-          {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && (
-            <SpotsCanvas setBitmaps={setBitmaps} />
-          )}
+          <SpotsCanvas setBitmaps={setBitmaps} />
           {editing && <ToolCanvas setBitmaps={setBitmaps} />}
         </>
       )}

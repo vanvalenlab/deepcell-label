@@ -7,7 +7,6 @@ import Cells from './Cells';
 import ExportButton from './ExportButton';
 import LabeledControls from './LabeledControls';
 import RawControls from './RawControls/RawControls';
-import SpotsControls from './SpotsControls';
 import TimeControls from './TimeControls';
 import TrackControls from './TrackControls';
 
@@ -29,7 +28,6 @@ function DisplayControls() {
       <Cells />
       {duration > 1 && <TimeControls />}
       {process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' && <TrackControls />}
-      {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && <SpotsControls />}
       <LabeledControls />
       <RawControls />
     </Box>

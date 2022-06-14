@@ -73,6 +73,12 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
             mousedown: { actions: forwardTo('editCells') },
           },
         },
+        editSpots: {
+          entry: [
+            assign({ tool: 'editCells' }),
+            send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+          ],
+        },
       },
       on: {
         SAVE: { actions: 'save' },
@@ -81,6 +87,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         EDIT_SEGMENT: 'editSegment',
         EDIT_DIVISIONS: 'editDivisions',
         EDIT_CELLS: 'editCells',
+        EDIT_SPOTS: 'editSpots',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
       },
