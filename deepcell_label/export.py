@@ -44,7 +44,7 @@ class Export:
                 labeled = np.frombuffer(f.read(), np.int32)
                 self.labeled = np.reshape(
                     labeled,
-                    (self.num_features, self.duration, self.width, self.height),
+                    (self.num_features, self.duration, self.height, self.width),
                 )
 
     def load_raw(self):
@@ -53,13 +53,13 @@ class Export:
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), np.uint8)
                 self.raw = np.reshape(
-                    raw, (self.num_channels, self.duration, self.width, self.height)
+                    raw, (self.num_channels, self.duration, self.height, self.width)
                 )
 
     def load_cells(self):
         """Loads cell labels from cells.json."""
         with zipfile.ZipFile(self.labels_zip) as zf:
-            with zf.open('raw.dat') as f:
+            with zf.open('cells.json') as f:
                 self.cells = json.load(f)
 
     def write_export_zip(self):
@@ -78,6 +78,8 @@ class Export:
                 ]:
                     buffer = input_zf.read(item.filename)
                     export_zf.writestr(item, buffer)
+            # Write updated cells
+            export_zf.writestr('cells.json', json.dumps(self.cells))
             # Write OME TIFF for labeled
             labeled_ome_tiff = io.BytesIO()
             tifffile.imwrite(
@@ -115,13 +117,13 @@ def rewrite_labeled(labeled, cells):
     Returns:
         (numpy array of shape (num_features, duration, height, width), cells with updated values)
     """
-    new_labeled = np.copy(labeled)
+    new_labeled = np.zeros(labeled.shape)
     # TODO: add 'c' to cell labels to independently reassign cells between features & rewrite each feature separately
     (f, duration, height, width) = labeled.shape
     new_cells = []
     for t in range(duration):
-        cells_at_t = filter(lambda c: c['t'] == t, cells)
-        values = itertools.groupby(cells, lambda c: c['value'])
+        cells_at_t = list(filter(lambda c: c['t'] == t, cells))
+        values = itertools.groupby(cells_at_t, lambda c: c['value'])
         overlap_values = []
 
         # Rewrite non-overlapping values with cells

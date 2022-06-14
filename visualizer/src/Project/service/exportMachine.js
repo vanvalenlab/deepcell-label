@@ -17,7 +17,7 @@ async function makeExportZip(context) {
   await zipWriter.add('dimensions.json', new zip.TextReader(JSON.stringify(dimensions)));
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeled))));
   await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
-  await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
+  await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells.cells)));
   await zipWriter.add('divisions.json', new zip.TextReader(JSON.stringify(divisions)));
 
   const zipBlob = await zipWriter.close();

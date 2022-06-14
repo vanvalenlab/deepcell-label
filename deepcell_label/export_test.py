@@ -5,6 +5,25 @@ import numpy as np
 from deepcell_label.export import rewrite_segmentation
 
 
+def test_rewrite_segmentation_removed_cell():
+    """
+    Test that the segmentation is rewritten correctly when cells are swapped.
+    """
+    case = unittest.TestCase()
+    segmentation = np.array([1, 2]).reshape((1, 1, 1, 2))
+    cells = [
+        {'value': 1, 'cell': 1, 't': 0},
+    ]
+    expected_segmentation = np.array([1, 0]).reshape((1, 1, 1, 2))
+    expected_cells = [
+        {'value': 1, 'cell': 1, 't': 0},
+    ]
+
+    new_segmentation, new_cells = rewrite_segmentation(segmentation, cells)
+    np.testing.assert_array_equal(new_segmentation, expected_segmentation)
+    case.assertCountEqual(new_cells, expected_cells)
+
+
 def test_rewrite_segmentation_swapped_cells():
     """
     Test that the segmentation is rewritten correctly when cells are swapped.
