@@ -1,9 +1,8 @@
-import { Box, MenuItem, TextField, Typography } from '@mui/material';
+import { Box, Checkbox, MenuItem, TextField, Typography } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Grid from '@mui/material/Grid';
 import Slider from '@mui/material/Slider';
-import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
@@ -24,7 +23,7 @@ const InvertToggle = ({ channel }) => {
       <FormGroup row>
         <FormControlLabel
           control={
-            <Switch
+            <Checkbox
               size='small'
               checked={invert}
               onChange={() => channel.send('TOGGLE_INVERT')}
@@ -64,7 +63,7 @@ const ChannelSelector = () => {
   }, [raw, channel, numChannels]);
 
   return (
-    <Tooltip title={tooltip} placement='top'>
+    <Tooltip title={tooltip} placement='right'>
       <TextField select size='small' value={channel} onChange={onChange}>
         {names.map((opt, index) => (
           <MenuItem key={index} value={index}>

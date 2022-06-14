@@ -1,11 +1,17 @@
 import Avatar from '@mui/material/Avatar';
+import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useHexColormap } from '../../ProjectContext';
+import { useHexColormap, useLabeled, useSelectedCell } from '../../ProjectContext';
 import { contrast } from './Selected/utils';
 
 const Cell = React.forwardRef(({ cell, onClick }, ref) => {
+  const labeled = useLabeled();
+  const highlight = useSelector(labeled, (state) => state.context.highlight);
+  const selected = useSelectedCell();
+
   const colors = useHexColormap();
-  const color = colors[cell] ?? '#000000';
+  const color =
+    highlight && cell === selected && cell !== 0 ? '#ff0000' : colors[cell] ?? '#000000';
   const textColor = contrast(color, '#000000') > contrast(color, '#ffffff') ? '#000000' : '#ffffff';
 
   return (

@@ -13,7 +13,7 @@ function Hovering() {
       display='flex'
       alignItems='center'
       justifyContent='center'
-      flexDirection='row-reverse'
+      flexDirection='column'
       flexWrap='wrap'
       maxWidth='9rem'
     >

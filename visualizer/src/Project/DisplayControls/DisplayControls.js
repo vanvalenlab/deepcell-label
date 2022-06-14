@@ -2,11 +2,10 @@ import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import EditTabs from '../EditControls/EditTabs';
+import UndoRedo from '../EditControls/UndoRedo';
 import { useEditing, useImage } from '../ProjectContext';
 import Cells from './Cells';
 import ExportButton from './ExportButton';
-import LabeledControls from './LabeledControls';
-import RawControls from './RawControls/RawControls';
 import TimeControls from './TimeControls';
 import TrackControls from './TrackControls';
 
@@ -24,12 +23,11 @@ function DisplayControls() {
       }}
     >
       <ExportButton />
+      <UndoRedo />
       {editing && <EditTabs />}
-      <Cells />
       {duration > 1 && <TimeControls />}
+      <Cells />
       {process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' && <TrackControls />}
-      <LabeledControls />
-      <RawControls />
     </Box>
   );
 }

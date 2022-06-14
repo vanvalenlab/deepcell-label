@@ -1,11 +1,13 @@
+import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
+import LabeledControls from '../DisplayControls/LabeledControls';
+import RawControls from '../DisplayControls/RawControls';
 import SpotsControls from '../DisplayControls/SpotsControls';
 import { useLabelMode } from '../ProjectContext';
 import CellControls from './CellControls';
 import TrackingControls from './DivisionsControls';
 import SegmentControls from './SegmentControls';
-import UndoRedo from './UndoRedo';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -26,14 +28,16 @@ function TabPanel(props) {
 function EditControls() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('editSegment')
+    return state.matches('display')
       ? 0
-      : state.matches('editCells')
+      : state.matches('editSegment')
       ? 1
-      : state.matches('editDivisions')
+      : state.matches('editCells')
       ? 2
-      : state.matches('editSpots')
+      : state.matches('editDivisions')
       ? 3
+      : state.matches('editSpots')
+      ? 4
       : false;
   });
 
@@ -44,17 +48,22 @@ function EditControls() {
         px: 1,
       }}
     >
-      <UndoRedo />
       <TabPanel value={value} index={0}>
-        <SegmentControls />
+        <Typography>Segmentation</Typography>
+        <LabeledControls />
+        <Typography>Image</Typography>
+        <RawControls />
       </TabPanel>
       <TabPanel value={value} index={1}>
-        <CellControls />
+        <SegmentControls />
       </TabPanel>
       <TabPanel value={value} index={2}>
-        <TrackingControls />
+        <CellControls />
       </TabPanel>
       <TabPanel value={value} index={3}>
+        <TrackingControls />
+      </TabPanel>
+      <TabPanel value={value} index={4}>
         <SpotsControls />
       </TabPanel>
     </Box>

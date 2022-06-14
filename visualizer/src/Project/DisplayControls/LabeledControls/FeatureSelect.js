@@ -16,7 +16,7 @@ function FeatureSelect() {
 
   const tooltipText = (
     <span>
-      <kbd>F</kbd> /. <kbd>Shift</kbd> + <kbd>F</kbd>
+      <kbd>F</kbd> / <kbd>Shift</kbd> + <kbd>F</kbd>
     </span>
   );
 

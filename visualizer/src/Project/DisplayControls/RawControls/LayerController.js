@@ -84,11 +84,11 @@ function LayerController({ layer }) {
     <Grid container direction='column' justifyContent='center'>
       {numChannels > 1 && (
         <>
-          <Grid container direction='row' justifyContent='space-between'>
-            <Grid item xs={10}>
+          <Grid container direction='row'>
+            <Grid item xs={9}>
               {numChannels > 1 && <LayerSelector layer={layer} />}
             </Grid>
-            <Grid item>
+            <Grid container item xs={3} justifyContent='flex-end'>
               <LayerOptions layer={layer} />
             </Grid>
           </Grid>

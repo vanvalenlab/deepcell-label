@@ -41,10 +41,15 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         },
         checkTool: {
           always: [
-            { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
+            { cond: ({ tool }) => tool === 'editSegment', target: 'editSegment' },
             { cond: ({ tool }) => tool === 'editCells', target: 'editCells' },
-            { target: 'editSegment' },
+            { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
+            { cond: ({ tool }) => tool === 'editSpots', target: 'editSpots' },
+            { target: 'display' },
           ],
+        },
+        display: {
+          entry: [assign({ tool: 'display' }), send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true })],
         },
         editSegment: {
           entry: assign({ tool: 'editSegment' }),
@@ -84,6 +89,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
+        DISPLAY: 'display',
         EDIT_SEGMENT: 'editSegment',
         EDIT_DIVISIONS: 'editDivisions',
         EDIT_CELLS: 'editCells',

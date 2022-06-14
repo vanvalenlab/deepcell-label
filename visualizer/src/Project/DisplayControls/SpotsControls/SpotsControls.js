@@ -1,4 +1,4 @@
-import { Box, FormLabel, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
 import { useSpots } from '../../ProjectContext';
@@ -18,11 +18,7 @@ function SpotsControls() {
   return (
     <Grid container direction='column' justifyContent='center' sx={{ pt: 1 }}>
       <Grid container direction='row'>
-        <Grid item xs={4}>
-          <FormLabel>Spots</FormLabel>
-        </Grid>
-        <Grid item xs={7} />
-        <Grid item xs={1}>
+        <Grid item xs={12}>
           <SpotsCheckbox />
         </Grid>
       </Grid>
