@@ -28,7 +28,7 @@ function SegmentInstructions() {
       <div>
         <Typography>Update the segmentation with controls in the Segment tab.</Typography>
         <Grid container spacing={3}>
-          <Grid item sx={12}>
+          <Grid item xs={12}>
             <Typography variant='h5'>Write Mode</Typography>
             <Typography component={'span'}>
               Controls how changes are added to the existing segmentation.

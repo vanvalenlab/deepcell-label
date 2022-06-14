@@ -44,7 +44,7 @@ function CellsInstructions() {
         <Typography variant='h5'>Tools</Typography>
         <Grid container spacing={3}>
           <Grid item xs={4}>
-            <Typography>
+            <Typography component={'span'}>
               Tools can be used by
               <ul>
                 <li>pressing its button in the toolbar</li>

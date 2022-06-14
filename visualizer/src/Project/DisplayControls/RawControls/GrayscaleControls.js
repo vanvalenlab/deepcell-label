@@ -160,7 +160,6 @@ const GrayscaleControls = () => {
   }, [raw]);
 
   return (
-    // <Grid sx={{ width: '100%' }} item>
     <Grid container direction='column'>
       {numChannels > 1 && (
         <Grid item xs={12}>
@@ -177,7 +176,6 @@ const GrayscaleControls = () => {
         <ContrastSlider channel={channel} />
       </Grid>
     </Grid>
-    // </Grid>
   );
 };
 
