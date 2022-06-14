@@ -31,10 +31,11 @@ it('Create a project from an example file', () => {
   cy.contains('DeepCell Label');
   cy.contains('Instructions');
   cy.contains('Download');
-  cy.contains('Segmentations');
-  cy.contains('Channels');
   cy.contains('Undo');
   cy.contains('Redo');
+  cy.contains('Display');
+  cy.contains('Segment');
+  cy.contains('Cells');
   cy.get('.MuiCircularProgress-svg').should('not.exist');
 });
 
@@ -42,22 +43,6 @@ it('shows loading spinner', () => {
   cy.visit(`/project?projectId=${getUniqueId()}`);
   cy.get('.MuiCircularProgress-svg');
 });
-
-// TODO: load tracking results on backend
-// it('Creates a tracking project', () => {
-//   cy.visit('/');
-//   cy.get('.MuiNativeSelect-select').select('uncorrected tracking timelapse');
-//   cy.get('#submitExample').click();
-//   cy.get('.MuiLinearProgress-root');
-//   cy.url({ timeout: 30000 })
-//     .should('include', '/project')
-//     .and('include', 'projectId=')
-//     .and('include', 'download=true')
-//   cy.get('.MuiCircularProgress-svg');
-//   cy.get('canvas');
-//   cy.contains('Divisions');
-//   cy.get('.MuiCircularProgress-svg').should('not.exist');
-// });
 
 it('updates state with keybinds', () => {
   const id = getUniqueId();
@@ -86,11 +71,13 @@ it('opens instructions', () => {
 
   cy.visit(`/project?projectId=${id}`);
   cy.contains('Instructions').click();
-  cy.contains('Display').click();
+  cy.contains('Overview').click();
+  cy.contains('Select').click();
   cy.contains('Canvas').click();
-  cy.contains('Select Labels').click();
-  cy.contains('Tools').click();
-  cy.contains('Actions').click();
+  cy.contains('Display').click();
+  cy.contains('Segment').click();
+  cy.contains('Cells').click();
+  cy.contains('Divisions').click();
 });
 
 it('shows quality control interface', () => {
