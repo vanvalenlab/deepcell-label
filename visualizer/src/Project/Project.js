@@ -26,7 +26,7 @@ function Project({ review }) {
             px: 1,
           }}
         >
-          {review && editing && <ReviewControls />}
+          {review && <ReviewControls />}
           <DisplayControls />
         </Box>
         <EditControls />
