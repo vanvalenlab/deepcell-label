@@ -52,7 +52,7 @@ export const ChannelCanvas = ({ layer, setBitmaps }) => {
       }
     );
     kernelRef.current = kernel;
-  }, [width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
     if (raw) {
