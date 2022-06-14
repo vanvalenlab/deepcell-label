@@ -5,85 +5,77 @@ import numpy as np
 from deepcell_label import utils
 
 
-def test_snakecase_to_camelcase():
-    """Tests snakecase_to_camelcase"""
-    snakecase = 'snake_case'
-    camelcase = utils.snakecase_to_camelcase(snakecase)
-    assert camelcase == 'snakeCase'
+def test_convert_lineage_with_no_cells():
+    assert utils.convert_lineage({}) == []
 
 
-def test_snakecase_to_camelcase_empty():
-    """Tests snakecase_to_camelcase with empty string"""
-    snakecase = ''
-    camelcase = utils.snakecase_to_camelcase(snakecase)
-    assert camelcase == ''
+def test_convert_lineage_with_no_divisions():
+    lineage = {'1': {'frame_div': None, 'parent': None, 'daughters': []}}
+    assert utils.convert_lineage(lineage) == []
 
 
-def test_snakecase_to_camelcase_no_underscores():
-    """Tests snakecase_to_camelcase with no underscores"""
-    snakecase = 'snakeCase'
-    camelcase = utils.snakecase_to_camelcase(snakecase)
-    assert camelcase == 'snakeCase'
-
-
-def test_snakecase_to_camelcase_only_underscores():
-    """Tests snakecase_to_camelcase with only underscores"""
-    snakecase = '___'
-    camelcase = utils.snakecase_to_camelcase(snakecase)
-    assert camelcase == '___'
-
-
-def test_reformat_lineage():
-    """Tests reformat_lineage"""
-    cell_info = {
-        '1': {'frame_div': 1, 'parent': None, 'daughters': [2]},
+def test_convert_lineage_with_one_division():
+    lineage = {
+        '1': {'frame_div': 1, 'parent': None, 'daughters': [2, 3]},
         '2': {'frame_div': None, 'parent': 1, 'daughters': []},
+        '3': {'frame_div': None, 'parent': 1, 'daughters': []},
     }
-    reformated = utils.reformat_lineage(cell_info)
-    expected = {
-        '1': {
-            'divisionFrame': 1,
-            'parent': None,
-            'daughters': [2],
-        },
-        '2': {
-            'divisionFrame': None,
-            'parent': 1,
-            'daughters': [],
-        },
-    }
-    assert reformated == expected
+    assert utils.convert_lineage(lineage) == [
+        {'parent': 1, 'daughters': [2, 3], 't': 1}
+    ]
 
 
-def test_add_parent_division_frame():
-    """Tests add_parent_division_frame"""
-    cell_info = {
-        '1': {'divisionFrame': 1, 'parent': None, 'daughters': [2, 3]},
-        '2': {'divisionFrame': None, 'parent': 1, 'daughters': []},
-        '3': {'divisionFrame': None, 'parent': 1, 'daughters': []},
+def test_convert_lineage_with_chained_divisions():
+    lineage = {
+        '1': {'frame_div': 1, 'parent': None, 'daughters': [2, 3]},
+        '2': {'frame_div': 2, 'parent': 1, 'daughters': [4, 5]},
+        '3': {'frame_div': None, 'parent': 1, 'daughters': []},
+        '4': {'frame_div': None, 'parent': 2, 'daughters': []},
+        '5': {'frame_div': None, 'parent': 2, 'daughters': []},
     }
-    added_info = utils.add_parent_division_frame(cell_info)
-    expected = {
-        '1': {
-            'parentDivisionFrame': None,
-            'divisionFrame': 1,
-            'parent': None,
-            'daughters': [2, 3],
-        },
-        '2': {
-            'parentDivisionFrame': 1,
-            'divisionFrame': None,
-            'parent': 1,
-            'daughters': [],
-        },
-        '3': {
-            'parentDivisionFrame': 1,
-            'divisionFrame': None,
-            'parent': 1,
-            'daughters': [],
-        },
+    assert utils.convert_lineage(lineage) == [
+        {'parent': 1, 'daughters': [2, 3], 't': 1},
+        {'parent': 2, 'daughters': [4, 5], 't': 2},
+    ]
+
+
+def test_convert_lineage_with_missing_frame_div():
+    lineage = {
+        '1': {'frame_div': None, 'parent': None, 'daughters': [2, 3]},
+        '2': {'frame_div': None, 'parent': 1, 'daughters': []},
+        '3': {'frame_div': None, 'parent': 1, 'daughters': []},
     }
-    assert added_info == expected
+    # TODO: assert ValueError
+    try:
+        utils.convert_lineage(lineage)
+    except Exception:
+        pass
+
+
+def test_convert_lineage_with_missing_parent():
+    lineage = {
+        '1': {'frame_div': None, 'parent': None, 'daughters': [2, 3]},
+        '2': {'frame_div': None, 'parent': 1, 'daughters': []},
+        '3': {'frame_div': None, 'parent': None, 'daughters': []},
+    }
+    # TODO: assert ValueError
+    try:
+        utils.convert_lineage(lineage)
+    except Exception:
+        pass
+
+
+def test_convert_lineage_with_missing_daughter():
+    lineage = {
+        '1': {'frame_div': None, 'parent': None, 'daughters': [2]},
+        '2': {'frame_div': None, 'parent': 1, 'daughters': []},
+        '3': {'frame_div': None, 'parent': 1, 'daughters': []},
+    }
+    # TODO: assert ValueError
+    try:
+        utils.convert_lineage(lineage)
+    except Exception:
+        pass
 
 
 def test_reshape_out_of_order():

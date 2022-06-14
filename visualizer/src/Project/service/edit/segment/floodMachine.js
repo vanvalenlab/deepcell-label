@@ -22,24 +22,34 @@ const creatFloodMachine = (context) =>
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
         mouseup: [
+          { cond: 'noneSelected', actions: 'select' },
           { cond: 'shift', actions: 'setFloodCell' },
           { cond: 'onFloodCell', actions: 'flood' },
+          { cond: 'floodingSelf', actions: 'flood' },
           { actions: 'setFloodCell' },
         ],
+        EXIT: { actions: 'resetFloodCell' },
       },
     },
     {
       guards: {
+        noneSelected: (ctx) => !ctx.selected,
         shift: (_, evt) => evt.shiftKey,
         onFloodCell: (ctx) => ctx.hovering.includes(ctx.floodCell),
+        floodingSelf: (ctx) => ctx.floodCell === ctx.selected,
       },
       actions: {
+        select: send('SELECT', { to: 'select' }),
         setSelected: assign({ selected: (_, evt) => evt.selected }),
+        resetFloodCell: assign({ floodCell: null }),
         setFloodCell: assign({
           floodCell: (ctx) => {
             const { hovering, floodCell } = ctx;
             const i = hovering.indexOf(floodCell);
-            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
+            if (i === hovering.length - 1) {
+              return ctx.selected;
+            }
+            return hovering[i + 1];
           },
         }),
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),

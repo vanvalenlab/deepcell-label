@@ -24,7 +24,7 @@ function HighlightToggle() {
   }, [labeled]);
 
   return (
-    <Tooltip title={tooltipText}>
+    <Tooltip title={tooltipText} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={

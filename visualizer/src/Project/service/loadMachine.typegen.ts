@@ -4,7 +4,7 @@ export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
     'set spots': 'done.invoke.load.loading:invocation[0]';
-    'set lineage': 'done.invoke.load.loading:invocation[0]';
+    'set divisions': 'done.invoke.load.loading:invocation[0]';
     'set cells': 'done.invoke.load.loading:invocation[0]';
     'set metadata': 'done.invoke.load.loading:invocation[0]';
     'set arrays': 'done.invoke.load.splitArrays:invocation[0]';

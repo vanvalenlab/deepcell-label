@@ -1,9 +1,8 @@
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
-  useAlphaKernelCanvas,
+  useAlphaGpu,
   useArrays,
   useCanvas,
   useCells,
@@ -14,7 +13,7 @@ import {
 
 const highlightColor = [255, 0, 0];
 
-export const LabeledCanvas = ({ setCanvases }) => {
+export const LabeledCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -25,25 +24,24 @@ export const LabeledCanvas = ({ setCanvases }) => {
   const opacity = useSelector(labeled, (state) => state.context.labelsOpacity);
 
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
+  const t = useSelector(image, (state) => state.context.t);
 
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    (state) => state.context.labeled && state.context.labeled[feature][frame]
+    (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
   const cells = useCells();
-  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
+  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(t), equal);
   const colormap = useSelector(cells, (state) => state.context.colormap);
 
   const cell = useSelectedCell();
 
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       `function (labelArray, cellMatrix, opacity, colormap, cell, numLabels, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
@@ -88,41 +86,29 @@ export const LabeledCanvas = ({ setCanvases }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [width, height, kernelCanvas]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
+    const kernel = kernelRef.current;
     if (labeledArray && cellMatrix) {
       const numLabels = cellMatrix[0].length;
       // Compute the label image with the kernel
-      kernelRef.current(
+      kernel(
         labeledArray,
         cellMatrix,
-        opacity,
+        [opacity, opacity],
         colormap,
         cell,
         numLabels,
         highlight,
         highlightColor
       );
-      // Rerender the parent canvas with the kernel output
-      setCanvases((canvases) => ({ ...canvases, labeled: kernelCanvas }));
+      // Rerender with the new bitmap
+      createImageBitmap(kernel.canvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, labeled: bitmap }));
+      });
     }
-  }, [
-    labeledArray,
-    cellMatrix,
-    opacity,
-    colormap,
-    cell,
-    highlight,
-    kernelCanvas,
-    setCanvases,
-    width,
-    height,
-  ]);
+  }, [labeledArray, cellMatrix, opacity, colormap, cell, highlight, setBitmaps, width, height]);
 
   return null;
 };

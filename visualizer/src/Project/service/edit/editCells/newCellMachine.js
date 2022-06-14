@@ -22,17 +22,19 @@ function createNewCellMachine(context) {
           { cond: 'onSelected', actions: 'newCell' },
           { actions: 'selectCell' },
         ],
+        ENTER: { cond: 'haveSelected', actions: 'newCell' },
       },
     },
     {
       guards: {
+        haveSelected: (ctx) => !!ctx.selected,
         shift: (_, event) => event.shiftKey,
         onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
-        newCell: send((ctx) => ({ type: 'NEW', cell: ctx.selected }), { to: 'cells' }),
+        newCell: send((ctx) => ({ type: 'NEW_CELL', cell: ctx.selected }), { to: 'cells' }),
         selectCell: send('SELECT', { to: 'select' }),
       },
     }

@@ -17,8 +17,8 @@ function createLabelHistoryMachine(actor) {
         idle: {
           on: {
             SNAPSHOT: { actions: 'saveSnapshot' },
-            UNDO: 'undoing',
-            REDO: 'redoing',
+            UNDO: { cond: 'canUndo', target: 'undoing' },
+            REDO: { cond: 'canRedo', target: 'redoing' },
           },
         },
         undoing: {
@@ -34,6 +34,10 @@ function createLabelHistoryMachine(actor) {
       },
     },
     {
+      guards: {
+        canUndo: (ctx, evt) => evt.edit in ctx.past,
+        canRedo: (ctx, evt) => evt.edit in ctx.future,
+      },
       actions: {
         setEdit: assign({ edit: (ctx, evt) => evt.edit }),
         saveSnapshot: assign({

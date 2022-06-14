@@ -27,7 +27,7 @@ function drawSpots(ctx, spots, radius, color, outline) {
   }
 }
 
-function SpotsCanvas({ setCanvases }) {
+function SpotsCanvas({ setBitmaps }) {
   const canvas = useCanvas();
   const { sx, sy, zoom, sw, sh, scale, moving } = useSelector(
     canvas,
@@ -52,7 +52,7 @@ function SpotsCanvas({ setCanvases }) {
   const labeledArray = useSelector(
     arrays,
     (state) =>
-      state.context.labeled && state.context.labeled[state.context.feature][state.context.frame]
+      state.context.labeled && state.context.labeled[state.context.feature][state.context.t]
   );
 
   const spots = useSpots();
@@ -121,13 +121,17 @@ function SpotsCanvas({ setCanvases }) {
         const color = [255, 255, 255];
         drawSpots(ctx, canvasSpots, radius, color, outline);
       }
-      setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
+      createImageBitmap(drawCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, spots: bitmap }));
+      });
     } else {
       ctx.clearRect(0, 0, width, height);
-      setCanvases((canvases) => ({ ...canvases, spots: drawCanvas }));
+      createImageBitmap(drawCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, spots: bitmap }));
+      });
     }
   }, [
-    setCanvases,
+    setBitmaps,
     sh,
     sw,
     sx,
@@ -160,7 +164,9 @@ function SpotsCanvas({ setCanvases }) {
       const movingWidth = width * zoomFactor;
       const movingHeight = height * zoomFactor;
       ctx.drawImage(drawCanvas, movingSx, movingSy, movingWidth, movingHeight, 0, 0, width, height);
-      setCanvases((canvases) => ({ ...canvases, spots: movingCanvas }));
+      createImageBitmap(movingCanvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, spots: bitmap }));
+      });
     }
   }, [
     moving,
@@ -174,7 +180,7 @@ function SpotsCanvas({ setCanvases }) {
     height,
     drawCanvas,
     movingCanvas,
-    setCanvases,
+    setBitmaps,
   ]);
 
   useEffect(() => {

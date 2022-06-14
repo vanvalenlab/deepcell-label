@@ -1,6 +1,6 @@
 /** Class to query and transform cell labels. */
 
-type Cell = { value: number; cell: number; z: number };
+type Cell = { value: number; cell: number; t: number };
 type CellMatrix = (0 | 1)[][];
 
 class Cells {
@@ -10,59 +10,62 @@ class Cells {
     this.cells = cells;
   }
 
-  /** Converts the cell list to a sparse matrix where the (i, j)th element is 1 if value i encodes cell j in frame z.
-   * @param z Frame to generate cell array for.
-   * @returns Cell matrix where the (i, j)th element is 1 if value i encodes cell j in frame z and 0 otherwise
+  /** Converts the cell list to a sparse matrix where the (i, j)th element is 1 if value i encodes cell j at time t.
+   * @param t Time to generate cell array for.
+   * @returns Cell matrix where the (i, j)th element is 1 if value i encodes cell j at time t and 0 otherwise
    */
-  getMatrix(z: number): CellMatrix {
-    // Filter to cells in current frame
-    const inFrame = this.cells.filter((o) => o.z === z);
-    // Get maximum value and cell in frame
-    const maxCell = inFrame.reduce((max, o) => Math.max(max, o.cell), 0);
-    const maxValue = inFrame.reduce((max, o) => Math.max(max, o.value), 0);
-    // Initialize matrix with zeros
+  getMatrix(t: number): CellMatrix {
+    const atT = this.cells.filter((c) => c.t === t);
+    const maxCell = atT.reduce((max, c) => Math.max(max, c.cell), 0);
+    const maxValue = atT.reduce((max, c) => Math.max(max, c.value), 0);
     const matrix: CellMatrix = new Array(maxValue + 1)
       .fill(0)
       .map(() => new Array(maxCell + 1).fill(0));
-    // Set entries
-    for (const c of inFrame) {
+    for (const c of atT) {
       const { value, cell } = c;
       matrix[value][cell] = 1;
     }
     return matrix;
   }
 
-  /** Returns the frame a cell is present in.
-   * @param cell Cell to get frames for.
-   * @returns List of frames the cell is present in.
+  /** Returns times the cell is present in.
+   * @param {number} cell Cell to get times for.
+   * @returns List of times the cell is present in.
    */
-  getFrames(cell: number) {
-    let frames = this.cells.filter((o) => o.cell === cell).map((o) => o.z);
-    frames = [...new Set(frames)];
-    frames.sort((a, b) => a - b);
-    return frames;
+  getTimes(cell: number) {
+    let t = this.cells.filter((c) => c.cell === cell).map((c) => c.t);
+    t = [...new Set(t)];
+    t.sort((a, b) => a - b);
+    return t;
   }
 
-  /** Returns the cells present in a frame.
-   * @param frame Frame to get cells in.
-   * @returns List of cells in the frame
+  /** Returns the cells present at a time.
+   * @param {number} t Time to get cells in.
+   * @returns List of cells at time t
    */
-  getCells(z: number) {
-    let cells = this.cells.filter((o) => o.z === z).map((o) => o.cell);
+  getCells(t: number) {
+    let cells = this.cells.filter((c) => c.t === t).map((o) => o.cell);
     cells = [...new Set(cells)];
     cells.sort((a, b) => a - b);
     return cells;
   }
 
-  getCellsForValue(value: number, z: number) {
-    let cells = this.cells.filter((o) => o.z === z && o.value === value).map((o) => o.cell);
+  /** Returns the cells that a value encodes at time t.
+   * @param {number} value Value in segmentation image
+   * @param {number} t Time to get cells in.
+   * @returns List of cells
+   */
+  getCellsForValue(value: number, t: number) {
+    let cells = this.cells
+      .filter((cell) => cell.t === t && cell.value === value)
+      .map((cell) => cell.cell);
     cells = [...new Set(cells)];
     cells.sort((a, b) => a - b);
     return cells;
   }
 
   getNewCell() {
-    return this.cells.reduce((max, o) => Math.max(max, o.cell), 0) + 1;
+    return this.cells.reduce((max, cell) => Math.max(max, cell.cell), 0) + 1;
   }
 }
 

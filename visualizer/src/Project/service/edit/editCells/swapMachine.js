@@ -19,28 +19,38 @@ function createSwapMachine(context) {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
         mouseup: [
+          { cond: 'noneSelected', actions: 'select' },
           { cond: 'shift', actions: 'setSwapCell' },
           { cond: 'onSwapCell', actions: 'swap' },
           { cond: 'onSelected', actions: 'swap' },
           { actions: 'setSwapCell' },
         ],
+        ENTER: { cond: 'haveCells', actions: 'swap' },
         EXIT: { actions: 'resetSwapCell' },
       },
     },
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
+        noneSelected: (ctx) => !ctx.selected,
         onSwapCell: (ctx) => ctx.hovering.includes(ctx.swapCell),
         onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
+        haveCells: (ctx) => !!ctx.replaceCell && !!ctx.selected,
       },
       actions: {
-        setSelected: assign({ selected: (_, evt) => evt.selected }),
+        select: send('SELECT', { to: 'select' }),
+        setSelected: assign({
+          selected: (_, evt) => evt.selected,
+          swapCell: (ctx, evt) => (evt.selected === ctx.swapCell ? null : ctx.swapCell),
+        }),
         resetSwapCell: assign({ swapCell: null }),
         setSwapCell: assign({
           swapCell: (ctx) => {
-            const { hovering, swapCell } = ctx;
+            const { hovering, swapCell, selected } = ctx;
             const i = hovering.indexOf(swapCell);
-            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
+            const next = i + 1 < hovering.length ? hovering[i + 1] : hovering[0];
+            const nextNext = i + 2 < hovering.length ? hovering[i + 2] : swapCell;
+            return next === selected ? nextNext : next;
           },
         }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),

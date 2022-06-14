@@ -1,9 +1,8 @@
 import { useSelector } from '@xstate/react';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useAlphaKernelCanvas, useCanvas, useThreshold } from '../../ProjectContext';
+import { useAlphaGpu, useCanvas, useThreshold } from '../../ProjectContext';
 
-const ThresholdCanvas = ({ setCanvases }) => {
+const ThresholdCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -14,11 +13,10 @@ const ThresholdCanvas = ({ setCanvases }) => {
   const [x2, y2] = useSelector(threshold, (state) => state.context.firstPoint);
   const show = useSelector(threshold, (state) => state.matches('dragging'));
 
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       `function (x1, y1, x2, y2) {
         const x = this.thread.x;
@@ -44,26 +42,25 @@ const ThresholdCanvas = ({ setCanvases }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [kernelCanvas, width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
+    const kernel = kernelRef.current;
     if (show) {
       // Compute threshold box with the kernel
-      kernelRef.current(x1, y1, x2, y2);
+      kernel(x1, y1, x2, y2);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
+      createImageBitmap(kernel.canvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
+      });
     } else {
       // Remove this component's canvas from the parent canvas
-      setCanvases((canvases) => {
-        delete canvases['tool'];
-        return { ...canvases };
+      setBitmaps((bitmaps) => {
+        const { tool, ...rest } = bitmaps;
+        return rest;
       });
     }
-  }, [setCanvases, show, x1, y1, x2, y2, kernelCanvas]);
+  }, [setBitmaps, show, x1, y1, x2, y2]);
 
   return null;
 };

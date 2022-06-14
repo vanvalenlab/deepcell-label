@@ -1,4 +1,6 @@
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
+import { GPU } from 'gpu.js';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 export const Context = createContext();
@@ -34,7 +36,7 @@ export function useHovering() {
  * When these tools are not in use, returns null instead.
  */
 export function useOtherSelectedCell() {
-  const segment = useSegment();
+  const segment = useEditSegment();
   const segmentTool = useSelector(segment, (state) => state.context.tool);
 
   const editCells = useEditCells();
@@ -88,25 +90,24 @@ export function useSpots() {
   return spots;
 }
 
-export function useLineage() {
+export function useDivisions() {
   const project = useProject();
-  const lineage = useSelector(project, (state) => state.context.lineageRef);
-  return lineage;
+  const divisions = useSelector(project, (state) => state.context.divisionsRef);
+  return divisions;
 }
 
-const emptyDivision = {
-  parent: null,
-  daughters: [],
-  divisionFrame: null,
-  parentDivisionFrame: null,
-  frames: [],
-};
+/** Returns the divisions where the cell is a parent if any. */
+export function useParentDivisions(cell) {
+  const divisionsMachine = useDivisions();
+  const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
+  return divisions.filter((d) => d.parent === cell);
+}
 
-export function useDivision(label) {
-  const lineageMachine = useLineage();
-  const lineage = useSelector(lineageMachine, (state) => state.context.lineage);
-  const division = lineage?.[label] ?? emptyDivision;
-  return division;
+/** Returns the divisions where the cell is a daughter if any. */
+export function useDaughterDivisions(cell) {
+  const divisionsMachine = useDivisions();
+  const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
+  return divisions.filter((d) => d.daughters.includes(cell));
 }
 
 export function useArrays() {
@@ -121,13 +122,13 @@ export function useSelect() {
   return select;
 }
 
-export function useEditLineage() {
+export function useEditDivisions() {
   const project = useProject();
-  const editLineage = useSelector(project, (state) => {
+  const editDivisions = useSelector(project, (state) => {
     const labelMode = state.context.toolRef;
-    return labelMode.state.context.editLineageRef;
+    return labelMode.state.context.editDivisionsRef;
   });
-  return editLineage;
+  return editDivisions;
 }
 
 export function useEditCells() {
@@ -260,7 +261,7 @@ export function useLabelMode() {
   return labelMode;
 }
 
-export function useSegment() {
+export function useEditSegment() {
   const project = useProject();
   const segment = useSelector(project, (state) => {
     const tool = state.context.toolRef;
@@ -346,8 +347,8 @@ function rgbToHex(rgb) {
 }
 
 export function useHexColormap() {
-  const labels = useCells();
-  const colormap = useSelector(labels, (state) => state.context.colormap);
+  const cells = useCells();
+  const colormap = useSelector(cells, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
 }
 
@@ -355,41 +356,39 @@ const gl2 = !!document.createElement('canvas').getContext('webgl2');
 const gl = !!document.createElement('canvas').getContext('webgl');
 
 /** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
-export function useAlphaKernelCanvas() {
+const alphaKernelCanvas = document.createElement('canvas');
+if (gl2) {
+  alphaKernelCanvas.getContext('webgl2', { premultipliedAlpha: false });
+} else if (gl) {
+  alphaKernelCanvas.getContext('webgl', { premultipliedAlpha: false });
+}
+const alphaGpu = new GPU({ canvas: alphaKernelCanvas });
+
+export function useAlphaGpu() {
   const project = useProject();
   const width = useSelector(useCanvas(), (state) => state.context.width);
   const height = useSelector(useCanvas(), (state) => state.context.height);
-  const [canvas, setCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    if (gl2) {
-      canvas.getContext('webgl2', { premultipliedAlpha: false });
-    } else if (gl) {
-      canvas.getContext('webgl', { premultipliedAlpha: false });
-    }
-    setCanvas(canvas);
+    alphaKernelCanvas.width = width;
+    alphaKernelCanvas.height = height;
   }, [project, width, height]);
 
-  return canvas;
+  return alphaGpu;
 }
 
 /** Creates a canvas with the same dimensions as the project. */
 export function usePixelatedCanvas() {
-  const [canvas, setCanvas] = useState(document.createElement('canvas'));
+  const [canvas] = useState(document.createElement('canvas'));
 
   const canvasMachine = useCanvas();
   const width = useSelector(canvasMachine, (state) => state.context.width);
   const height = useSelector(canvasMachine, (state) => state.context.height);
 
   useEffect(() => {
-    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    setCanvas(canvas);
-  }, [height, width]);
+  }, [canvas, height, width]);
 
   return canvas;
 }
@@ -399,9 +398,11 @@ export function useFullResolutionCanvas() {
   const [canvas] = useState(document.createElement('canvas'));
 
   const canvasMachine = useCanvas();
-  const sw = useSelector(canvasMachine, (state) => state.context.width);
-  const sh = useSelector(canvasMachine, (state) => state.context.height);
-  const scale = useSelector(canvasMachine, (state) => state.context.scale);
+  const [sw, sh, scale] = useSelector(
+    canvasMachine,
+    (state) => [state.context.width, state.context.height, state.context.scale],
+    equal
+  );
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 

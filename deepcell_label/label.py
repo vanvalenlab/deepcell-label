@@ -114,6 +114,9 @@ class Edit(object):
         f = io.BytesIO()
         with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr('labeled.dat', self.labels.tobytes())
+            # Remove cell labels that are not in the segmentation
+            values = np.unique(self.labels)
+            self.cells = list(filter(lambda c: c['value'] in values, self.cells))
             zf.writestr('cells.json', json.dumps(self.cells))
         f.seek(0)
         self.response_zip = f
@@ -143,12 +146,13 @@ class Edit(object):
         values = set(map(lambda c: c['value'], self.cells))
         for cell in cells:
             values = values & set(self.get_values(cell))
-        if len(values) == 0:
-            value = self.new_value
-            for cell in cells:
-                self.cells.append({'value': value, 'cell': cell})
-            return value
-        return values.pop()
+        for value in values:
+            if set(self.get_cells(value)) == set(cells):
+                return value
+        value = self.new_value
+        for cell in cells:
+            self.cells.append({'value': value, 'cell': cell})
+        return value
 
     def get_mask(self, cell):
         """
@@ -262,20 +266,12 @@ class Edit(object):
             x (int): x coordinate of region to flood
             y (int): y coordinate of region to flood
         """
-        if background == 0:
-            mask = self.get_mask(background)
-            # Lower connectivity helps prevent flooding whole image
-            flooded = flood(mask, (y, x), connectivity=1)
-            self.add_mask(flooded, foreground)
-        else:
-            mask = self.get_mask(background)
-            flooded = flood(mask, (y, x), connectivity=2) & mask
-            self.remove_mask(flooded, background)
-            self.add_mask(flooded, foreground)
+        mask = self.get_mask(background)
+        flooded = flood(mask, (y, x), connectivity=2 if background != 0 else 1)
+        self.add_mask(flooded, foreground)
 
-    def action_watershed(self, cell, x1, y1, x2, y2):
+    def action_watershed(self, cell, new_cell, x1, y1, x2, y2):
         """Use watershed to segment different objects"""
-        new_cell = self.new_cell
         # Create markers for to seed watershed labels
         markers = np.zeros(self.labels.shape)
         markers[y1, x1] = cell

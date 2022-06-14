@@ -2,7 +2,9 @@ import { useSelector } from '@xstate/react';
 import { useSwap } from '../../ProjectContext';
 import OutlineCellCanvas from './OutlineCellCanvas';
 
-function SwapCanvas({ setCanvases }) {
+const red = [1, 0, 0, 1];
+
+function SwapCanvas({ setBitmaps }) {
   const swap = useSwap();
   const cell = useSelector(swap, (state) => state.context.swapCell);
 
@@ -10,7 +12,7 @@ function SwapCanvas({ setCanvases }) {
     return null;
   }
 
-  return <OutlineCellCanvas setCanvases={setCanvases} cell={cell} />;
+  return <OutlineCellCanvas setBitmaps={setBitmaps} cell={cell} color={red} />;
 }
 
 export default SwapCanvas;

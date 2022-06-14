@@ -4,7 +4,7 @@ import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useArrays, useCanvas, useEditing } from '../ProjectContext';
-import ComposeCanvas from './ComposeCanvases';
+import ComposeCanvas from './ComposeCanvas';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
 import RawCanvas from './RawCanvas';
@@ -65,10 +65,10 @@ function Canvas() {
     };
   }, []);
 
-  const [canvases, setCanvases] = useState([]);
+  const [bitmaps, setBitmaps] = useState([]);
 
   const arrays = useArrays();
-  const loading = useSelector(arrays, (state) => state.matches('waiting'));
+  const loading = useSelector(arrays, (state) => state.matches('setUp'));
 
   return (
     <Box
@@ -89,14 +89,14 @@ function Canvas() {
         <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />
       ) : (
         <>
-          <ComposeCanvas canvases={canvases} />
-          <RawCanvas setCanvases={setCanvases} />
-          <LabeledCanvas setCanvases={setCanvases} />
-          <OutlineCanvas setCanvases={setCanvases} />
+          <ComposeCanvas bitmaps={bitmaps} />
+          <RawCanvas setBitmaps={setBitmaps} />
+          <LabeledCanvas setBitmaps={setBitmaps} />
+          <OutlineCanvas setBitmaps={setBitmaps} />
           {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && (
-            <SpotsCanvas setCanvases={setCanvases} />
+            <SpotsCanvas setBitmaps={setBitmaps} />
           )}
-          {editing && <ToolCanvas setCanvases={setCanvases} />}
+          {editing && <ToolCanvas setBitmaps={setBitmaps} />}
         </>
       )}
     </Box>

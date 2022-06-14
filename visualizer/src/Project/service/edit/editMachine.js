@@ -5,7 +5,7 @@ import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
 import createEditCellsMachine from './editCells';
-import createEditLineageMachine from './editLineageMachine';
+import createEditDivisionsMachine from './editDivisionsMachine';
 import createEditSegmentMachine from './segment';
 
 const createEditMachine = ({ eventBuses, undoRef }) =>
@@ -17,7 +17,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         eventBuses,
         undoRef,
         editSegmentRef: null,
-        editLineageRef: null,
+        editDivisionsRef: null,
         editCellsRef: null,
       },
       invoke: [
@@ -28,17 +28,20 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         { src: fromEventBus('tool', () => eventBuses.select, 'SELECTED') },
         { src: fromEventBus('tool', () => eventBuses.load, 'LOADED') },
       ],
-      initial: 'loading',
-      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
+      initial: 'setUp',
       states: {
+        setUp: {
+          entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
+          always: 'loading',
+        },
         loading: {
           on: {
-            LOADED: [{ cond: 'hasLineage', target: 'editLineage' }, { target: 'editCells' }],
+            LOADED: 'checkTool',
           },
         },
         checkTool: {
           always: [
-            { cond: ({ tool }) => tool === 'editLineage', target: 'editLineage' },
+            { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
             { cond: ({ tool }) => tool === 'editCells', target: 'editCells' },
             { target: 'editSegment' },
           ],
@@ -50,14 +53,14 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
             mousedown: { actions: forwardTo('editSegment') },
           },
         },
-        editLineage: {
+        editDivisions: {
           entry: [
-            assign({ tool: 'editLineage' }),
+            assign({ tool: 'editDivisions' }),
             send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
           ],
           on: {
-            mouseup: { actions: forwardTo('editLineage') },
-            mousedown: { actions: forwardTo('editLineage') },
+            mouseup: { actions: forwardTo('editDivisions') },
+            mousedown: { actions: forwardTo('editDivisions') },
           },
         },
         editCells: {
@@ -76,22 +79,19 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
         EDIT_SEGMENT: 'editSegment',
-        EDIT_LINEAGE: 'editLineage',
+        EDIT_DIVISIONS: 'editDivisions',
         EDIT_CELLS: 'editCells',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
       },
     },
     {
-      guards: {
-        hasLineage: (ctx, evt) => evt.lineage !== null && evt.lineage !== undefined,
-      },
       actions: {
         save: respond(({ tool }) => ({ type: 'RESTORE', tool })),
         restore: assign((_, { tool }) => ({ tool })),
         spawnTools: assign((context) => ({
           editSegmentRef: spawn(createEditSegmentMachine(context), 'editSegment'),
-          editLineageRef: spawn(createEditLineageMachine(context), 'editLineage'),
+          editDivisionsRef: spawn(createEditDivisionsMachine(context), 'editDivisions'),
           editCellsRef: spawn(createEditCellsMachine(context), 'editCells'),
         })),
       },

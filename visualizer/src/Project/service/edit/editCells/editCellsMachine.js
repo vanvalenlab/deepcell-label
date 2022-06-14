@@ -11,15 +11,21 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
   return Machine(
     {
       id: 'editCells',
-      entry: [send('REGISTER_UI', { to: undoRef })],
+      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnTools'],
       context: {
         tool: 'select',
         tools: null,
         eventBuses,
       },
-      entry: 'spawnTools',
       on: {
-        SET_TOOL: { actions: 'setTool' },
+        SET_TOOL: [
+          { cond: 'sameTool', actions: send('ENTER') },
+          {
+            actions: ['setTool', send('ENTER')],
+          },
+        ],
+        ENTER: { actions: 'forwardToTool' },
+        EXIT: { actions: 'forwardToTool' },
         // from canvas event bus (forwarded from parent)
         mousedown: { actions: 'forwardToTool' },
         mouseup: { actions: 'forwardToTool' },
@@ -29,6 +35,9 @@ function createEditCellsMachine({ eventBuses, undoRef }) {
       },
     },
     {
+      guards: {
+        sameTool: (ctx, evt) => ctx.tool === evt.tool,
+      },
       actions: {
         setTool: pure((ctx, evt) => [
           send('EXIT', { to: ctx.tools[ctx.tool] }),

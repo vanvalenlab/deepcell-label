@@ -11,7 +11,7 @@ const hexToRGB = (hex) => {
   return [r, g, b];
 };
 
-export const ChannelCanvas = ({ layer, setCanvases }) => {
+export const ChannelCanvas = ({ layer, setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -23,13 +23,10 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const channel = useSelector(layer, (state) => state.context.channel);
 
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
+  const t = useSelector(image, (state) => state.context.t);
 
   const arrays = useArrays();
-  const raw = useSelector(
-    arrays,
-    (state) => state.context.raw && state.context.raw[channel][frame]
-  );
+  const raw = useSelector(arrays, (state) => state.context.raw && state.context.raw[channel][t]);
 
   const kernelRef = useRef();
   const canvasRef = useRef();
@@ -68,18 +65,20 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
       // Rerender the canvas for this component
       kernelRef.current(raw, on, hexToRGB(color), min, max);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
+      createImageBitmap(canvasRef.current).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, [layerIndex]: bitmap }));
+      });
     }
-  }, [raw, on, color, min, max, width, height, layerIndex, setCanvases]);
+  }, [raw, on, color, min, max, width, height, layerIndex, setBitmaps]);
 
-  // Remove canvas from canvases when layer is removed
+  // Remove bitmap when layer is removed
   useEffect(() => {
     return () =>
-      setCanvases((prevCanvases) => {
-        delete prevCanvases[layerIndex];
-        return { ...prevCanvases };
+      setBitmaps((bitmaps) => {
+        const { [layerIndex]: removed, ...rest } = bitmaps;
+        return rest;
       });
-  }, [setCanvases, layerIndex]);
+  }, [setBitmaps, layerIndex]);
 
   return null;
 };

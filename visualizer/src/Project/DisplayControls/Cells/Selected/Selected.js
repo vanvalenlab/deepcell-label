@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
-import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useSelect } from '../../../ProjectContext';
 import Cell from '../Cell';
@@ -16,10 +15,28 @@ function Selected() {
   const cell = useSelector(select, (state) => state.context.selected);
 
   useEffect(() => {
-    bind('esc', () => select.send('RESET'));
-    bind('n', () => select.send('SELECT_NEW'));
-    bind('[', () => select.send('SELECT_PREVIOUS'));
-    bind(']', () => select.send('SELECT_NEXT'));
+    const listener = (e) => {
+      switch (e.key) {
+        case 'Escape':
+          select.send('RESET');
+          break;
+        case 'n':
+          select.send('SELECT_NEW');
+          break;
+        case '[':
+          select.send('SELECT_PREVIOUS');
+          break;
+        case ']':
+          select.send('SELECT_NEXT');
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener('keydown', listener);
+    return () => {
+      window.removeEventListener('keydown', listener);
+    };
   }, [select]);
 
   const [showButtons, setShowButtons] = useState(false);

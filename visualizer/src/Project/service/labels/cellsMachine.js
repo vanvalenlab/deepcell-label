@@ -5,6 +5,7 @@ import { assign, Machine, send } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import Cells from '../../cells';
 import { fromEventBus } from '../eventBus';
+import { combine } from './utils';
 
 const createCellsMachine = ({ eventBuses, undoRef }) =>
   Machine(
@@ -15,28 +16,23 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         { id: 'eventBus', src: fromEventBus('cells', () => eventBuses.cells) },
         { src: fromEventBus('cells', () => eventBuses.arrays, 'EDITED_SEGMENT') },
         { src: fromEventBus('cells', () => eventBuses.load, 'LOADED') },
-        { src: fromEventBus('cells', () => eventBuses.image, 'SET_FRAME') },
+        { src: fromEventBus('cells', () => eventBuses.image, 'SET_T') },
       ],
       context: {
         cells: null, // Cells object
-        frame: 0,
+        t: 0,
         colormap: [
           [0, 0, 0, 1],
           ...colormap({ colormap: 'viridis', format: 'rgba' }),
           [255, 255, 255, 1],
         ],
-        frameMode: 'one',
+        mode: 'one',
         undoRef,
         historyRef: null,
       },
       on: {
-        SET_FRAME_MODE: { actions: 'setFrameMode' },
-        SET_FRAME: { actions: 'setFrame' },
-        // TODO: right now changes to segment & cells are stored together in segment history
-        // as we generalize to dependencies between labels, each may want to store its own changes)
-        EDITED_SEGMENT: {
-          actions: [(c, e) => console.log(c, e), 'updateCells'],
-        },
+        SET_T: { actions: 'setT' },
+        EDITED_SEGMENT: { actions: 'updateCells' },
         RESTORE: { actions: ['setCells', 'setColormap', 'sendCells'] },
       },
       initial: 'loading',
@@ -76,14 +72,17 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           onDone: { target: 'idle', actions: ['setColormap', 'sendCells'] },
         },
         idle: {
+          entry: ['setColormap', 'sendCells'],
           on: {
             REPLACE: { actions: 'replace', target: 'editing' },
             DELETE: { actions: 'delete', target: 'editing' },
             SWAP: { actions: 'swap', target: 'editing' },
-            NEW: { actions: 'new', target: 'editing' },
+            NEW_CELL: { actions: 'newCell' }, // sends REPLACE event
+            SET_MODE: { actions: 'setMode' },
           },
         },
         editing: {
+          entry: 'setEditEvent',
           type: 'parallel',
           states: {
             getEdit: {
@@ -91,20 +90,20 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
               initial: 'idle',
               states: {
                 idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
-                done: { type: 'final' },
+                done: { entry: 'sendEditEvent', type: 'final' },
               },
             },
             getEdits: {
               initial: 'editing',
               states: {
-                editing: { on: { EDITED_CELLS: { target: 'done', actions: 'setEdited' } } },
+                editing: { on: { EDITED_CELLS: { target: 'done', actions: 'setEditedCells' } } },
                 done: { type: 'final' },
               },
             },
           },
           onDone: {
             target: 'idle',
-            actions: ['sendEdited', 'useEditedCells', 'sendSnapshot', 'setColormap', 'sendCells'],
+            actions: 'finishEditing',
           },
         },
       },
@@ -113,25 +112,41 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
       actions: {
         setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
         setEdit: assign({ edit: (_, evt) => evt.edit }),
-        setEdited: assign({ edited: (_, evt) => evt }),
-        useEditedCells: assign({ cells: (ctx) => ctx.edited.cells }),
-        sendSnapshot: send(
-          (ctx) => ({
-            type: 'SNAPSHOT',
-            before: { type: 'RESTORE', cells: ctx.cells },
-            after: { type: 'RESTORE', cells: ctx.edited.cells },
-            edit: ctx.edit,
-          }),
-          { to: (ctx) => ctx.historyRef }
-        ),
-        sendEdited: send((ctx) => ({ ...ctx.edited, edit: ctx.edit }), { to: 'eventBus' }),
-        setFrameMode: assign({ frameMode: (_, evt) => evt.frameMode }),
-        setFrame: assign({ frame: (_, evt) => evt.frame }),
+        setEditEvent: assign({ editEvent: (ctx, evt) => ({ ...evt, t: ctx.t }) }),
+        sendEditEvent: send((ctx) => ({ ...ctx.editEvent, edit: ctx.edit, mode: ctx.mode }), {
+          to: 'eventBus',
+        }),
+        setEditedCells: assign({
+          editedCells: (ctx, evt) => {
+            const cells = ctx.cells.cells;
+            const editedCells = evt.cells.cells;
+            const { t, mode } = ctx;
+            const combinedCells = combine(cells, editedCells, t, mode);
+            return new Cells(combinedCells);
+          },
+        }),
+        finishEditing: pure((ctx, evt) => {
+          const { edit, editedCells, cells, historyRef } = ctx;
+          return [
+            assign({ cells: (ctx) => ctx.editedCells }),
+            send(
+              {
+                type: 'SNAPSHOT',
+                before: { type: 'RESTORE', cells },
+                after: { type: 'RESTORE', cells: editedCells },
+                edit,
+              },
+              { to: historyRef }
+            ),
+          ];
+        }),
+        setMode: assign({ mode: (_, evt) => evt.mode }),
+        setT: assign({ t: (_, evt) => evt.t }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = new Cells([
-            ...ctx.cells.cells.filter((o) => o.z !== evt.frame),
-            ...evt.cells.map((o) => ({ ...o, z: evt.frame })),
+            ...ctx.cells.cells.filter((cell) => cell.t !== evt.t),
+            ...evt.cells.map((cell) => ({ ...cell, t: evt.t })),
           ]);
           const newColormap = [
             [0, 0, 0, 1],
@@ -152,143 +167,44 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             send({ type: 'CELLS', cells }, { to: 'eventBus' }),
           ];
         }),
-        sendCells: send(
-          (ctx, evt) => ({
-            type: 'CELLS',
-            cells: ctx.cells,
-          }),
-          { to: 'eventBus' }
+        sendCells: send((ctx) => ({ type: 'CELLS', cells: ctx.cells }), { to: 'eventBus' }),
+        // needs to be pure because assign events have priority
+        // NOTE: this is changing in xstate v5, can revert to assign when that's released
+        setColormap: pure((ctx) =>
+          assign({
+            colormap: [
+              [0, 0, 0, 1],
+              ...colormap({
+                colormap: 'viridis',
+                nshades: Math.max(9, ctx.cells.getNewCell() - 1),
+                format: 'rgba',
+              }),
+              [255, 255, 255, 1],
+            ],
+          })
         ),
-        setColormap: assign({
-          colormap: (ctx, evt) => [
-            [0, 0, 0, 1],
-            ...colormap({
-              colormap: 'viridis',
-              nshades: Math.max(9, ctx.cells.getNewCell() - 1),
-              format: 'rgba',
-            }),
-            [255, 255, 255, 1],
-          ],
-        }),
         replace: send((ctx, evt) => {
-          let cells;
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.b && o.z === ctx.frame ? { ...o, cell: evt.a } : o
-              );
-              break;
-            case 'past':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.b && o.z <= ctx.frame ? { ...o, cell: evt.a } : o
-              );
-              break;
-            case 'future':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.b && o.z >= ctx.frame ? { ...o, cell: evt.a } : o
-              );
-              break;
-            case 'all':
-              cells = ctx.cells.cells.map((o) => (o.cell === evt.b ? { ...o, cell: evt.a } : o));
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
+          const { a, b } = evt;
+          const cells = new Cells(
+            ctx.cells.cells.map((c) => (c.cell === b ? { ...c, cell: a } : c))
+          );
+          return { type: 'EDITED_CELLS', cells };
         }),
         delete: send((ctx, evt) => {
-          let cells;
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.filter((o) => o.z !== ctx.frame || o.cell !== evt.cell);
-              break;
-            case 'past':
-              cells = ctx.cells.cells.filter((o) => o.z > ctx.frame || o.cell !== evt.cell);
-              break;
-            case 'future':
-              cells = ctx.cells.cells.filter((o) => o.z < ctx.frame || o.cell !== evt.cell);
-              break;
-            case 'all':
-              cells = ctx.cells.cells.filter((o) => o.cell !== evt.cell);
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
+          const { cell } = evt;
+          const cells = new Cells(ctx.cells.cells.filter((c) => c.cell !== cell));
+          return { type: 'EDITED_CELLS', cells };
         }),
         swap: send((ctx, evt) => {
-          let cells;
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a && o.z === ctx.frame
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b && o.z === ctx.frame
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            case 'past':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a && o.z <= ctx.frame
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b && o.z <= ctx.frame
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            case 'future':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a && o.z >= ctx.frame
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b && o.z >= ctx.frame
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            case 'all':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.a
-                  ? { ...o, cell: evt.b }
-                  : o.cell === evt.b
-                  ? { ...o, cell: evt.a }
-                  : o
-              );
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
+          const { a, b } = evt;
+          const cells = new Cells(
+            ctx.cells.cells.map((c) =>
+              c.cell === a ? { ...c, cell: b } : c.cell === b ? { ...c, cell: a } : c
+            )
+          );
+          return { type: 'EDITED_CELLS', cells };
         }),
-        new: send((ctx, evt) => {
-          let cells;
-          const newCell = ctx.cells.getNewCell();
-          switch (ctx.frameMode) {
-            case 'one':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell && o.z === ctx.frame ? { ...o, cell: newCell } : o
-              );
-              break;
-            case 'past':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell && o.z <= ctx.frame ? { ...o, cell: newCell } : o
-              );
-              break;
-            case 'future':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell && o.z >= ctx.frame ? { ...o, cell: newCell } : o
-              );
-              break;
-            case 'all':
-              cells = ctx.cells.cells.map((o) =>
-                o.cell === evt.cell ? { ...o, cell: newCell } : o
-              );
-              break;
-            default:
-              cells = ctx.cells.cells;
-          }
-          return { type: 'EDITED_CELLS', cells: new Cells(cells) };
-        }),
+        newCell: send((ctx, evt) => ({ type: 'REPLACE', a: ctx.cells.getNewCell(), b: evt.cell })),
       },
     }
   );

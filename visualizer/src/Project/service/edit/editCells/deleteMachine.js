@@ -22,11 +22,13 @@ function createDeleteMachine(context) {
           { cond: 'onSelected', actions: 'delete' },
           { actions: 'selectCell' },
         ],
+        ENTER: { cond: 'haveSelected', actions: 'delete' },
       },
     },
     {
       guards: {
         shift: (_, event) => event.shiftKey,
+        haveSelected: (ctx) => !!ctx.selected,
         onSelected: (ctx) => ctx.hovering.includes(ctx.selected),
       },
       actions: {

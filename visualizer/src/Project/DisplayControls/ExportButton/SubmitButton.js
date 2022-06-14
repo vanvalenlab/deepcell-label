@@ -19,7 +19,7 @@ function SubmitButton() {
       sx={{ position: 'relative' }}
     >
       Submit
-      {true && (
+      {uploading && (
         <CircularProgress
           sx={{
             color: green[500],

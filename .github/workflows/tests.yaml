@@ -35,7 +35,7 @@ jobs:
           pip install -r requirements-test.txt
 
       - name: Cypress run
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v4
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -46,8 +46,8 @@ jobs:
             npm run cypress:backend
           wait-on: "http://localhost:3000, http://localhost:5000/health"
           spec: |
-            cypress/integration/label.spec.js
-            cypress/integration/caliban.spec.js
+            cypress/e2e/label.cy.js
+            cypress/e2e/caliban.cy.js
 
       - name: Cypress Coveralls
         uses: coverallsapp/github-action@master
@@ -89,7 +89,7 @@ jobs:
           pip install -r requirements-test.txt
 
       - name: Cypress Spots
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v4
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -100,7 +100,7 @@ jobs:
             npm run cypress:frontend
             npm run cypress:backend
           wait-on: "http://localhost:3000, http://localhost:5000/health"
-          spec: cypress/integration/spots.spec.js
+          spec: cypress/e2e/spots.cy.js
 
       - name: Spots Viz Coveralls
         uses: coverallsapp/github-action@master

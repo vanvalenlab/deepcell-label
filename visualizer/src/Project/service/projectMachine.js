@@ -11,7 +11,7 @@ import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createArraysMachine from './labels/arraysMachine';
 import createCellsMachine from './labels/cellsMachine';
-import createLineageMachine from './labels/lineageMachine';
+import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
@@ -29,16 +29,17 @@ const createProjectMachine = (projectId) =>
           // UI state
           canvas: new EventBus('canvas'), // COORDINATES, mouseup, mousedown
           hovering: new EventBus('hovering'), // HOVERING
-          image: new EventBus('image'), // FRAME (and FEATURE and CHANNEL?)
-          labeled: new EventBus('labeled'), // FEATURE (?)
-          raw: new EventBus('raw'), // CHANNEL (?)
-          select: new EventBus('select'), // SELECTED // also receives GET_SELECTED and responds with SELECTED
+          image: new EventBus('image'), // SET_T
+          labeled: new EventBus('labeled'), // SET_FEATURE
+          raw: new EventBus('raw'), // SET_CHANNEL
+          select: new EventBus('select'), // SELECTED, receives GET_SELECTED and responds with SELECTED
           // EDIT events and label changes
           // TODO: rename to segment and separate raw arrays
           arrays: new EventBus('arrays'), // also receives GET_ARRAYS and responds with ARRAYS
           cells: new EventBus('cells'),
+          divisions: new EventBus('divisions'),
+          spots: new EventBus('spots'),
         },
-        track: false,
       },
       invoke: {
         id: 'loadEventBus',
@@ -69,9 +70,7 @@ const createProjectMachine = (projectId) =>
             LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
           },
         },
-        idle: {
-          entry: 'setTrack',
-        },
+        idle: {},
       },
     },
     {
@@ -90,7 +89,7 @@ const createProjectMachine = (projectId) =>
           actors.arraysRef = spawn(createArraysMachine(ctx), 'arrays');
           actors.exportRef = spawn(createExportMachine(ctx), 'export');
           actors.selectRef = spawn(createSelectMachine(ctx), 'select');
-          actors.lineageRef = spawn(createLineageMachine(ctx), 'lineage');
+          actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');
           actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
           actors.toolRef = spawn(createToolMachine(ctx), 'tool');
           if (process.env.REACT_APP_SPOTS_VISUALIZER === 'true') {
@@ -105,17 +104,13 @@ const createProjectMachine = (projectId) =>
               type: 'DIMENSIONS',
               numChannels: raw.length,
               numFeatures: labeled.length,
-              numFrames: raw[0].length,
+              duration: raw[0].length,
               height: raw[0][0].length,
               width: raw[0][0][0].length,
             };
           },
           { to: 'loadEventBus' }
         ),
-        // TODO: dynamically add track labels and show UI
-        setTrack: assign({
-          track: (ctx, evt) => evt.lineage !== null && evt.lineage !== undefined,
-        }),
       },
     }
   );

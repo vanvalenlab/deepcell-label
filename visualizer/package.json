@@ -82,16 +82,17 @@
     ]
   },
   "devDependencies": {
-    "@cypress/code-coverage": "^3.9.12",
+    "@cypress/code-coverage": "^3.10.0",
     "@cypress/instrument-cra": "^1.4.0",
     "@testing-library/user-event": "^14.0.0-beta",
     "canvas": "^2.9.0",
-    "cypress": "^9.5.0",
+    "cypress": "^10.0.3",
     "eslint": "^8.8.0",
     "eslint-plugin-prettier": "^4.0.0",
     "fake-indexeddb": "^3.1.7",
     "prettier": "^2.3.1",
-    "prettier-plugin-organize-imports": "^2.1.0"
+    "prettier-plugin-organize-imports": "^2.1.0",
+    "worker-loader": "^3.0.8"
   },
   "husky": {
     "hooks": {

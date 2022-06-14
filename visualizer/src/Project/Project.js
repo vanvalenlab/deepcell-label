@@ -1,16 +1,16 @@
 import Box from '@mui/material/Box';
 import Canvas from './Canvas';
 import DisplayControls from './DisplayControls';
-// import Instructions from './Instructions';
-import LabelControls from './LabelControls';
+import EditControls from './EditControls';
+import Instructions from './Instructions';
 import { useEditing } from './ProjectContext';
 import ReviewControls from './ReviewControls';
 
-function Project({ review, track }) {
+function Project({ review }) {
   const editing = useEditing();
   return (
     <>
-      {/* <Instructions /> */}
+      <Instructions />
       <Box
         sx={{
           boxSizing: 'border-box',
@@ -31,7 +31,7 @@ function Project({ review, track }) {
           {review && editing && <ReviewControls />}
           <DisplayControls />
         </Box>
-        {editing && <LabelControls />}
+        {editing && <EditControls />}
         <Canvas />
       </Box>
     </>

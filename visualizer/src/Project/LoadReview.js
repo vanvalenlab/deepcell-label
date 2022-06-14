@@ -12,12 +12,11 @@ function LoadReview({ ids }) {
     const { projectId, projects } = state.context;
     return projects[projectId];
   });
-  const track = useSelector(project, (state) => state.context.track);
 
   return (
     <ReviewContext review={review}>
       <ProjectContext project={project}>
-        <Project review={true} track={track} />
+        <Project review={true} />
       </ProjectContext>
     </ReviewContext>
   );

@@ -1,3 +1,3 @@
-import Divisions from '../../LabelControls/TrackingControls/Divisions';
+import Divisions from '../../EditControls/DivisionsControls/Divisions';
 
 export default Divisions;

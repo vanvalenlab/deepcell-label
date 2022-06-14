@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
-from deepcell_label.utils import add_parent_division_frame, reformat_lineage, reshape
+from deepcell_label.utils import convert_lineage, reshape
 
 
 class Loader:
@@ -26,7 +26,7 @@ class Loader:
         self.X = None
         self.y = None
         self.spots = None
-        self.lineage = None
+        self.divisions = None
         self.cells = None
 
         self.image_file = image_file
@@ -45,7 +45,7 @@ class Loader:
         self.X = load_images(self.image_file)
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
-        self.lineage = load_lineage(self.label_file)
+        self.divisions = load_divisions(self.label_file)
         self.cells = load_cells(self.label_file)
 
         if self.y is None:
@@ -57,7 +57,7 @@ class Loader:
         self.write_images()
         self.write_segmentation()
         self.write_spots()
-        self.write_lineage()
+        self.write_divisions()
         self.write_cells()
 
     def write_images(self):
@@ -110,19 +110,19 @@ class Loader:
             buffer.seek(0)
             self.zip.writestr('spots.csv', buffer.read())
 
-    def write_lineage(self):
-        """Writes lineage to lineage.json in the output zip."""
-        self.zip.writestr('lineage.json', json.dumps(self.lineage))
+    def write_divisions(self):
+        """Writes divisions to divisions.json in the output zip."""
+        self.zip.writestr('divisions.json', json.dumps(self.divisions))
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
         if self.cells is None:
             cells = []
-            for z in range(self.y.shape[0]):
-                for value in np.unique(self.y[z]):
+            for t in range(self.y.shape[0]):
+                for value in np.unique(self.y[t]):
                     if value != 0:
                         cells.append(
-                            {'cell': int(value), 'value': int(value), 'z': int(z)}
+                            {'cell': int(value), 'value': int(value), 't': int(t)}
                         )
             self.cells = cells
         self.zip.writestr('cells.json', json.dumps(self.cells))
@@ -187,27 +187,30 @@ def load_spots(f):
         return load_zip_csv(zf)
 
 
-def load_lineage(f):
+def load_divisions(f):
     """
-    Load lineage from label file.
+    Load divisions from divisions.json in project archive
+
+    Loading from lineage.json from .trk file is supported, but deprecated.
 
     Args:
-        zf: zip file with lineage json
+        zf: zip file with divisions.json
+            or tarfile with lineage.json
 
     Returns:
-        dict or None if no json in zip
+        dict or None if divisions.json not found
     """
     f.seek(0)
-    lineage = None
+    divisions = None
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
-        lineage = load_zip_json(zf, filename='lineage.json')
+        divisions = load_zip_json(zf, filename='divisions.json')
     elif tarfile.is_tarfile(f.name):
         lineage = load_trk(f, filename='lineage.json')
-    if lineage is not None:
-        lineage = reformat_lineage(lineage)
-        lineage = add_parent_division_frame(lineage)
-        return lineage
+        divisions = convert_lineage(lineage)
+    if divisions is None:
+        return []
+    return divisions
 
 
 def load_cells(f):
@@ -282,7 +285,7 @@ def load_zip_tiffs(zf, filename):
     if len(tiffs) > 0:
         # Stack channels on last axis
         y = np.stack(tiffs, axis=-1)
-        # Add frame axis
+        # Add t axis
         if y.ndim == 3:
             y = y[np.newaxis, ...]
         return y
@@ -415,14 +418,14 @@ def load_tiff(f, axes=None):
             X = tiff.asarray(squeeze=False)
         # Reshape array
         if X.ndim == 2:
-            # Add channels and frames
+            # Add C and T axes
             return X[np.newaxis, ..., np.newaxis]
         if X.ndim == 3:
             # TODO: more general axis handling
-            if axes[0] == 'C':  # Move channels to last axis and add frame
+            if axes[0] == 'C':  # Move C to last axis and add T axis
                 X = np.moveaxis(X, 0, -1)
                 return X[np.newaxis, ...]
-            else:  # Add channels
+            else:  # Add C axis
                 return X[..., np.newaxis]
         if X.ndim == 4:
             return X
@@ -452,7 +455,7 @@ def load_png(f):
             # Create three RGB channels
             # Handles RGB, RGBA, P modes
             X = np.array(image.convert('RGB'))
-        # Add frame dimension at start
+        # Add T axis at start
         X = np.expand_dims(X, 0)
         return X
 
@@ -468,5 +471,6 @@ def load_trk(f, filename='raw.npy'):
                     array_file.seek(0)
                     return np.load(array_file)
             if filename == 'lineage.json':
-                trk_data = trks.getmember('lineage.json')
-                return json.loads(trks.extractfile(trk_data).read().decode())
+                return json.loads(
+                    trks.extractfile(trks.getmember('lineage.json')).read().decode()
+                )

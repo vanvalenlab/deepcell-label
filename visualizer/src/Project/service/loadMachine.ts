@@ -1,8 +1,8 @@
 /** Fetches data from the project storage API, including raw image data, label image data, and labels. */
 
+import { loadOmeTiff } from '@hms-dbmi/viv';
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine, sendParent } from 'xstate';
-import { loadOmeTiff } from '@hms-dbmi/viv';
 import Cells from '../cells';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
@@ -10,20 +10,10 @@ type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : nev
 
 type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
-type Spots = number[][];
-type Lineage = {
-  [cell: number]: {
-    label: number;
-    frames: number[];
-    divisionFrame: number | null;
-    parentDivisionFrame: number | null;
-    daughters: number[];
-    capped: boolean;
-    parent: number | null;
-  };
-};
+type Spots = [number, number][];
+type Divisions = { parent: number; daughters: number[]; t: number }[];
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells | Lineage | Cells;
+  [filename: string]: OmeTiff | Spots | Cells | Divisions;
 };
 
 async function parseZip(response: Response) {
@@ -42,14 +32,19 @@ async function parseZip(response: Response) {
     if (entry.filename === 'spots.csv') {
       // @ts-ignore
       const csv = await entry.getData(new zip.TextWriter());
-      const spots: Spots = csv.split('\n').map((row: string) => row.split(',').map(Number));
+      let spots: Spots = csv
+        .split('\n')
+        .map((row: string) => row.split(',').map(Number))
+        .map(([x, y]: number[]) => [x, y]); // Use only x and y columns
+      spots.shift(); // Remove header row
+      spots.pop(); // Remove last empty row from final newline
       files[entry.filename] = spots;
     }
-    if (entry.filename === 'lineage.json') {
+    if (entry.filename === 'divisions.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
-      const lineage: Lineage = JSON.parse(json);
-      files[entry.filename] = lineage;
+      const divisions: Divisions = JSON.parse(json);
+      files[entry.filename] = divisions;
     }
     if (entry.filename === 'cells.json') {
       // @ts-ignore
@@ -131,14 +126,14 @@ interface Context {
   // shape: [number, number, number, number] | null;
   width: number | null;
   height: number | null;
-  numFrames: number | null;
+  t: number | null;
   numChannels: number | null;
   numFeatures: number | null;
   raw: Uint8Array[][][] | null;
   labeled: Int32Array[][][] | null;
   labels: Cells | null;
   spots: Spots | null;
-  lineage: Lineage | null;
+  divisions: Divisions | null;
   cells: Cells | null;
 }
 
@@ -151,14 +146,14 @@ const createLoadMachine = (projectId: string) =>
         // shape: null,
         width: null,
         height: null,
-        numFrames: null,
+        t: null,
         numChannels: null,
         numFeatures: null,
         raw: null,
         labeled: null,
         labels: null,
         spots: null,
-        lineage: null,
+        divisions: null,
         cells: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
@@ -186,7 +181,7 @@ const createLoadMachine = (projectId: string) =>
             src: 'fetch project zip',
             onDone: {
               target: 'splitArrays',
-              actions: ['set spots', 'set lineage', 'set cells', 'set metadata'],
+              actions: ['set spots', 'set divisions', 'set cells', 'set metadata'],
             },
           },
         },
@@ -212,9 +207,9 @@ const createLoadMachine = (projectId: string) =>
           // @ts-ignore
           spots: (context, event) => event.data.files['spots.csv'] as Spots,
         }),
-        'set lineage': assign({
+        'set divisions': assign({
           // @ts-ignore
-          lineage: (context, event) => event.data.files['lineage.json'] as Lineage,
+          divisions: (context, event) => event.data.files['divisions.json'] as Divisions,
         }),
         'set cells': assign({
           // @ts-ignore
@@ -230,7 +225,7 @@ const createLoadMachine = (projectId: string) =>
           return {
             width: SizeX,
             height: SizeY,
-            numFrames: SizeZ,
+            t: SizeZ,
             // SizeT,
             numChannels: SizeC,
             numFeatures: labelSizeC,
@@ -245,7 +240,7 @@ const createLoadMachine = (projectId: string) =>
           raw: ctx.raw,
           labeled: ctx.labeled,
           spots: ctx.spots,
-          lineage: ctx.lineage,
+          divisions: ctx.divisions,
           cells: ctx.cells,
         })),
       },

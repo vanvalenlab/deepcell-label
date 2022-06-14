@@ -19,26 +19,36 @@ function createReplaceMachine(context) {
         SELECTED: { actions: 'setSelected' },
         HOVERING: { actions: 'setHovering' },
         mouseup: [
+          { cond: 'noneSelected', actions: 'select' },
           { cond: 'shift', actions: 'setReplaceCell' },
-          { cond: 'onReplaceCell', actions: [(c, e) => console.log(c, e), 'replace'] },
+          { cond: 'onReplaceCell', actions: 'replace' },
           { actions: 'setReplaceCell' },
         ],
+        ENTER: { cond: 'haveCells', actions: 'replace' },
         EXIT: { actions: 'resetReplaceCell' },
       },
     },
     {
       guards: {
         shift: (_, evt) => evt.shiftKey,
+        noneSelected: (ctx) => !ctx.selected,
         onReplaceCell: (ctx) => ctx.hovering.includes(ctx.replaceCell),
+        haveCells: (ctx) => !!ctx.replaceCell && !!ctx.selected,
       },
       actions: {
         resetReplaceCell: assign({ replaceCell: null }),
-        setSelected: assign({ selected: (_, evt) => evt.selected }),
+        select: send('SELECT', { to: 'select' }),
+        setSelected: assign({
+          selected: (_, evt) => evt.selected,
+          replaceCell: (ctx, evt) => (evt.selected === ctx.replaceCell ? null : ctx.replaceCell),
+        }),
         setReplaceCell: assign({
           replaceCell: (ctx) => {
-            const { hovering, replaceCell } = ctx;
+            const { hovering, replaceCell, selected } = ctx;
             const i = hovering.indexOf(replaceCell);
-            return i === -1 || i === hovering.length - 1 ? hovering[0] : hovering[i + 1];
+            const next = i + 1 < hovering.length ? hovering[i + 1] : hovering[0];
+            const nextNext = i + 2 < hovering.length ? hovering[i + 2] : replaceCell;
+            return next === selected ? nextNext : next;
           },
         }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),

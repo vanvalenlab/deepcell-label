@@ -1,13 +1,16 @@
 /** Manages spots labels. */
 
-import { assign, Machine } from 'xstate';
+import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../eventBus';
 
 function createSpotsMachine({ eventBuses }) {
   return Machine(
     {
       id: 'spots',
-      invoke: [{ src: fromEventBus('labeled', () => eventBuses.load, 'LOADED') }],
+      invoke: [
+        { src: fromEventBus('spots', () => eventBuses.load, 'LOADED') },
+        { id: 'eventBus', src: fromEventBus('spots', () => eventBuses.spots) },
+      ],
       context: {
         spots: null,
         opacity: 0.7,
@@ -30,12 +33,15 @@ function createSpotsMachine({ eventBuses }) {
             LOADED: { target: 'loaded', actions: 'setSpots' },
           },
         },
-        loaded: {},
+        loaded: {
+          entry: 'sendSpots',
+        },
       },
     },
     {
       actions: {
         setSpots: assign({ spots: (ctx, evt) => evt.spots }),
+        sendSpots: send((ctx, evt) => ({ type: 'SPOTS', spots: ctx.spots }), { to: 'eventBus' }),
         toggleShowSpots: assign({ showSpots: (ctx, evt) => !ctx.showSpots }),
         toggleOutline: assign({ outline: (ctx, evt) => !ctx.outline }),
         toggleColorSpots: assign({ colorSpots: (ctx, evt) => !ctx.colorSpots }),

@@ -16,8 +16,8 @@ const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
         numFeatures: 1,
         feature: 0,
         featureNames: ['feature 0'],
-        labelsOpacity: [0, 0.3],
-        outlineOpacity: [0.5, 1],
+        labelsOpacity: 0.3, // [0, 0.3],
+        outlineOpacity: 0.3, // [0.5, 1],
         highlight: true,
       },
       on: {

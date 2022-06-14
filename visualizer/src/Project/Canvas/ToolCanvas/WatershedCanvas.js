@@ -1,11 +1,10 @@
 import { useSelector } from '@xstate/react';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useAlphaKernelCanvas, useCanvas, useWatershed } from '../../ProjectContext';
+import { useAlphaGpu, useCanvas, useWatershed } from '../../ProjectContext';
 
 const crossColor = [255, 0, 255, 128];
 
-const WatershedCanvas = ({ setCanvases }) => {
+const WatershedCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -19,11 +18,10 @@ const WatershedCanvas = ({ setCanvases }) => {
     state.matches('clicked') ? 1 : state.matches('waiting') ? 2 : 0
   );
 
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       // TODO: research how to work around minification
       `function (x1, y1, x2, y2, color, state) {
@@ -56,26 +54,25 @@ const WatershedCanvas = ({ setCanvases }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [kernelCanvas, width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
+    const kernel = kernelRef.current;
     // Draw the watershed crosses with the kernel
-    kernelRef.current(x1, y1, x2, y2, crossColor, state);
+    kernel(x1, y1, x2, y2, crossColor, state);
     // Rerender the parent canvas
-    setCanvases((canvases) => ({ ...canvases, tool: kernelCanvas }));
-  }, [setCanvases, x1, y1, x2, y2, crossColor, kernelCanvas, width, height, state]);
+    createImageBitmap(kernel.canvas).then((bitmap) => {
+      setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
+    });
+  }, [setBitmaps, x1, y1, x2, y2, width, height, state]);
 
   useEffect(
     () => () =>
-      setCanvases((canvases) => {
-        delete canvases['tool'];
-        return { ...canvases };
+      setBitmaps((bitmaps) => {
+        const { tool, ...rest } = bitmaps;
+        return rest;
       }),
-    [setCanvases]
+    [setBitmaps]
   );
 
   return null;

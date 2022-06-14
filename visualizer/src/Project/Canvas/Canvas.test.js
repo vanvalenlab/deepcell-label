@@ -25,7 +25,7 @@ const context = {
   eventBuses,
   numFeatures: 2,
   numChannels: 3,
-  numFrames: 2,
+  duration: 2,
   width: 100,
   height: 100,
 };
@@ -41,12 +41,12 @@ let mockSegmentActor = interpret(createSegmentMachine(context), {
 jest.mock('../ProjectContext', () => ({
   useArrays: () => mockArraysActor,
   useCanvas: () => mockCanvasActor,
-  useSegment: () => mockSegmentActor,
+  useEditSegment: () => mockSegmentActor,
   useSelect: () => mockSelectActor,
   useEditing: () => true,
 }));
 
-jest.mock('./ComposeCanvases', () => () => 'ComposeCanvases');
+jest.mock('./ComposeCanvas', () => () => 'ComposeCanvas');
 jest.mock('./LabeledCanvas', () => () => 'LabeledCanvas');
 jest.mock('./OutlineCanvas', () => () => 'OutlineCanvas');
 jest.mock('./RawCanvas', () => () => 'RawCanvas');

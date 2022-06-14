@@ -1,9 +1,8 @@
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
-  useAlphaKernelCanvas,
+  useAlphaGpu,
   useArrays,
   useCanvas,
   useCells,
@@ -14,7 +13,7 @@ import {
   useSelectedCell,
 } from '../ProjectContext';
 
-const OutlineCanvas = ({ setCanvases }) => {
+const OutlineCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -32,22 +31,21 @@ const OutlineCanvas = ({ setCanvases }) => {
   const invert = useSelector(channel, (state) => state.context.invert && isGrayscale);
 
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
+  const t = useSelector(image, (state) => state.context.t);
 
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    (state) => state.context.labeled && state.context.labeled[feature][frame]
+    (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
   const cells = useCells();
-  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(frame), equal);
+  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(t), equal);
 
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       `function (data, cells, numLabels, opacity, cell, invert) {
         const x = this.thread.x;
@@ -98,21 +96,20 @@ const OutlineCanvas = ({ setCanvases }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [kernelCanvas, width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
+    const kernel = kernelRef.current;
     if (labeledArray && cellMatrix) {
       const numLabels = cellMatrix[0].length;
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, cellMatrix, numLabels, opacity, cell, invert);
+      kernel(labeledArray, cellMatrix, numLabels, [opacity, opacity], cell, invert);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
+      createImageBitmap(kernel.canvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, outline: bitmap }));
+      });
     }
-  }, [labeledArray, cellMatrix, opacity, cell, invert, setCanvases, kernelCanvas, width, height]);
+  }, [labeledArray, cellMatrix, opacity, cell, invert, setBitmaps, width, height]);
 
   return null;
 };
