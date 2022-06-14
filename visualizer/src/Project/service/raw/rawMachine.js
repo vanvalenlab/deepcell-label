@@ -1,4 +1,4 @@
-import { actions, assign, Machine, send, sendParent, spawn } from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from '../eventBus';
 import createChannelMachine from './channelMachine';
 import createLayerMachine from './layerMachine';
@@ -84,6 +84,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
             return names;
           },
         }),
+        forwardToChannel: forwardTo((ctx) => `channel${ctx.channel}`),
         spawnLayers: assign({
           layers: ({ numChannels }) => {
             const layers = [];
