@@ -136,8 +136,8 @@ export default function Instructions() {
           <Tabs value={value} onChange={handleTabChange}>
             <Tab label='Overview' />
             <Tab label='Select' />
-            <Tab label='Display' />
             <Tab label='Canvas' />
+            <Tab label='Display' />
             <Tab label='Segment' />
             <Tab label='Cells' />
             <Tab label='Divisions' />
@@ -149,10 +149,10 @@ export default function Instructions() {
             <SelectInstructions />
           </TabPanel>
           <TabPanel value={value} index={2}>
-            <DisplayInstructions />
+            <CanvasInstructions />
           </TabPanel>
           <TabPanel value={value} index={3}>
-            <CanvasInstructions />
+            <DisplayInstructions />
           </TabPanel>
           <TabPanel value={value} index={4}>
             <SegmentInstructions />
