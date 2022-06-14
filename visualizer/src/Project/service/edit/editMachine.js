@@ -13,7 +13,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
     {
       id: 'tool',
       context: {
-        tool: 'editSegment',
+        tool: 'display',
         eventBuses,
         undoRef,
         editSegmentRef: null,
