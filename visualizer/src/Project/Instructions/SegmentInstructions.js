@@ -30,7 +30,7 @@ function SegmentInstructions() {
         <Grid container spacing={3}>
           <Grid item sx={12}>
             <Typography variant='h5'>Write Mode</Typography>
-            <Typography>
+            <Typography component={'span'}>
               Controls how changes are added to the existing segmentation.
               <ul>
                 <li>

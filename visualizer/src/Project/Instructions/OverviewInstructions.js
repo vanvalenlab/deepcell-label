@@ -3,7 +3,7 @@ import React from 'react';
 
 function OverviewInstructions() {
   return (
-    <Typography>
+    <Typography component={'span'}>
       DeepCell Label annotates biological images by
       <ul>
         <li>segmenting cells</li>
