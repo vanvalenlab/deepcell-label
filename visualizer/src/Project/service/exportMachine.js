@@ -5,7 +5,7 @@ import { fromEventBus } from './eventBus';
 
 /** Creates a blob for a zip file with all project data. */
 async function makeExportZip(context) {
-  const { raw, labeled, cells, divisions } = context;
+  const { raw, labeled, cells, divisions, spots } = context;
   const dimensions = {
     width: raw[0][0][0].length,
     height: raw[0][0].length,
@@ -19,6 +19,12 @@ async function makeExportZip(context) {
   await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
   await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells.cells)));
   await zipWriter.add('divisions.json', new zip.TextReader(JSON.stringify(divisions)));
+  if (spots) {
+    await zipWriter.add(
+      'spots.csv',
+      new zip.TextReader('x,y\n' + spots.map((e) => e.join(',')).join('\n'))
+    );
+  }
 
   const zipBlob = await zipWriter.close();
   return zipBlob;
@@ -74,6 +80,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         { id: 'arrays', src: fromEventBus('export', () => eventBuses.arrays, 'ARRAYS') },
         { id: 'cells', src: fromEventBus('export', () => eventBuses.cells, 'CELLS') },
         { id: 'divisions', src: fromEventBus('export', () => eventBuses.divisions, 'DIVISIONS') },
+        { id: 'spots', src: fromEventBus('export', () => eventBuses.spots, 'SPOTS') },
       ],
       context: {
         projectId,
@@ -83,10 +90,12 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         labeled: null,
         cells: null,
         divisions: null,
+        spots: null,
       },
       on: {
         CELLS: { actions: 'setCells' },
         DIVISIONS: { actions: 'setDivisions' },
+        SPOTS: { actions: 'setSpots' },
       },
       initial: 'idle',
       states: {
@@ -149,6 +158,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         })),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         setDivisions: assign({ divisions: (_, evt) => evt.divisions }),
+        setSpots: assign({ spots: (_, evt) => evt.spots }),
       },
     }
   );
