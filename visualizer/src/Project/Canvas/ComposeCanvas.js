@@ -29,6 +29,9 @@ export const ComposeCanvas = ({ bitmaps }) => {
 
   useEffect(() => {
     canvasRef.current.getContext('2d').imageSmoothingEnabled = false;
+  }, [width, height]);
+
+  useEffect(() => {
     composeCanvas.getContext('2d').globalCompositeOperation = 'source-over';
     composeCanvas.width = sw;
     composeCanvas.height = sh;
