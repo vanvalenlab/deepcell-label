@@ -3,7 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useArrays, useCanvas, useEditing } from '../ProjectContext';
+import { useArrays, useCanvas } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvas';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
@@ -24,8 +24,6 @@ function Canvas() {
     },
     equal
   );
-
-  const editing = useEditing();
 
   const padding = 5;
   const topColor = Math.floor(sy) === 0 ? 'white' : 'black';
@@ -94,7 +92,7 @@ function Canvas() {
           <LabeledCanvas setBitmaps={setBitmaps} />
           <OutlineCanvas setBitmaps={setBitmaps} />
           <SpotsCanvas setBitmaps={setBitmaps} />
-          {editing && <ToolCanvas setBitmaps={setBitmaps} />}
+          <ToolCanvas setBitmaps={setBitmaps} />
         </>
       )}
     </Box>
