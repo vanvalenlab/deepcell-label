@@ -15,7 +15,7 @@ function NewCellButton({ sx }) {
 
   return (
     <Tooltip title={tooltip}>
-      <IconButton sx={sx} size='small' onClick={() => select.send('SELECT_NEW')}>
+      <IconButton sx={{ ...sx, p: 0 }} size='small' onClick={() => select.send('SELECT_NEW')}>
         <AddIcon />
       </IconButton>
     </Tooltip>

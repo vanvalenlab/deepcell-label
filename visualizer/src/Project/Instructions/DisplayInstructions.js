@@ -46,6 +46,9 @@ function DisplayInstructions() {
 
   const raw = useRaw();
   const numChannels = useSelector(raw, (state) => state.context.numChannels);
+
+  const width = '150px';
+
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
@@ -54,13 +57,13 @@ function DisplayInstructions() {
           controls adjust how the images and segmentations.
         </Typography>
         <br />
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <LabeledControls />
-            <br />
-          </Grid>
-          <Grid item xs={12} md={8}>
-            <Typography component={'span'}>
+        <Box></Box>
+        <Grid container spacing={1}>
+          <Grid container item>
+            <Box sx={{ width }}>
+              <LabeledControls />
+            </Box>
+            <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
               <ul style={{ margin: 0 }}>
                 {numFeatures > 1 && (
                   <li>Feature selects a segmentation, like whole-cell or nuclear</li>
@@ -71,19 +74,19 @@ function DisplayInstructions() {
               </ul>
             </Typography>
           </Grid>
-          <Grid item xs={4}>
-            <ColorModeToggle />
-          </Grid>
-          <Grid item xs={8}>
-            <Typography>
+          <Grid container item>
+            <Box sx={{ width }}>
+              <ColorModeToggle />
+            </Box>
+            <Typography sx={{ pl: 1, flex: '1 0 0' }}>
               Toggles showing a single grayscale channel or multiple color channels
             </Typography>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <RGBControls />
-          </Grid>
-          <Grid item xs={12} md={8}>
-            <Typography component={'span'}>
+          <Grid container item>
+            <Box sx={{ width }}>
+              <RGBControls />
+            </Box>
+            <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
               When color is on,
               <ul>
                 {numChannels > 1 && <li>the dropdown selects a channel</li>}
@@ -94,11 +97,11 @@ function DisplayInstructions() {
               </ul>
             </Typography>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <GrayscaleControls />
-          </Grid>
-          <Grid item xs={12} md={8}>
-            <Typography component={'span'}>
+          <Grid container item>
+            <Box sx={{ width }}>
+              <GrayscaleControls />
+            </Box>
+            <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
               When color is off,
               <ul>
                 {numChannels > 1 && <li>the dropdown selects a channel</li>}
