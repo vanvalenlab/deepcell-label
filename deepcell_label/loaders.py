@@ -212,8 +212,8 @@ def load_divisions(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         divisions = load_zip_json(zf, filename='divisions.json')
-        if divisions is None:
-            lineage = load_zip_json(zf, filename='lineage.json')
+        lineage = load_zip_json(zf, filename='lineage.json')
+        if lineage:
             divisions = convert_lineage(lineage)
     elif tarfile.is_tarfile(f.name):
         lineage = load_trk(f, filename='lineage.json')
