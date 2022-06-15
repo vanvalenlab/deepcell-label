@@ -22,7 +22,13 @@ class Loader:
     Loads and writes data into a DeepCell Label project zip.
     """
 
-    def __init__(self, image_file=None, label_file=None):
+    def __init__(self, image_file=None, label_file=None, axes=None):
+        """
+        Args:
+            image_file: file zip object containing a png, zip, tiff, or npz file
+            label_file: file like object containing a zip
+            axes: dimension order of the image data
+        """
         self.X = None
         self.y = None
         self.spots = None
@@ -31,6 +37,7 @@ class Loader:
 
         self.image_file = image_file
         self.label_file = label_file if label_file else image_file
+        self.axes = axes
 
         with tempfile.TemporaryFile() as project_file:
             with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:
@@ -42,7 +49,7 @@ class Loader:
 
     def load(self):
         """Loads data from input files."""
-        self.X = load_images(self.image_file)
+        self.X = load_images(self.image_file, self.axes)
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
         self.divisions = load_divisions(self.label_file)
@@ -128,7 +135,7 @@ class Loader:
         self.zip.writestr('cells.json', json.dumps(self.cells))
 
 
-def load_images(image_file):
+def load_images(image_file, axes=None):
     """
     Loads image data from image file.
 
@@ -142,7 +149,7 @@ def load_images(image_file):
     if X is None:
         X = load_npy(image_file)
     if X is None:
-        X = load_tiff(image_file)
+        X = load_tiff(image_file, axes)
     if X is None:
         X = load_png(image_file)
     if X is None:
@@ -205,6 +212,9 @@ def load_divisions(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         divisions = load_zip_json(zf, filename='divisions.json')
+        if divisions is None:
+            lineage = load_zip_json(zf, filename='lineage.json')
+            divisions = convert_lineage(lineage)
     elif tarfile.is_tarfile(f.name):
         lineage = load_trk(f, filename='lineage.json')
         divisions = convert_lineage(lineage)
@@ -422,6 +432,8 @@ def load_tiff(f, axes=None):
             return X[np.newaxis, ..., np.newaxis]
         if X.ndim == 3:
             # TODO: more general axis handling
+            if axes is None:
+                return X[np.newaxis, ...]
             if axes[0] == 'C':  # Move C to last axis and add T axis
                 X = np.moveaxis(X, 0, -1)
                 return X[np.newaxis, ...]
@@ -461,6 +473,16 @@ def load_png(f):
 
 
 def load_trk(f, filename='raw.npy'):
+    """
+    Loads image data from a .trk file containing raw.npy, tracked.npy, and lineage.json
+
+    Args:
+        f: file object containing a .trk file
+        filename: name of the file within the .trk to load
+
+    Returns:
+        numpy array (for raw.npy or tracked.npy) or dictionary (for lineage.json)
+    """
     f.seek(0)
     if tarfile.is_tarfile(f.name):
         with tarfile.open(fileobj=f) as trks:
