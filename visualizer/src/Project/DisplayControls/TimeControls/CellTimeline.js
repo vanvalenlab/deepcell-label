@@ -2,13 +2,7 @@ import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React from 'react';
-import {
-  useCells,
-  useHexColormap,
-  useImage,
-  useLabeled,
-  useSelectedCell,
-} from '../../ProjectContext';
+import { useCells, useHexColormap, useImage } from '../../ProjectContext';
 import TimeBox from './TimeBox';
 
 export function getRanges(array) {
@@ -30,12 +24,8 @@ function CellTimeline({ cell, height }) {
   const image = useImage();
   const duration = useSelector(image, (state) => state.context.duration);
 
-  const labeled = useLabeled();
-  const highlight = useSelector(labeled, (state) => state.context.highlight);
-  const selected = useSelectedCell();
-
   const colors = useHexColormap();
-  const color = highlight && cell === selected ? '#ff0000' : colors[cell] ?? '#000000';
+  const color = colors[cell] ?? '#000000';
 
   const cells = useCells();
   const times = useSelector(cells, (state) => state.context.cells.getTimes(cell), equal);
