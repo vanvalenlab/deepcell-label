@@ -57,7 +57,7 @@ function ToolCanvas({ setBitmaps }) {
       if (addingDaughter) {
         return <AddDaughterCanvas setBitmaps={setBitmaps} />;
       }
-      break;
+      return null;
     default:
       return null;
   }
