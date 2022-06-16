@@ -35,11 +35,11 @@ function createIDBMachine({ projectId, eventBuses }) {
             LOADED: [
               {
                 cond: 'forceLoadOutput',
-                actions: [(c, e) => console.log(c, e), 'setProject', 'setLoaded'],
+                actions: ['setProject', 'setLoaded'],
                 target: 'promptForceLoadOutput',
               },
               {
-                actions: [(c, e) => console.log(c, e), 'setProject', 'setLoaded', 'sendLoaded'],
+                actions: ['setProject', 'setLoaded', 'sendLoaded'],
                 target: 'idle',
               },
             ],

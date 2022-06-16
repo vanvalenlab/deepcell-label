@@ -187,23 +187,17 @@ const createLoadMachine = (projectId: string) =>
             src: 'fetch project zip',
             onDone: {
               target: 'splitArrays',
-              actions: [
-                (c, e) => console.log(c, e),
-                'set spots',
-                'set divisions',
-                'set cells',
-                'set metadata',
-              ],
+              actions: ['set spots', 'set divisions', 'set cells', 'set metadata'],
             },
             onError: {
-              actions: [(c, e) => console.log(c, e), 'send project not in output bucket'],
+              actions: 'send project not in output bucket',
             },
           },
         },
         splitArrays: {
           invoke: {
             src: 'split arrays',
-            onDone: { target: 'loaded', actions: [(c, e) => console.log(c, e), 'set arrays'] },
+            onDone: { target: 'loaded', actions: 'set arrays' },
           },
         },
         loaded: {

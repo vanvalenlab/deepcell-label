@@ -36,7 +36,7 @@ const idbMachine = createMachine(
             {
               cond: 'projectInDb',
               target: 'idle',
-              actions: [(c, e) => console.log(c, e), 'sendLoaded'],
+              actions: 'sendLoaded',
             },
             { target: 'idle', actions: 'sendProjectNotInDB' },
           ],
