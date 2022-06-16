@@ -55,9 +55,7 @@ function SelectInstructions() {
               <HighlightToggle />
             </Box>
             <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
-              Shows the selected cell. Hover for controls to change the cell. <PreviousCellButton />{' '}
-              and <NextCellButton /> cycle the cell, <NewCellButton />
-              selects a new cell, and <ResetCellButton /> resets the cell.
+              Toggles whether to show the selected cell in red on the canvas.
             </Typography>
           </Grid>
           <Grid container item>
