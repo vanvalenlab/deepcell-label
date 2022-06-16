@@ -20,28 +20,52 @@ function createIDBMachine({ projectId, eventBuses }) {
         },
       },
       invoke: [
-        { id: 'idb', src: fromWebWorker(() => new IdbWorker()) },
+        { src: fromWebWorker(() => new IdbWorker()), id: 'idb' },
         { src: fromEventBus('IDB', () => eventBuses.arrays, 'LABELED') },
         { src: fromEventBus('IDB', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('IDB', () => eventBuses.divisions, 'DIVISIONS') },
         { src: fromEventBus('IDB', () => eventBuses.spots, 'SPOTS') },
         { src: fromEventBus('IDB', () => eventBuses.load, 'LOADED') },
       ],
-      entry: send((ctx) => ({ type: 'PROJECT_ID', projectId: ctx.projectId }), { to: 'idb' }),
-      on: {},
       initial: 'getProject',
       states: {
         getProject: {
+          entry: 'getProject',
           on: {
-            LOADED: { target: 'idle', actions: ['setProject', 'forwardLoadedToParent'] },
-            PROJECT_NOT_IN_DB: { target: 'loadProject', actions: 'forwardToParent' },
+            LOADED: [
+              {
+                cond: 'forceLoadOutput',
+                actions: [(c, e) => console.log(c, e), 'setProject', 'setLoaded'],
+                target: 'promptForceLoadOutput',
+              },
+              {
+                actions: [(c, e) => console.log(c, e), 'setProject', 'setLoaded', 'sendLoaded'],
+                target: 'idle',
+              },
+            ],
+            PROJECT_NOT_IN_DB: {
+              actions: 'forwardToParent',
+              target: 'loadProject',
+            },
+          },
+        },
+        promptForceLoadOutput: {
+          on: {
+            FORCE_LOAD_OUTPUT: {
+              actions: sendParent('FORCE_LOAD_PROJECT_FROM_OUTPUT'),
+              target: 'loadProject',
+            },
+            USE_LOCAL_PROJECT: {
+              actions: 'sendLoaded',
+              target: 'idle',
+            },
           },
         },
         loadProject: {
           on: {
             LOADED: {
-              target: 'idle',
               actions: ['setProject', 'putProject'],
+              target: 'idle',
             },
           },
         },
@@ -56,7 +80,14 @@ function createIDBMachine({ projectId, eventBuses }) {
       },
     },
     {
+      guards: {
+        forceLoadOutput: () =>
+          new URLSearchParams(window.location.search).get('forceLoadOutput') === 'true',
+      },
       actions: {
+        getProject: send((ctx) => ({ type: 'PROJECT_ID', projectId: ctx.projectId }), {
+          to: 'idb',
+        }),
         updateLabeled: assign({
           project: (ctx, evt) => {
             const { t, feature } = evt;
@@ -84,7 +115,10 @@ function createIDBMachine({ projectId, eventBuses }) {
             spots: evt.spots,
           },
         })),
-        forwardLoadedToParent: sendParent((ctx, evt) => ({ ...evt, cells: new Cells(evt.cells) })),
+        setLoaded: assign({
+          loadedEvent: (ctx, evt) => ({ ...evt, cells: new Cells(evt.cells) }),
+        }),
+        sendLoaded: sendParent((ctx) => ctx.loadedEvent),
         forwardToParent: sendParent((ctx, evt) => evt),
         putProject: send(
           (ctx) => ({ type: 'PUT_PROJECT', projectId: ctx.projectId, project: ctx.project }),

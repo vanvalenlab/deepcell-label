@@ -47,9 +47,10 @@ def get_project(project):
     project = Project.get(project)
     if not project:
         return abort(404, description=f'project {project} not found')
+    bucket = request.args.get('bucket', default=project.bucket)
     s3 = boto3.client('s3')
     data = io.BytesIO()
-    s3.download_fileobj(project.bucket, project.key, data)
+    s3.download_fileobj(bucket, project.key, data)
     data.seek(0)
     return send_file(data, mimetype='application/zip')
 
