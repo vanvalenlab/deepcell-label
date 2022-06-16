@@ -21,7 +21,7 @@ function createIDBMachine({ projectId, eventBuses }) {
       },
       invoke: [
         { id: 'idb', src: fromWebWorker(() => new IdbWorker()) },
-        { src: fromEventBus('IDB', () => eventBuses.arrays, 'EDITED_SEGMENT') },
+        { src: fromEventBus('IDB', () => eventBuses.arrays, 'LABELED') },
         { src: fromEventBus('IDB', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('IDB', () => eventBuses.divisions, 'DIVISIONS') },
         { src: fromEventBus('IDB', () => eventBuses.spots, 'SPOTS') },
@@ -47,7 +47,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         },
         idle: {
           on: {
-            EDITED_SEGMENT: { actions: ['updateSegment', 'putProject'] },
+            LABELED: { actions: ['updateLabeled', 'putProject'] },
             CELLS: { actions: ['updateCells', 'putProject'] },
             DIVISIONS: { actions: ['updateDivisions', 'putProject'] },
             SPOTS: { actions: ['updateSpots', 'putProject'] },
@@ -57,7 +57,7 @@ function createIDBMachine({ projectId, eventBuses }) {
     },
     {
       actions: {
-        updateSegment: assign({
+        updateLabeled: assign({
           project: (ctx, evt) => {
             const { t, feature } = evt;
             const labeled = ctx.project.labeled.map((arr, i) =>
