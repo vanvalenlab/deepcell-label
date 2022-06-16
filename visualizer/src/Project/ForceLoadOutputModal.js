@@ -31,8 +31,8 @@ function ForceLoadOutputModal() {
           Confirm Force Reload from Output Bucket
         </Typography>
         <Typography sx={{ my: 2 }}>
-          YOu You haveProject <strong>{id}</strong> has been loaded previously, but you've opened a
-          link to force loading project from the output bucket.
+          Project <strong>{id}</strong> has been loaded previously, but you've opened a link to
+          force loading project from the output bucket.
         </Typography>
         <Typography sx={{ my: 2 }}>
           Do you want to overwrite with the project in output bucket, or keep your local project
