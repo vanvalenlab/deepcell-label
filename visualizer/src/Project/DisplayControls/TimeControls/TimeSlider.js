@@ -1,6 +1,6 @@
 import { Slider, Tooltip } from '@mui/material';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage, useMousetrapRef } from '../../ProjectContext';
 
@@ -16,10 +16,6 @@ function TimeSlider() {
     const nextT = Math.min(t + 1, duration - 1);
     bind('a', () => image.send({ type: 'SET_T', t: prevT }));
     bind('d', () => image.send({ type: 'SET_T', t: nextT }));
-    return () => {
-      unbind('a');
-      unbind('d');
-    };
   }, [t, image, duration]);
 
   const handleChange = (event, newValue) => {

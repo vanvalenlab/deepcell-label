@@ -35,7 +35,7 @@ export const GrayscaleCanvas = ({ setBitmaps }) => {
         // Rescale value from min - max to 0 - 1
         let v = Math.max(0, data[y][x] - min) / 255;
         const diff = (max - min) / 255;
-        const scale = diff === 0 ? 1 : 1 / diff;
+        const scale = diff === 0 ? 255 : 1 / diff;
         v = Math.min(1, v * scale);
         // Shift by brightness
         v = Math.max(0, Math.min(1, v + brightness));

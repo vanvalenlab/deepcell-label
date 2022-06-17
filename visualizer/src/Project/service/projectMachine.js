@@ -58,6 +58,7 @@ const createProjectMachine = (projectId) =>
         loadFromDB: {
           on: {
             PROJECT_NOT_IN_DB: 'loadFromServer',
+            FORCE_LOAD_PROJECT_FROM_OUTPUT: 'loadFromServer',
             LOADED: {
               target: 'idle',
               actions: [forwardTo('loadEventBus'), 'sendDimensions'],
@@ -68,8 +69,10 @@ const createProjectMachine = (projectId) =>
           invoke: { src: 'loadMachine' },
           on: {
             LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
+            PROJECT_NOT_IN_OUTPUT_BUCKET: 'missingProject',
           },
         },
+        missingProject: {},
         idle: {},
       },
     },

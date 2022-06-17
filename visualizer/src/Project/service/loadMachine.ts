@@ -58,6 +58,12 @@ async function parseZip(response: Response) {
 
 function fetchZip(context: Context) {
   const { projectId } = context;
+  const forceLoadOutput =
+    new URLSearchParams(window.location.search).get('forceLoadOutput') === 'true';
+  if (forceLoadOutput) {
+    const params = new URLSearchParams({ bucket: 'deepcell-label-output' });
+    return fetch(`/api/project/${projectId}?` + params).then(parseZip);
+  }
   return fetch(`/api/project/${projectId}`).then(parseZip);
 }
 
@@ -183,6 +189,9 @@ const createLoadMachine = (projectId: string) =>
               target: 'splitArrays',
               actions: ['set spots', 'set divisions', 'set cells', 'set metadata'],
             },
+            onError: {
+              actions: 'send project not in output bucket',
+            },
           },
         },
         splitArrays: {
@@ -203,6 +212,7 @@ const createLoadMachine = (projectId: string) =>
         'split arrays': (ctx, evt) => splitArrays(evt.data.files),
       },
       actions: {
+        'send project not in output bucket': sendParent('PROJECT_NOT_IN_OUTPUT_BUCKET'),
         'set spots': assign({
           // @ts-ignore
           spots: (context, event) => event.data.files['spots.csv'] as Spots,

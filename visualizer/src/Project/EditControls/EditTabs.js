@@ -5,7 +5,7 @@ import { useLabelMode, useSpots } from '../ProjectContext';
 
 const tabKeybinds = {
   display: ['c', 'f', 'y', 'i', '0', 'z', 'o'],
-  segment: ['v', 'b', 'e', 'x', 'k', 'g', 't', 'w', 'm', 'q'],
+  segment: ['b', 'e', 'x', 'k', 'g', 't', 'w', 'm', 'q'],
   cells: ['Backspace', 'r', 's'],
 };
 

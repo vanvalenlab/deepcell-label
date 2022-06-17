@@ -104,6 +104,12 @@ export function useDaughterDivisions(cell) {
   return divisions.filter((d) => d.daughters.includes(cell));
 }
 
+export function useIdb() {
+  const project = useProject();
+  const idb = useSelector(project, (state) => state.context.idbRef);
+  return idb;
+}
+
 export function useArrays() {
   const project = useProject();
   const arrays = useSelector(project, (state) => state.context.arraysRef);

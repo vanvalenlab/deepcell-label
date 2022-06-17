@@ -6,24 +6,24 @@ import React from 'react';
 function ExcludeIcon() {
   return (
     <>
-      <CircleTwoToneIcon sx={{ position: 'absolute', left: 22, zIndex: 1, color: 'gray' }} />
-      <CircleIcon sx={{ position: 'absolute', left: 22, zIndex: 0, color: 'white' }} />
+      <CircleTwoToneIcon sx={{ position: 'absolute', right: '50%', zIndex: 1, color: 'gray' }} />
+      <CircleIcon sx={{ position: 'absolute', right: '50%', zIndex: 0, color: 'white' }} />
       <CircleOutlinedIcon
         sx={{
           position: 'absolute',
-          left: 22,
+          right: '50%',
           zIndex: 2,
           color: 'black',
           WebkitClipPath: 'circle(40% at 24px)',
         }}
       />
       <CircleTwoToneIcon sx={{ position: 'absolute', zIndex: -1, color: 'black' }} />
-      <CircleTwoToneIcon sx={{ position: 'absolute', right: 22, zIndex: 1, color: 'gray' }} />
-      <CircleIcon sx={{ position: 'absolute', right: 22, zIndex: 0, color: 'white' }} />
+      <CircleTwoToneIcon sx={{ position: 'absolute', left: '50%', zIndex: 1, color: 'gray' }} />
+      <CircleIcon sx={{ position: 'absolute', left: '50%', zIndex: 0, color: 'white' }} />
       <CircleOutlinedIcon
         sx={{
           position: 'absolute',
-          right: 22,
+          left: '50%',
           zIndex: 2,
           color: 'black',
           WebkitClipPath: 'circle(40% at 24px)',

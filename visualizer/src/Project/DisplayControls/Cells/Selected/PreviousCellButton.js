@@ -15,7 +15,7 @@ function PreviousCellButton({ sx }) {
 
   return (
     <Tooltip title={tooltip}>
-      <IconButton sx={sx} size='small' onClick={() => select.send('SELECT_PREVIOUS')}>
+      <IconButton sx={{ ...sx, p: 0 }} size='small' onClick={() => select.send('SELECT_PREVIOUS')}>
         <ArrowBackIosNewIcon />
       </IconButton>
     </Tooltip>

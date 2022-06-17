@@ -15,7 +15,7 @@ function NextCellButton({ sx }) {
 
   return (
     <Tooltip title={tooltip}>
-      <IconButton sx={sx} size='small' onClick={() => select.send('SELECT_NEXT')}>
+      <IconButton sx={{ ...sx, p: 0 }} size='small' onClick={() => select.send('SELECT_NEXT')}>
         <ArrowForwardIosIcon />
       </IconButton>
     </Tooltip>

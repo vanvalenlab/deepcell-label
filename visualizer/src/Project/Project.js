@@ -1,13 +1,25 @@
 import Box from '@mui/material/Box';
+import { useSelector } from '@xstate/react';
 import Canvas from './Canvas';
 import DisplayControls from './DisplayControls';
 import EditControls from './EditControls';
+import ForceLoadOutputModal from './ForceLoadOutputModal';
 import Instructions from './Instructions';
+import MissingProject from './MissingProject';
+import { useProject } from './ProjectContext';
 import ReviewControls from './ReviewControls';
 
 function Project({ review }) {
+  const project = useProject();
+  const missing = useSelector(project, (state) => state.matches('missingProject'));
+
+  if (missing) {
+    return <MissingProject />;
+  }
+
   return (
     <>
+      <ForceLoadOutputModal />
       <Instructions />
       <Box
         sx={{

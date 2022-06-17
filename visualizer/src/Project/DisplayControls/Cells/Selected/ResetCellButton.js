@@ -15,7 +15,7 @@ function ResetCellButton({ sx }) {
 
   return (
     <Tooltip title={tooltip}>
-      <IconButton sx={sx} size='small' onClick={() => select.send('RESET')}>
+      <IconButton sx={{ ...sx, p: 0 }} size='small' onClick={() => select.send('RESET')}>
         <ClearIcon />
       </IconButton>
     </Tooltip>

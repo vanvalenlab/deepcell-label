@@ -46,6 +46,7 @@ function EditControls() {
       sx={{
         flex: '0 0 auto',
         px: 1,
+        minWidth: '150px',
       }}
     >
       <TabPanel value={value} index={0}>
