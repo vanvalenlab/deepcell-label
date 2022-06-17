@@ -1,26 +1,30 @@
 # Deployment
 
-To put DeepCell Label online so it is accessible through a web address like label.deepcell.org, there are several services on AWS and Google Cloud Platform that need to be coordinated, including:
+Deploying DeepCell Label at a web address like label.deepcell.org uses several services on AWS and Google Cloud Platform, including
 
-- an S3 bucket hosted static site
-- an Elastic Beanstalk instance
-- an MySQL database RDS
-- a CloudFront distribution
-- DNS on Google Cloud Platform
+- an [S3 bucket hosted static site](#host-a-static-site-with-an-s3-bucket) for the frontend assets
+- an [Elastic Beanstalk instance](#host-the-backend-with-elastic-beanstalk) for the backend
+- a [CloudFront distribution](#create-a-shared-endpoint-with-cloudfront)
+- a [custom domain name](#use-a-custom-domain-name)
+- an [MySQL database](#appendix-using-the-aws-rds-database)
+
+This guide walkthrough how to create, configure, and coordinates these services to complete a deployment. Unless otherwise specified, use the default settings for each service.
 
 ## Host a static site with an S3 bucket
 
-In the Properties tab, scroll to the bottom to find the Static website hosting settings.
+Create a new S3 bucket with the [AWS console](https://s3.console.aws.amazon.com/s3/buckets).
+
+In the Properties tab of the bucket, scroll to the bottom to find the Static website hosting settings.
 
 - Enable static site hosting.
 - Set the Index document to `index.html`
 - Set the Error document to `index.html`
   - needed for React Router to serve different pages like /project, /loading, etc. Otherwise, the site raises a 404 error because it cannot find a file named `project` or `loading` in the bucket.
 
-The Static site hosting section will now show a "Bucket website endpoint" where the site is hosted. Take note of this URL for later.
+The Static site hosting section will now show a "Bucket website endpoint" with a URL for the site. Make a note of this URL to use with CloudFront.
 
 In the Permissions tab,
-Set the Bucket policy to
+set the Bucket policy to
 
 ```
 {
@@ -40,19 +44,23 @@ Set the Bucket policy to
 }
 ```
 
-Note that you need to change the bucket name at `INSERT_BUCKET_NAME_HERE`.
+Note that you need to update the bucket name at `INSERT_BUCKET_NAME_HERE`.
 
 Build the frontend by running `yarn build` in the frontend folder which generates the static assets in the build folder. Open the build folder and upload all the files to the bucket.
 
 ## Host the backend with Elastic Beanstalk
 
-Start by installing the Elastic Beanstalk command line tools following [these instructions](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html). You can check that they are installed by running `eb --version` on the command line.
+Loading and editing data with DeepCell Label happens with a Flask application hosted on Elastic Beanstalk.
+
+Install the Elastic Beanstalk command line tools following [these instructions](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html). You can check that they are installed by running `eb --version` on the command line.
 
 If using Elastic Beanstalk for the first time in the repository, run `eb init` from the root of the repository to initialize Elastic Beanstalk.
 
-If there is an existing environment, use `eb use ENVIRONMENT_NAME` to use that environment for the current git branch. Each time you switch branches with git, you'll need to set the environment with `eb use`.
+use `eb create`. creating an Elastic Beanstalk environment for the first time,
 
-Once the EB environment is set, run `eb status` to see the state of the environment. Note the endpoint for the EB instance under CNAME. You can also find this info through the [Elastic Beanstalk page on the AWS Console](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home).
+To use existing environment, run `eb use ENVIRONMENT_NAME` to set the environment for the current git branch. Each time you switch git branches, make sure to set the environment with `eb use`.
+
+Once the environment is set, run `eb status`. Look for CNAME to see the instance's endpoint URL. You can also find this URL on the [AWS Console](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home). Make a note of this URL to use with CloudFront.
 
 When you're ready to deploy, run `eb deploy`.
 
@@ -60,24 +68,20 @@ When you're ready to deploy, run `eb deploy`.
 
 Now that both the frontend and backend are online, we need to reach them through a single endpoint with CloudFront on AWS.
 
-## Create a CloudFront distribution
+### Create a CloudFront distribution for the S3 bucket
 
-Set the Origin domain to the "Bucket website endpoint" from the S3
+On the [CloudFront AWS Console](https://us-east-1.console.aws.amazon.com/cloudfront/v3/home), create a distribution.
+Set the Origin domain to the "Bucket website endpoint" URL from the S3 static site.
 
-### Add two custom origins
+### Add a second origin for Elastic Beanstalk
 
-two custom origins for
+Under the Origins tab for the distribution, create an origin where the Origin domain is the URL for the Elastic Beanstalk instance. You may want to change Response timeout for the backend from 30 seconds to the maximum 60 seconds to support loading large and/or slow downloads.
 
-- the flask backend on Elastic Beanstalk
-- the S3 bucket hosted static site
+### Add a behaviors to redirect API requests to Elastic
 
-All the default settings when setting up the origin are acceptable. You may want to change Response timeout for the backend from 30 seconds to the maximum 60 seconds to support loading large and/or slow downloads.
+By adding the S3 hosted static site origin first, the default behavior will be to forward requests to this origin. We'll add a behavior to to forward API requests to the backend.
 
-### Add Behaviors to split traffic between the origins
-
-By adding the S3 hosted static site origin first, the default behavior will be to forward requests to this origin.
-
-To redirect API requests to the backend, add a new behavior with these settings
+Under the Behaviors tab, create a behavior, then
 
 - Set the Path pattern to `/api/*`
 - Set the Origin to the backend on Elastic Beanstalk
@@ -90,40 +94,37 @@ To redirect API requests to the backend, add a new behavior with these settings
 
 ## Use a custom domain name
 
-We use Google Cloud Platform for our Domain Name System (DNS).
+The application is now online at the domain name generated by CloudFront. Follow these steps to use a custom domain name for a deployment, such as label.deepcell.org.
 
-To use a custom domain name for a deployment, such as label.deepcell.org,
+- on Cloud DNS on [console.cloud.google.com](console.cloud.google.com)
 
-- on Cloud DNS on console.cloud.google.com,
-
-  - Add a CNAME record where the data is the URL for the CloudFront endpoint such as `d1234abcd.cloudfront.net.` and the DNS name is `label.deepcell.org.`.
+  - Add a CNAME record where the data is the URL for the CloudFront endpoint and the DNS name is `label.deepcell.org.`.
 
   - Add a CNAME record where the data is `label.deepcell.org.` and DNS name is `www.label.deepcell.org.`.
 
-- on the CloudFront distribution,
-  - set the Alternate domain name (CNAME) to `label.deepcell.org`
+- on the CloudFront distribution
+  - Set the Alternate domain name (CNAME) to `label.deepcell.org`
+  - Set the Custom SSL certificate to `*.deepcell.org`, or your own certificate for the domain name to use
 
 ## Updating the deployment
 
-For future deployments on the same resources, you'll need to
-
-- redeploy the backend with `eb deploy`
-  - make sure the database credentials are set before deploying
-- rebuild the frontend with `yarn build` in the frontend folder
-- reupload the built static assets for the frontend to the S3 bucket
-- invalidate the CloudFront cache for `/` and `/index.html` so the updated assets are served
+- Redeploy the backend with `eb deploy`
+  - Make sure the database credentials are set before deploying
+- Rebuild the frontend with `yarn build` in the frontend folder
+- Reupload the compiled frontend static assets to the S3 bucket
+- Invalidate the CloudFront cache for `/` and `/index.html` so the updated assets are served
 
 ## Appendix: using the AWS RDS database
 
-We have a MySQL database already set up with RDS on AWS. It is shared between deployments, so it's not generally part of deployment, other than providing credentials to the backend to connect to it.
+A MySQL database is set up with RDS on AWS. It's not part of the deployment process, other than providing credentials to the backend to connect to it.
 
-Access the RDS MySQL instance on the command like with
+In case the database requires changes, access it on the command like with
 
 ```
 mysql --host=deepcell-label-db-1.cbwvcgkyjfot.us-east-2.rds.amazonaws.com --user=deepcelladmin --password -P 3306
 ```
 
-and interact with commands like the ones on this [MySQL cheat sheet](https://devhints.io/mysql). If you're switching the database that the backend uses (for instance, if the database schema changes dramatically), you'll need to create the new database first on the command with `CREATE DATABASE new-database-name`. The backend will set up the tables once the database exists.
+and modify it with commands such as these: [MySQL cheat sheet](https://devhints.io/mysql). If you're switching the database that the backend uses (for instance, when the database schema changes dramatically), connect to the MySQL instance and create the new database with `CREATE DATABASE new-database-name`. The Flask backend sets up tables once it connects to the new database.
 
 ### Switching between deployment and development
 
