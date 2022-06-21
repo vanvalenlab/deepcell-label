@@ -67,6 +67,12 @@ To use existing environment, run `eb use ENVIRONMENT_NAME` to set the environmen
 
 Once the environment is set, run `eb status`. Look for CNAME to see the instance's endpoint URL. You can also find this URL on the [AWS Console](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home). Make a note of this URL to use with CloudFront.
 
+Before deploying the instance, confirm that you have set the following values in the `.env` file:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `S3_BUCKET` - this is the bucket where you will store files uploaded to DCL 
+- `SQLALCHEMY_DATABASE_URI`
+
 When you're ready to deploy, run `eb deploy`.
 
 ## Create a shared endpoint with CloudFront
