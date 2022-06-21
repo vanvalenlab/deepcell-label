@@ -55,11 +55,13 @@ Loading and editing data with DeepCell Label happens with a Flask application ho
 Install the Elastic Beanstalk command line tools following [these instructions](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html). You can check that they are installed by running `eb --version` on the command line.
 
 If using Elastic Beanstalk for the first time in the repository, run `eb init` from the root of the repository to initialize Elastic Beanstalk.
+
 - Select region 14 to use the existing application for deepcell label
 - Select the `caliban-test-with-db` application
 - Decline CodeCommit
 
 use `eb create`. creating an Elastic Beanstalk environment for the first time,
+
 - Select load balancer type 2: application
 - Decline spot fleet requests
 
@@ -68,9 +70,10 @@ To use existing environment, run `eb use ENVIRONMENT_NAME` to set the environmen
 Once the environment is set, run `eb status`. Look for CNAME to see the instance's endpoint URL. You can also find this URL on the [AWS Console](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home). Make a note of this URL to use with CloudFront.
 
 Before deploying the instance, confirm that you have set the following values in the `.env` file:
+
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
-- `S3_BUCKET` - this is the bucket where you will store files uploaded to DCL 
+- `S3_BUCKET` - this is the bucket where you will store files uploaded to DCL
 - `SQLALCHEMY_DATABASE_URI`
 
 When you're ready to deploy, run `eb deploy`.
