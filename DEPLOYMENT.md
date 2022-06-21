@@ -55,6 +55,9 @@ Loading and editing data with DeepCell Label happens with a Flask application ho
 Install the Elastic Beanstalk command line tools following [these instructions](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html). You can check that they are installed by running `eb --version` on the command line.
 
 If using Elastic Beanstalk for the first time in the repository, run `eb init` from the root of the repository to initialize Elastic Beanstalk.
+- Select region 14 to use the existing application for deepcell label
+- Select the `caliban-test-with-db` application
+- Decline CodeCommit
 
 use `eb create`. creating an Elastic Beanstalk environment for the first time,
 
