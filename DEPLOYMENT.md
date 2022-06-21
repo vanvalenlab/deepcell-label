@@ -60,6 +60,8 @@ If using Elastic Beanstalk for the first time in the repository, run `eb init` f
 - Decline CodeCommit
 
 use `eb create`. creating an Elastic Beanstalk environment for the first time,
+- Select load balancer type 2: application
+- Decline spot fleet requests
 
 To use existing environment, run `eb use ENVIRONMENT_NAME` to set the environment for the current git branch. Each time you switch git branches, make sure to set the environment with `eb use`.
 
