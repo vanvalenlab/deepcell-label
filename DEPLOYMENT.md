@@ -12,7 +12,7 @@ This guide walkthrough how to create, configure, and coordinates these services 
 
 ## Host a static site with an S3 bucket
 
-Create a new S3 bucket with the [AWS console](https://s3.console.aws.amazon.com/s3/buckets).
+Create a new S3 bucket with the [AWS console](https://s3.console.aws.amazon.com/s3/buckets) and uncheck "Block all public access".
 
 In the Properties tab of the bucket, scroll to the bottom to find the Static website hosting settings.
 
