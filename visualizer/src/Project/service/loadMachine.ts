@@ -3,7 +3,6 @@
 import { loadOmeTiff } from '@hms-dbmi/viv';
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine, sendParent } from 'xstate';
-import Cells from '../cells';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
@@ -12,6 +11,7 @@ type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
 type Spots = [number, number][];
 type Divisions = { parent: number; daughters: number[]; t: number }[];
+type Cells = { value: number; cell: number; t: number }[];
 type Files = {
   [filename: string]: OmeTiff | Spots | Cells | Divisions;
 };
@@ -49,7 +49,7 @@ async function parseZip(response: Response) {
     if (entry.filename === 'cells.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
-      const cells = new Cells(JSON.parse(json));
+      const cells = JSON.parse(json);
       files[entry.filename] = cells;
     }
   }

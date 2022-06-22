@@ -68,7 +68,10 @@ const createProjectMachine = (projectId) =>
         loadFromServer: {
           invoke: { src: 'loadMachine' },
           on: {
-            LOADED: { target: 'idle', actions: [forwardTo('loadEventBus'), 'sendDimensions'] },
+            LOADED: {
+              target: 'idle',
+              actions: [forwardTo('loadEventBus'), 'sendDimensions'],
+            },
             PROJECT_NOT_IN_OUTPUT_BUCKET: 'missingProject',
           },
         },

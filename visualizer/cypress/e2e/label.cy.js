@@ -67,7 +67,7 @@ it('updates state with keybinds', () => {
 
 it('opens instructions', () => {
   const id = getUniqueId();
-  cy.intercept('GET', `/api/project${id}`, { fixture: 'rgb.zip' });
+  cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
   cy.visit(`/project?projectId=${id}`);
   cy.contains('Instructions').click();
