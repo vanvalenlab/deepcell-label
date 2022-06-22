@@ -16,7 +16,7 @@ const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
         numFeatures: 1,
         feature: 0,
         featureNames: ['feature 0'],
-        labelsOpacity: 0.3, // [0, 0.3],
+        cellsOpacity: 0.3, // [0, 0.3],
         outlineOpacity: 0.3, // [0.5, 1],
         highlight: true,
       },
@@ -24,7 +24,9 @@ const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
         DIMENSIONS: { actions: 'setNumFeatures' },
         SET_FEATURE: { actions: ['setFeature', 'sendToEventBus'] },
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
-        SET_LABELS_OPACITY: { actions: 'setLabelsOpacity' },
+        SET_CELLS_OPACITY: { actions: 'setCellsOpacity' },
+        CYCLE_CELLS_OPACITY: { actions: 'cycleCellsOpacity' },
+        CYCLE_OUTLINE_OPACITY: { actions: 'cycleOutlineOpacity' },
         SET_OUTLINE_OPACITY: { actions: 'setOutlineOpacity' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
@@ -33,7 +35,31 @@ const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
     {
       actions: {
         setOutlineOpacity: assign({ outlineOpacity: (ctx, event) => event.opacity }),
-        setLabelsOpacity: assign({ labelsOpacity: (ctx, event) => event.opacity }),
+        setCellsOpacity: assign({ cellsOpacity: (ctx, event) => event.opacity }),
+        cycleCellsOpacity: assign({
+          cellsOpacity: (ctx) => {
+            switch (ctx.cellsOpacity) {
+              case 0:
+                return 0.3;
+              case 1:
+                return 0;
+              default:
+                return 1;
+            }
+          },
+        }),
+        cycleOutlineOpacity: assign({
+          outlineOpacity: (ctx) => {
+            switch (ctx.outlineOpacity) {
+              case 0:
+                return 0.3;
+              case 1:
+                return 0;
+              default:
+                return 1;
+            }
+          },
+        }),
         setNumFeatures: assign({
           numFeatures: (ctx, evt) => evt.numFeatures,
           featureNames: (ctx, evt) => [...Array(evt.numFeatures).keys()].map((i) => `feature ${i}`),

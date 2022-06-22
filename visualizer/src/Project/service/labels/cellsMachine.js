@@ -19,7 +19,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         { src: fromEventBus('cells', () => eventBuses.image, 'SET_T') },
       ],
       context: {
-        cells: null, // Cells object
+        cells: new Cells([]), // Cells object
         t: 0,
         colormap: [
           [0, 0, 0, 1],

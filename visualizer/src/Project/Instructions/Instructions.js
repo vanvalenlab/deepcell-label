@@ -8,11 +8,13 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import PropTypes from 'prop-types';
 import React from 'react';
-import ActionInstructions from './ActionInstructions';
 import CanvasInstructions from './CanvasInstructions';
+import CellsInstructions from './CellsInstructions';
 import DisplayInstructions from './DisplayInstructions';
+import DivisionsInstructions from './DivisionsInstructions';
+import OverviewInstructions from './OverviewInstructions';
+import SegmentInstructions from './SegmentInstructions';
 import SelectInstructions from './SelectInstructions';
-import ToolInstructions from './ToolInstructions';
 
 const PREFIX = 'Instructions';
 
@@ -132,26 +134,34 @@ export default function Instructions() {
         </AccordionSummary>
         <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
           <Tabs value={value} onChange={handleTabChange}>
-            <Tab label='Display' />
+            <Tab label='Overview' />
+            <Tab label='Select' />
             <Tab label='Canvas' />
-            <Tab label='Select Labels' />
-            <Tab label='Tools' />
-            <Tab label='Actions' />
+            <Tab label='Display' />
+            <Tab label='Segment' />
+            <Tab label='Cells' />
+            <Tab label='Divisions' />
           </Tabs>
           <TabPanel value={value} index={0}>
-            <DisplayInstructions />
+            <OverviewInstructions />
           </TabPanel>
           <TabPanel value={value} index={1}>
-            <CanvasInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={2}>
             <SelectInstructions />
           </TabPanel>
+          <TabPanel value={value} index={2}>
+            <CanvasInstructions />
+          </TabPanel>
           <TabPanel value={value} index={3}>
-            <ToolInstructions />
+            <DisplayInstructions />
           </TabPanel>
           <TabPanel value={value} index={4}>
-            <ActionInstructions />
+            <SegmentInstructions />
+          </TabPanel>
+          <TabPanel value={value} index={5}>
+            <CellsInstructions />
+          </TabPanel>
+          <TabPanel value={value} index={6}>
+            <DivisionsInstructions />
           </TabPanel>
         </AccordionDetails>
       </Accordion>

@@ -14,8 +14,8 @@ const createArraysMachine = (context) =>
         { id: 'eventBus', src: fromEventBus('arrays', () => context.eventBuses.arrays) },
         { id: 'api', src: createSegmentApiMachine(context) },
         { src: fromEventBus('arrays', () => context.eventBuses.image, 'SET_T') },
-        { src: fromEventBus('arrays', () => context.eventBuses.raw, 'SET_FEATURE') },
-        { src: fromEventBus('arrays', () => context.eventBuses.labeled, 'SET_CHANNEL') },
+        { src: fromEventBus('arrays', () => context.eventBuses.raw, 'SET_CHANNEL') },
+        { src: fromEventBus('arrays', () => context.eventBuses.labeled, 'SET_FEATURE') },
         { src: fromEventBus('arrays', () => context.eventBuses.load, 'LOADED') },
       ],
       context: {

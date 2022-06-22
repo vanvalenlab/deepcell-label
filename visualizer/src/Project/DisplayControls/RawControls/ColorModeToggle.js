@@ -1,6 +1,5 @@
-import { FormGroup } from '@mui/material';
+import { FormGroup, Switch } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
@@ -19,14 +18,8 @@ function ColorModeToggle() {
     bind('y', onClick);
   }, [onClick]);
 
-  const toggleTooltip = (
-    <span>
-      Toggle with <kbd>Y</kbd>
-    </span>
-  );
-
   return (
-    <Tooltip title={toggleTooltip} placement='right'>
+    <Tooltip title={<kbd>Y</kbd>} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
@@ -37,8 +30,8 @@ function ColorModeToggle() {
               inputRef={inputRef}
             />
           }
-          label='Multi-channel'
-          labelPlacement='start'
+          label='Color'
+          labelPlacement='end'
         />
       </FormGroup>
     </Tooltip>

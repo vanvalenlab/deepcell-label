@@ -90,7 +90,7 @@ class Edit(object):
             raise ValueError('zip must contain labeled.dat.')
         with zf.open('labeled.dat') as f:
             labels = np.frombuffer(f.read(), np.int32)
-            self.initial_labels = np.reshape(labels, (self.width, self.height))
+            self.initial_labels = np.reshape(labels, (self.height, self.width))
             self.labels = self.initial_labels.copy()
 
         # Load cells array

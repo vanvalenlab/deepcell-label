@@ -13,7 +13,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
     {
       id: 'tool',
       context: {
-        tool: 'editSegment',
+        tool: 'display',
         eventBuses,
         undoRef,
         editSegmentRef: null,
@@ -25,7 +25,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
           id: 'canvas',
           src: fromEventBus('tool', () => eventBuses.canvas, ['mouseup', 'mousedown']),
         },
-        { src: fromEventBus('tool', () => eventBuses.select, 'SELECTED') },
+        { id: 'select', src: fromEventBus('tool', () => eventBuses.select, 'SELECTED') },
         { src: fromEventBus('tool', () => eventBuses.load, 'LOADED') },
       ],
       initial: 'setUp',
@@ -41,10 +41,18 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         },
         checkTool: {
           always: [
-            { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
+            { cond: ({ tool }) => tool === 'editSegment', target: 'editSegment' },
             { cond: ({ tool }) => tool === 'editCells', target: 'editCells' },
-            { target: 'editSegment' },
+            { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
+            { cond: ({ tool }) => tool === 'editSpots', target: 'editSpots' },
+            { target: 'display' },
           ],
+        },
+        display: {
+          entry: [assign({ tool: 'display' }), send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true })],
+          on: {
+            mouseup: { actions: send('SELECT', { to: 'select' }) },
+          },
         },
         editSegment: {
           entry: assign({ tool: 'editSegment' }),
@@ -73,14 +81,25 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
             mousedown: { actions: forwardTo('editCells') },
           },
         },
+        editSpots: {
+          entry: [
+            assign({ tool: 'editCells' }),
+            send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+          ],
+          on: {
+            mouseup: { actions: send('SELECT', { to: 'select' }) },
+          },
+        },
       },
       on: {
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
 
+        DISPLAY: 'display',
         EDIT_SEGMENT: 'editSegment',
         EDIT_DIVISIONS: 'editDivisions',
         EDIT_CELLS: 'editCells',
+        EDIT_SPOTS: 'editSpots',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
       },

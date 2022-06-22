@@ -2,7 +2,7 @@ import { useTheme } from '@mui/material/styles';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
-import { useCells, useEditing, useImage, useSelect } from '../../../ProjectContext';
+import { useCells, useImage, useSelect } from '../../../ProjectContext';
 import Cell from './Cell';
 
 function Parent({ division }) {
@@ -12,7 +12,6 @@ function Parent({ division }) {
   const times = cells.getTimes(parent);
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;
-  const editing = useEditing();
 
   const relations = daughters.map((d) => ({
     targetId: `daughter${d}`,
@@ -20,14 +19,12 @@ function Parent({ division }) {
     sourceAnchor: 'right',
     style: { strokeColor, strokeWidth: 1, noCurves: true },
   }));
-  if (editing) {
-    relations.push({
-      targetId: 'addDaughter',
-      targetAnchor: 'left',
-      sourceAnchor: 'right',
-      style: { strokeColor, strokeWidth: 1, noCurves: true },
-    });
-  }
+  relations.push({
+    targetId: 'addDaughter',
+    targetAnchor: 'left',
+    sourceAnchor: 'right',
+    style: { strokeColor, strokeWidth: 1, noCurves: true },
+  });
 
   const select = useSelect();
   const image = useImage();

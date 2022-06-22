@@ -1,11 +1,8 @@
-import { Typography } from '@mui/material';
-import Box from '@mui/material/Box';
-import FormLabel from '@mui/material/FormLabel';
+import { FormLabel } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import React from 'react';
+import CellsOpacitySlider from './CellsOpacitySlider';
 import FeatureSelect from './FeatureSelect';
-import HighlightToggle from './HighlightToggle';
-import LabelsOpacitySlider from './LabelsOpacitySlider';
 import OutlineOpacitySlider from './OutlineOpacitySlider';
 
 const LabeledControls = () => {
@@ -13,21 +10,14 @@ const LabeledControls = () => {
     <>
       <Grid container direction='column'>
         <Grid item>
-          <FormLabel component='legend'>Segmentations</FormLabel>
-        </Grid>
-        <Grid item>
           <FeatureSelect />
         </Grid>
         <Grid item>
-          <Box display='flex' flexDirection='row' justifyContent='space-between'>
-            <Typography>Opacity</Typography>
-            <HighlightToggle />
-          </Box>
+          <FormLabel>Cells Opacity</FormLabel>
+          <CellsOpacitySlider />
         </Grid>
         <Grid item>
-          <LabelsOpacitySlider />
-        </Grid>
-        <Grid item>
+          <FormLabel>Outline Opacity</FormLabel>
           <OutlineOpacitySlider />
         </Grid>
       </Grid>

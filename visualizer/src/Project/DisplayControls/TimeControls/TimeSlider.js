@@ -1,6 +1,6 @@
 import { Slider, Tooltip } from '@mui/material';
 import { useSelector } from '@xstate/react';
-import { bind, unbind } from 'mousetrap';
+import { bind } from 'mousetrap';
 import React, { useEffect, useState } from 'react';
 import { useImage, useMousetrapRef } from '../../ProjectContext';
 
@@ -16,10 +16,6 @@ function TimeSlider() {
     const nextT = Math.min(t + 1, duration - 1);
     bind('a', () => image.send({ type: 'SET_T', t: prevT }));
     bind('d', () => image.send({ type: 'SET_T', t: nextT }));
-    return () => {
-      unbind('a');
-      unbind('d');
-    };
   }, [t, image, duration]);
 
   const handleChange = (event, newValue) => {
@@ -27,12 +23,6 @@ function TimeSlider() {
       image.send({ type: 'SET_T', t: newValue });
     }
   };
-
-  const tooltipText = (
-    <span>
-      Cycle with <kbd>A</kbd> and <kbd>D</kbd>.
-    </span>
-  );
 
   const [display, setDisplay] = useState('on');
 
@@ -44,7 +34,14 @@ function TimeSlider() {
   }, [t]);
 
   return (
-    <Tooltip title={tooltipText} placement='top'>
+    <Tooltip
+      title={
+        <span>
+          <kbd>A</kbd> / <kbd>D</kbd>
+        </span>
+      }
+      placement='right'
+    >
       <Slider
         value={t}
         valueLabelDisplay={display}

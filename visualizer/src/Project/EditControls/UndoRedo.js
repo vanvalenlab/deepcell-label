@@ -21,7 +21,7 @@ export default function UndoRedo() {
   return (
     <Box display='flex' flexDirection='column'>
       <Button
-        sx={{ width: '100%', p: 0.5, mb: 0.5 }}
+        sx={{ width: '100%', p: 0.5, my: 0.5 }}
         variant='contained'
         color='primary'
         disabled={cannotUndo}
@@ -31,7 +31,7 @@ export default function UndoRedo() {
         <UndoIcon />
       </Button>
       <Button
-        sx={{ width: '100%', p: 0.5 }}
+        sx={{ width: '100%', p: 0.5, mb: 0.5 }}
         variant='contained'
         color='primary'
         disabled={cannotRedo}

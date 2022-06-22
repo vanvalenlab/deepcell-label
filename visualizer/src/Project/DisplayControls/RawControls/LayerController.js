@@ -44,6 +44,7 @@ function LayerCheckbox({ layer }) {
         '&.Mui-checked': {
           color: color,
         },
+        p: 0,
       }}
     />
   );
@@ -77,22 +78,29 @@ function LayerSlider({ layer }) {
 }
 
 function LayerController({ layer }) {
+  const raw = useRaw();
+  const numChannels = useSelector(raw, (state) => state.context.numChannels);
+
   return (
     <Grid container direction='column' justifyContent='center'>
-      <Grid container direction='row' justifyContent='space-between'>
-        <Grid item xs={10}>
-          <LayerSelector layer={layer} />
-        </Grid>
-        <Grid item>
-          <LayerOptions layer={layer} />
-        </Grid>
-      </Grid>
-      <Grid container direction='row'>
-        <Grid item xs={2}>
+      {numChannels > 1 && (
+        <>
+          <Grid container direction='row'>
+            <Grid item xs={12}>
+              {numChannels > 1 && <LayerSelector layer={layer} />}
+            </Grid>
+          </Grid>
+        </>
+      )}
+      <Grid container direction='row' alignItems='center'>
+        <Grid item xs={3}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid container item xs={9} sx={{ ml: 1 }} alignItems='center'>
+        <Grid container item xs={6} alignItems='center'>
           <LayerSlider layer={layer} />
+        </Grid>
+        <Grid container item xs={3} justifyContent='right'>
+          <LayerOptions layer={layer} />
         </Grid>
       </Grid>
     </Grid>

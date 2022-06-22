@@ -68,16 +68,7 @@ def create_project():
             description='Include "images" in the request form with a URL to download the project data.',
         )
     labels_url = request.form['labels'] if 'labels' in request.form else None
-    # dimension_order = (
-    #     request.form['dimension_order']
-    #     if 'dimension_order' in request.form
-    #     else 'TZYXC'
-    # )
-    # labels_dimension_order = (
-    #     request.form['labels_dimension_order']
-    #     if 'labels_dimension_order' in request.form
-    #     else None
-    # )
+    axes = request.form['axes'] if 'axes' in request.form else None
     with tempfile.NamedTemporaryFile() as image_file, tempfile.NamedTemporaryFile() as label_file:
         if images_url is not None:
             image_response = requests.get(images_url)
@@ -101,7 +92,7 @@ def create_project():
             label_file.seek(0)
         else:
             label_file = image_file
-        loader = Loader(image_file, label_file)
+        loader = Loader(image_file, label_file, axes)
         project = Project.create(loader)
     current_app.logger.info(
         'Created project %s from %s in %s s.',

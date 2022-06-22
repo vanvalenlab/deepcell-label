@@ -1,14 +1,29 @@
-import { Box, Grid } from '@mui/material';
+import { Box, FormLabel, Grid } from '@mui/material';
 import Typography from '@mui/material/Typography';
+import { useSelector } from '@xstate/react';
 import React from 'react';
-import SelectedBox from '../DisplayControls/Cells/Selected/Selected';
+import Hovering from '../DisplayControls/Cells/Hovering';
+import NewCellButton from '../DisplayControls/Cells/Selected/NewCellButton';
+import NextCellButton from '../DisplayControls/Cells/Selected/NextCellButton';
+import PreviousCellButton from '../DisplayControls/Cells/Selected/PreviousCellButton';
+import ResetCellButton from '../DisplayControls/Cells/Selected/ResetCellButton';
+import Selected from '../DisplayControls/Cells/Selected/Selected';
+import HighlightToggle from '../DisplayControls/LabeledControls/HighlightToggle';
+import TimeControls from '../DisplayControls/TimeControls';
+import { useImage } from '../ProjectContext';
 import { Shortcut, Shortcuts } from './Shortcuts';
 
 function SelectShortcuts() {
+  const image = useImage();
+  const duration = useSelector(image, (state) => state.context.duration);
+
   return (
     <Shortcuts>
-      <Shortcut text='New label' shortcut='N' />
-      <Shortcut text='Unselect ' shortcut='Esc' />
+      {duration > 1 && <Shortcut text='Previous time' shortcut='A' />}
+      {duration > 1 && <Shortcut text='Next time' shortcut='D' />}
+      <Shortcut text='Toggle highlight' shortcut='H' />
+      <Shortcut text='Select new label' shortcut='N' />
+      <Shortcut text='Reset selected label ' shortcut='Esc' />
       <Shortcut text='Select previous label' shortcut='[' />
       <Shortcut text='Select next label' shortcut=']' />
     </Shortcuts>
@@ -16,27 +31,55 @@ function SelectShortcuts() {
 }
 
 function SelectInstructions() {
+  const image = useImage();
+  const duration = useSelector(image, (state) => state.context.duration);
+
+  const width = '150px';
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
-        <Typography variant='h5'>Selected Label Palette</Typography>
-        <Grid container spacing={3}>
-          <Grid item xs={6} sm={4} md={2}>
-            <SelectedBox />
+        <Grid container spacing={1}>
+          {duration > 1 && (
+            <Grid container item>
+              <Box sx={{ width }}>
+                <TimeControls />
+              </Box>
+              <Typography sx={{ pl: 1, flex: '1 0 0' }}>
+                Move between frames in a timelapse with this slider. Below is a timeline of which
+                when the selected and hovering cells are present.
+              </Typography>
+            </Grid>
+          )}
+          <Grid container item>
+            <Box sx={{ width }}>
+              <HighlightToggle />
+            </Box>
+            <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
+              Shows the selected cell. Hover for controls to change the cell. <PreviousCellButton />{' '}
+              and <NextCellButton /> cycle the cell, <NewCellButton />
+              selects a new cell, and <ResetCellButton /> resets the cell.
+            </Typography>
           </Grid>
-          <Grid item xs={6} sm={8} md={10}>
-            <Typography>
-              This box shows the selected label and has controls to cycle, reset, or select a new
-              label.
+          <Grid container item>
+            <Box sx={{ width }}>
+              <Selected />
+            </Box>
+            <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
+              Shows the selected cell. Hover for controls to change the cell. <PreviousCellButton />{' '}
+              and <NextCellButton /> cycle the cell, <NewCellButton />
+              selects a new cell, and <ResetCellButton /> resets the cell.
+            </Typography>
+          </Grid>
+          <Grid container item>
+            <Box sx={{ width }} display='flex' flexDirection='column'>
+              <FormLabel>Hovering</FormLabel>
+              <Hovering />
+            </Box>
+            <Typography sx={{ pl: 1, flex: '1 0 0' }}>
+              Hover over cells on the canvas to see which cell it is.
             </Typography>
           </Grid>
         </Grid>
-        <Typography variant='h5'>Selecting Labels</Typography>
-        <Typography>
-          Click on labels on the canvas to select them.
-          <br />
-          While using the Select tool, click to select a label.
-        </Typography>
       </div>
       <SelectShortcuts />
     </Box>

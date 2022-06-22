@@ -21,7 +21,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
   const labeled = useLabeled();
   const feature = useSelector(labeled, (state) => state.context.feature);
   const highlight = useSelector(labeled, (state) => state.context.highlight);
-  const opacity = useSelector(labeled, (state) => state.context.labelsOpacity);
+  const opacity = useSelector(labeled, (state) => state.context.cellsOpacity);
 
   const image = useImage();
   const t = useSelector(image, (state) => state.context.t);

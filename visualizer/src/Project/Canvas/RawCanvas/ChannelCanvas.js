@@ -1,7 +1,6 @@
 import { useSelector } from '@xstate/react';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useArrays, useCanvas, useImage } from '../../ProjectContext';
+import { useArrays, useCanvas, useGpu, useImage } from '../../ProjectContext';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
 const hexToRGB = (hex) => {
@@ -29,9 +28,9 @@ export const ChannelCanvas = ({ layer, setBitmaps }) => {
   const raw = useSelector(arrays, (state) => state.context.raw && state.context.raw[channel][t]);
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
+  const gpu = useGpu();
+
   useEffect(() => {
-    const gpu = new GPU();
     const kernel = gpu.createKernel(
       `function (data, on, color, min, max) {
         if (on) {
@@ -53,19 +52,15 @@ export const ChannelCanvas = ({ layer, setBitmaps }) => {
       }
     );
     kernelRef.current = kernel;
-    canvasRef.current = kernel.canvas;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
     if (raw) {
+      const kernel = kernelRef.current;
       // Rerender the canvas for this component
-      kernelRef.current(raw, on, hexToRGB(color), min, max);
+      kernel(raw, on, hexToRGB(color), min, max);
       // Rerender the parent canvas
-      createImageBitmap(canvasRef.current).then((bitmap) => {
+      createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, [layerIndex]: bitmap }));
       });
     }

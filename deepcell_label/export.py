@@ -3,6 +3,7 @@ Converts data from the client into a ZIP to export from DeepCell Label.
 """
 
 import io
+import itertools
 import json
 import zipfile
 
@@ -18,6 +19,9 @@ class Export:
         self.load_dimensions()
         self.load_labeled()
         self.load_raw()
+        self.load_cells()
+
+        self.labeled, self.cells = rewrite_labeled(self.labeled, self.cells)
 
         self.write_export_zip()
         self.export_zip.seek(0)
@@ -40,7 +44,7 @@ class Export:
                 labeled = np.frombuffer(f.read(), np.int32)
                 self.labeled = np.reshape(
                     labeled,
-                    (self.num_features, self.duration, self.width, self.height),
+                    (self.num_features, self.duration, self.height, self.width),
                 )
 
     def load_raw(self):
@@ -49,8 +53,14 @@ class Export:
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), np.uint8)
                 self.raw = np.reshape(
-                    raw, (self.num_channels, self.duration, self.width, self.height)
+                    raw, (self.num_channels, self.duration, self.height, self.width)
                 )
+
+    def load_cells(self):
+        """Loads cell labels from cells.json."""
+        with zipfile.ZipFile(self.labels_zip) as zf:
+            with zf.open('cells.json') as f:
+                self.cells = json.load(f)
 
     def write_export_zip(self):
         """Writes an export zip with OME TIFF files instead of raw.dat and labeled.dat."""
@@ -59,10 +69,17 @@ class Export:
             self.labels_zip
         ) as input_zf:
             for item in input_zf.infolist():
-                # Writes all other files (cells.json, divisions.json, etc.) to export zip
-                if item.filename not in ['dimensions.json', 'labeled.dat', 'raw.dat']:
+                # Writes all other files (divisions.json, spots.csv, etc.) to export zip
+                if item.filename not in [
+                    'dimensions.json',
+                    'labeled.dat',
+                    'raw.dat',
+                    'cells.json',
+                ]:
                     buffer = input_zf.read(item.filename)
                     export_zf.writestr(item, buffer)
+            # Write updated cells
+            export_zf.writestr('cells.json', json.dumps(self.cells))
             # Write OME TIFF for labeled
             labeled_ome_tiff = io.BytesIO()
             tifffile.imwrite(
@@ -87,3 +104,47 @@ class Export:
             )
             raw_ome_tiff.seek(0)
             export_zf.writestr('X.ome.tiff', raw_ome_tiff.read())
+
+
+def rewrite_labeled(labeled, cells):
+    """
+    Rewrites the labeled to use values from cell labels.
+
+    Args:
+        labeled: numpy array of shape (num_features, duration, height, width)
+        cells: list of cells labels like { "cell": 1, "value": 1, "t": 0}
+
+    Returns:
+        (numpy array of shape (num_features, duration, height, width), cells with updated values)
+    """
+    new_labeled = np.zeros(labeled.shape)
+    # TODO: add 'c' to cell labels to independently reassign cells between features & rewrite each feature separately
+    (f, duration, height, width) = labeled.shape
+    new_cells = []
+    for t in range(duration):
+        cells_at_t = list(filter(lambda c: c['t'] == t, cells))
+        values = itertools.groupby(cells_at_t, lambda c: c['value'])
+        overlap_values = []
+
+        # Rewrite non-overlapping values with cells
+        for value, group in values:
+            group = list(group)
+            if len(group) == 1:
+                cell = group[0]['cell']
+                frame = labeled[:, t, :, :]
+                new_labeled[:, t, :, :][frame == value] = cell
+                new_cells.append({'cell': cell, 'value': cell, 't': t})
+            else:
+                overlap_values.append([value, group])
+
+        # Rewrite overlapping values with values higher than all cells
+        new_overlap_value = max(cells_at_t, key=lambda c: c['cell'])['cell'] + 1
+        for overlap_value, overlap_cells in overlap_values:
+            for cell in overlap_cells:
+                frame = labeled[:, t, :, :]
+                new_labeled[:, t, :, :][frame == overlap_value] = new_overlap_value
+                new_cells.append(
+                    {'cell': cell['cell'], 'value': new_overlap_value, 't': t}
+                )
+            new_overlap_value += 1
+    return new_labeled, new_cells

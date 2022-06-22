@@ -3,11 +3,9 @@ import Canvas from './Canvas';
 import DisplayControls from './DisplayControls';
 import EditControls from './EditControls';
 import Instructions from './Instructions';
-import { useEditing } from './ProjectContext';
 import ReviewControls from './ReviewControls';
 
 function Project({ review }) {
-  const editing = useEditing();
   return (
     <>
       <Instructions />
@@ -28,10 +26,10 @@ function Project({ review }) {
             px: 1,
           }}
         >
-          {review && editing && <ReviewControls />}
+          {review && <ReviewControls />}
           <DisplayControls />
         </Box>
-        {editing && <EditControls />}
+        <EditControls />
         <Canvas />
       </Box>
     </>

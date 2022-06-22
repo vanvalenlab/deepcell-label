@@ -1,14 +1,6 @@
 import { useSelector } from '@xstate/react';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import {
-  useArrays,
-  useCanvas,
-  useChannel,
-  useImage,
-  usePixelatedCanvas,
-  useRaw,
-} from '../../ProjectContext';
+import { useArrays, useCanvas, useChannel, useGpu, useImage, useRaw } from '../../ProjectContext';
 
 export const GrayscaleCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
@@ -33,10 +25,9 @@ export const GrayscaleCanvas = ({ setBitmaps }) => {
   );
 
   const kernelRef = useRef();
-  const kernelCanvas = usePixelatedCanvas();
+  const gpu = useGpu();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
       `function (data, min, max, brightness, contrast, invert) {
         const x = this.thread.x;
@@ -64,22 +55,19 @@ export const GrayscaleCanvas = ({ setBitmaps }) => {
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [kernelCanvas, width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
     // Rerender the canvas for this component
     if (rawArray) {
-      kernelRef.current(rawArray, min, max, brightness, contrast, invert);
+      const kernel = kernelRef.current;
+      kernel(rawArray, min, max, brightness, contrast, invert);
       // Rerender the parent canvas
-      createImageBitmap(kernelCanvas).then((bitmap) => {
+      createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, raw: bitmap }));
       });
     }
-  }, [rawArray, min, max, brightness, contrast, invert, kernelCanvas, setBitmaps, height, width]);
+  }, [rawArray, min, max, brightness, contrast, invert, setBitmaps, height, width]);
 
   return null;
 };

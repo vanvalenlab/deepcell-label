@@ -2,17 +2,13 @@ import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import React from 'react';
 import EditTabs from '../EditControls/EditTabs';
-import { useEditing, useImage } from '../ProjectContext';
+import UndoRedo from '../EditControls/UndoRedo';
+import { useImage } from '../ProjectContext';
 import Cells from './Cells';
 import ExportButton from './ExportButton';
-import LabeledControls from './LabeledControls';
-import RawControls from './RawControls/RawControls';
-import SpotsControls from './SpotsControls';
 import TimeControls from './TimeControls';
-import TrackControls from './TrackControls';
 
 function DisplayControls() {
-  const editing = useEditing();
   const image = useImage();
   const duration = useSelector(image, (state) => state.context.duration);
 
@@ -25,13 +21,10 @@ function DisplayControls() {
       }}
     >
       <ExportButton />
-      {editing && <EditTabs />}
-      <Cells />
+      <UndoRedo />
+      <EditTabs />
       {duration > 1 && <TimeControls />}
-      {process.env.REACT_APP_CALIBAN_VISUALIZER === 'true' && <TrackControls />}
-      {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && <SpotsControls />}
-      <LabeledControls />
-      <RawControls />
+      <Cells />
     </Box>
   );
 }

@@ -78,12 +78,6 @@ export function useMousetrapRef() {
   };
 }
 
-export function useEditing() {
-  const polaris = process.env.REACT_APP_SPOTS_VISUALIZER === 'true';
-  const caliban = process.env.REACT_APP_CALIBAN_VISUALIZER === 'true';
-  return !polaris && !caliban;
-}
-
 export function useSpots() {
   const project = useProject();
   const spots = useSelector(project, (state) => state.context.spotsRef);
@@ -355,45 +349,46 @@ export function useHexColormap() {
 const gl2 = !!document.createElement('canvas').getContext('webgl2');
 const gl = !!document.createElement('canvas').getContext('webgl');
 
-/** Creates a reference to a canvas with an alpha channel to use with a GPU.js kernel. */
-const alphaKernelCanvas = document.createElement('canvas');
+const alphaGpuCanvas = document.createElement('canvas');
 if (gl2) {
-  alphaKernelCanvas.getContext('webgl2', { premultipliedAlpha: false });
+  alphaGpuCanvas.getContext('webgl2', { premultipliedAlpha: false });
 } else if (gl) {
-  alphaKernelCanvas.getContext('webgl', { premultipliedAlpha: false });
+  alphaGpuCanvas.getContext('webgl', { premultipliedAlpha: false });
 }
-const alphaGpu = new GPU({ canvas: alphaKernelCanvas });
+const alphaGpu = new GPU({ canvas: alphaGpuCanvas });
 
+/** Provides a GPU that uses a canvas with premultipliedAlpha off. */
 export function useAlphaGpu() {
   const project = useProject();
   const width = useSelector(useCanvas(), (state) => state.context.width);
   const height = useSelector(useCanvas(), (state) => state.context.height);
 
   useEffect(() => {
-    alphaKernelCanvas.width = width;
-    alphaKernelCanvas.height = height;
+    alphaGpuCanvas.width = width;
+    alphaGpuCanvas.height = height;
   }, [project, width, height]);
 
   return alphaGpu;
 }
 
-/** Creates a canvas with the same dimensions as the project. */
-export function usePixelatedCanvas() {
-  const [canvas] = useState(document.createElement('canvas'));
+const gpuCanvas = document.createElement('canvas');
+const gpu = new GPU({ canvas: gpuCanvas });
 
-  const canvasMachine = useCanvas();
-  const width = useSelector(canvasMachine, (state) => state.context.width);
-  const height = useSelector(canvasMachine, (state) => state.context.height);
+/** Provides a GPU that uses a canvas with the same dimensions as the labeled image. */
+export function useGpu() {
+  const canvas = useCanvas();
+  const width = useSelector(canvas, (state) => state.context.width);
+  const height = useSelector(canvas, (state) => state.context.height);
 
   useEffect(() => {
-    canvas.width = width;
-    canvas.height = height;
-  }, [canvas, height, width]);
+    gpuCanvas.width = width;
+    gpuCanvas.height = height;
+  }, [height, width]);
 
-  return canvas;
+  return gpu;
 }
 
-/** Creates a canvas with the same resolution as the displayed canvas.. */
+/** Creates a canvas with the same resolution as the displayed canvas. */
 export function useFullResolutionCanvas() {
   const [canvas] = useState(document.createElement('canvas'));
 

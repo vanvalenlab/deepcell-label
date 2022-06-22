@@ -1,6 +1,6 @@
+import { Checkbox } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
-import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
@@ -13,30 +13,25 @@ function HighlightToggle() {
 
   const inputRef = useMousetrapRef();
 
-  const tooltipText = (
-    <span>
-      Toggle with <kbd>H</kbd>
-    </span>
-  );
-
   useEffect(() => {
     bind('h', () => labeled.send('TOGGLE_HIGHLIGHT'));
   }, [labeled]);
 
   return (
-    <Tooltip title={tooltipText} placement='right'>
+    <Tooltip title={<kbd>H</kbd>} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
-            <Switch
+            <Checkbox
               size='small'
               checked={highlight}
               onChange={() => labeled.send('TOGGLE_HIGHLIGHT')}
               inputRef={inputRef}
+              sx={{ py: 0 }}
             />
           }
-          label='Red Highlight'
-          labelPlacement='start'
+          label='Highlight'
+          labelPlacement='end'
         />
       </FormGroup>
     </Tooltip>
