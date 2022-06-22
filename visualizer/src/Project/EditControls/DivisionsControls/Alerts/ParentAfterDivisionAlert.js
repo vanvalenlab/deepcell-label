@@ -6,8 +6,7 @@ import { formatTimes, parentAfterDivision } from '../divisionUtils';
 import AlertGroup, { alertStyle } from './AlertGroup';
 
 function ParentAfterDivisionAlert({ division }) {
-  const cellsMachine = useCells();
-  const cells = useSelector(cellsMachine, (state) => state.context.cells);
+  const cells = useCells();
   const { parent, t } = division;
   const times = cells.getTimes(parent);
 
@@ -22,8 +21,7 @@ function ParentAfterDivisionAlert({ division }) {
 }
 
 function ParentAfterDivisionAlerts() {
-  const cellsMachine = useCells();
-  const cells = useSelector(cellsMachine, (state) => state.context.cells);
+  const cells = useCells();
   const divisionsMachine = useDivisions();
   const divisions = useSelector(divisionsMachine, (state) => state.context.divisions);
 

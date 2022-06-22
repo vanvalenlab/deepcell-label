@@ -19,7 +19,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         { src: fromEventBus('cells', () => eventBuses.image, 'SET_T') },
       ],
       context: {
-        cells: new Cells([]), // Cells object
+        cells: [],
         t: 0,
         colormap: [
           [0, 0, 0, 1],
@@ -117,13 +117,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           to: 'eventBus',
         }),
         setEditedCells: assign({
-          editedCells: (ctx, evt) => {
-            const cells = ctx.cells.cells;
-            const editedCells = evt.cells.cells;
-            const { t, mode } = ctx;
-            const combinedCells = combine(cells, editedCells, t, mode);
-            return new Cells(combinedCells);
-          },
+          editedCells: (ctx, evt) => combine(ctx.cells, evt.cells, ctx.t, ctx.mode),
         }),
         finishEditing: pure((ctx, evt) => {
           const { edit, editedCells, cells, historyRef } = ctx;
@@ -144,15 +138,15 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         setT: assign({ t: (_, evt) => evt.t }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
-          const cells = new Cells([
-            ...ctx.cells.cells.filter((cell) => cell.t !== evt.t),
+          const cells = [
+            ...ctx.cells.filter((cell) => cell.t !== evt.t),
             ...evt.cells.map((cell) => ({ ...cell, t: evt.t })),
-          ]);
+          ];
           const newColormap = [
             [0, 0, 0, 1],
             ...colormap({
               colormap: 'viridis',
-              nshades: Math.max(9, cells.getNewCell() - 1),
+              nshades: Math.max(9, new Cells(cells).getNewCell() - 1),
               format: 'rgba',
             }),
             [255, 255, 255, 1],
@@ -176,7 +170,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
               [0, 0, 0, 1],
               ...colormap({
                 colormap: 'viridis',
-                nshades: Math.max(9, ctx.cells.getNewCell() - 1),
+                nshades: Math.max(9, new Cells(ctx.cells).getNewCell() - 1),
                 format: 'rgba',
               }),
               [255, 255, 255, 1],
@@ -185,26 +179,26 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         ),
         replace: send((ctx, evt) => {
           const { a, b } = evt;
-          const cells = new Cells(
-            ctx.cells.cells.map((c) => (c.cell === b ? { ...c, cell: a } : c))
-          );
+          const cells = ctx.cells.map((c) => (c.cell === b ? { ...c, cell: a } : c));
           return { type: 'EDITED_CELLS', cells };
         }),
         delete: send((ctx, evt) => {
           const { cell } = evt;
-          const cells = new Cells(ctx.cells.cells.filter((c) => c.cell !== cell));
+          const cells = ctx.cells.filter((c) => c.cell !== cell);
           return { type: 'EDITED_CELLS', cells };
         }),
         swap: send((ctx, evt) => {
           const { a, b } = evt;
-          const cells = new Cells(
-            ctx.cells.cells.map((c) =>
-              c.cell === a ? { ...c, cell: b } : c.cell === b ? { ...c, cell: a } : c
-            )
+          const cells = ctx.cells.map((c) =>
+            c.cell === a ? { ...c, cell: b } : c.cell === b ? { ...c, cell: a } : c
           );
           return { type: 'EDITED_CELLS', cells };
         }),
-        newCell: send((ctx, evt) => ({ type: 'REPLACE', a: ctx.cells.getNewCell(), b: evt.cell })),
+        newCell: send((ctx, evt) => ({
+          type: 'REPLACE',
+          a: new Cells(ctx.cells).getNewCell(),
+          b: evt.cell,
+        })),
       },
     }
   );

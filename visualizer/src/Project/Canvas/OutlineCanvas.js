@@ -1,11 +1,10 @@
 import { useSelector } from '@xstate/react';
-import equal from 'fast-deep-equal';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaGpu,
   useArrays,
   useCanvas,
-  useCells,
+  useCellMatrix,
   useChannel,
   useImage,
   useLabeled,
@@ -39,8 +38,7 @@ const OutlineCanvas = ({ setBitmaps }) => {
     (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
-  const cells = useCells();
-  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(t), equal);
+  const cellMatrix = useCellMatrix();
 
   const gpu = useAlphaGpu();
   const kernelRef = useRef();

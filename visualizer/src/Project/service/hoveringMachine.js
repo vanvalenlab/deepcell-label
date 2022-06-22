@@ -1,5 +1,6 @@
 import equal from 'fast-deep-equal';
 import { actions, assign, Machine, send } from 'xstate';
+import Cells from '../cells';
 import { fromEventBus } from './eventBus';
 const { pure } = actions;
 
@@ -32,7 +33,7 @@ const createHoveringMachine = ({ eventBuses }) =>
     {
       actions: {
         setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
-        setCells: assign({ cells: (_, evt) => evt.cells }),
+        setCells: assign({ cells: (_, evt) => new Cells(evt.cells) }),
         setT: assign({ t: (_, evt) => evt.t }),
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
         updateHovering: pure((ctx) => {

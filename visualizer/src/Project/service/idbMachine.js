@@ -1,10 +1,8 @@
 /** Records the current project state in IDB so that it can be restored when closing.
  * MVP only records the labeled data state, not the UI state or the undo/redo history.
- * Converts from cell list to Cells object.
  */
 import IdbWorker from 'worker-loader!./idbWebWorker'; // eslint-disable-line import/no-webpack-loader-syntax
 import { assign, forwardTo, Machine, send, sendParent } from 'xstate';
-import Cells from '../cells';
 import { fromEventBus } from './eventBus';
 import { fromWebWorker } from './from-web-worker';
 
@@ -62,7 +60,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         loadProject: {
           on: {
             LOADED: {
-              actions: send((ctx, evt) => ({ ...evt, cells: evt.cells.cells }), { to: 'idb' }),
+              actions: forwardTo('idb'),
               target: 'idle',
             },
           },
@@ -71,9 +69,7 @@ function createIDBMachine({ projectId, eventBuses }) {
           on: {
             EDITED_SEGMENT: { actions: forwardTo('idb') },
             RESTORED_SEGMENT: { actions: forwardTo('idb') },
-            CELLS: {
-              actions: send((ctx, evt) => ({ ...evt, cells: evt.cells.cells }), { to: 'idb' }),
-            },
+            CELLS: { actions: forwardTo('idb') },
             DIVISIONS: { actions: forwardTo('idb') },
             SPOTS: { actions: forwardTo('idb') },
           },
@@ -89,9 +85,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         getProject: send((ctx) => ({ type: 'PROJECT_ID', projectId: ctx.projectId }), {
           to: 'idb',
         }),
-        setLoaded: assign({
-          loaded: (ctx, evt) => ({ ...evt, cells: new Cells(evt.cells) }),
-        }),
+        setLoaded: assign({ loaded: (ctx, evt) => evt }),
         sendLoaded: sendParent((ctx) => ctx.loaded),
         forwardToParent: sendParent((ctx, evt) => evt),
       },

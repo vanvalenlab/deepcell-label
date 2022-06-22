@@ -2,6 +2,7 @@ import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import { GPU } from 'gpu.js';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import Cells from './cells';
 
 export const Context = createContext();
 
@@ -346,8 +347,14 @@ function rgbToHex(rgb) {
   return '#' + componentToHex(rgb[0]) + componentToHex(rgb[1]) + componentToHex(rgb[2]);
 }
 
+export function useColormap() {
+  const cells = useCellsMachine();
+  const colormap = useSelector(cells, (state) => state.context.colormap);
+  return colormap;
+}
+
 export function useHexColormap() {
-  const cells = useCells();
+  const cells = useCellsMachine();
   const colormap = useSelector(cells, (state) => state.context.colormap);
   return colormap.map(rgbToHex);
 }
@@ -415,10 +422,53 @@ export function useFullResolutionCanvas() {
   return canvas;
 }
 
+export function useCellsMachine() {
+  const project = useProject();
+  const cellsMachine = useSelector(project, (state) => state.context.cellsRef);
+  return cellsMachine;
+}
+
 export function useCells() {
   const project = useProject();
-  const cells = useSelector(project, (state) => state.context.cellsRef);
-  return cells;
+  const cellsMachine = useSelector(project, (state) => state.context.cellsRef);
+  const cells = useSelector(cellsMachine, (state) => state.context.cells);
+
+  const [test, setTest] = useState(new Cells(cells));
+
+  useEffect(() => {
+    setTest(new Cells(cells));
+  }, [cells]);
+
+  return test;
+}
+
+export function useCellMatrix() {
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+  const cells = useCells();
+
+  const [cellMatrix, setCellMatrix] = useState(cells.getMatrix(t));
+
+  useEffect(() => {
+    setCellMatrix(cells.getMatrix(t));
+  }, [cells, t]);
+
+  return cellMatrix;
+}
+
+export function useLabeledArray() {
+  const labeled = useLabeled();
+  const feature = useSelector(labeled, (state) => state.context.feature);
+
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+
+  const arrays = useArrays();
+  const labeledArray = useSelector(
+    arrays,
+    (state) => state.context.labeled && state.context.labeled[feature][t]
+  );
+  return labeledArray;
 }
 
 function ProjectContext({ project, children }) {
