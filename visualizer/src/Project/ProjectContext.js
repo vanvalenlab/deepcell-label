@@ -432,27 +432,14 @@ export function useCells() {
   const project = useProject();
   const cellsMachine = useSelector(project, (state) => state.context.cellsRef);
   const cells = useSelector(cellsMachine, (state) => state.context.cells);
-
-  const [test, setTest] = useState(new Cells(cells));
-
-  useEffect(() => {
-    setTest(new Cells(cells));
-  }, [cells]);
-
-  return test;
+  return useMemo(() => new Cells(cells), [cells]);
 }
 
 export function useCellMatrix() {
   const image = useImage();
   const t = useSelector(image, (state) => state.context.t);
   const cells = useCells();
-
-  const [cellMatrix, setCellMatrix] = useState(cells.getMatrix(t));
-
-  useEffect(() => {
-    setCellMatrix(cells.getMatrix(t));
-  }, [cells, t]);
-
+  const cellMatrix = useMemo(() => cells.getMatrix(t), [cells, t]);
   return cellMatrix;
 }
 
