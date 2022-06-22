@@ -12,7 +12,7 @@ This guide walkthrough how to create, configure, and coordinates these services 
 
 ## Host a static site with an S3 bucket
 
-Create a new S3 bucket with the [AWS console](https://s3.console.aws.amazon.com/s3/buckets).
+Create a new S3 bucket with the [AWS console](https://s3.console.aws.amazon.com/s3/buckets) and uncheck "Block all public access".
 
 In the Properties tab of the bucket, scroll to the bottom to find the Static website hosting settings.
 
@@ -46,7 +46,13 @@ set the Bucket policy to
 
 Note that you need to update the bucket name at `INSERT_BUCKET_NAME_HERE`.
 
-Build the frontend by running `yarn build` in the frontend folder which generates the static assets in the build folder. Open the build folder and upload all the files to the bucket.
+Build the frontend by running
+
+- `cd visualizer` to open the frontend folder
+- `yarn` to install or update the dependencies
+- `yarn build` to generate the static assets
+
+Open the `visualizer/build` folder and upload all the files to the S3 bucket.
 
 ## Host the backend with Elastic Beanstalk
 
@@ -56,11 +62,25 @@ Install the Elastic Beanstalk command line tools following [these instructions](
 
 If using Elastic Beanstalk for the first time in the repository, run `eb init` from the root of the repository to initialize Elastic Beanstalk.
 
+- Select region 14 to use the existing application for deepcell label
+- Select the `caliban-test-with-db` application
+- Decline CodeCommit
+
 use `eb create`. creating an Elastic Beanstalk environment for the first time,
+
+- Select load balancer type 2: application
+- Decline spot fleet requests
 
 To use existing environment, run `eb use ENVIRONMENT_NAME` to set the environment for the current git branch. Each time you switch git branches, make sure to set the environment with `eb use`.
 
 Once the environment is set, run `eb status`. Look for CNAME to see the instance's endpoint URL. You can also find this URL on the [AWS Console](https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home). Make a note of this URL to use with CloudFront.
+
+Before deploying the instance, confirm that you have set the following values in the `.env` file:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `S3_BUCKET` - this is the bucket where you will store files uploaded to DCL
+- `SQLALCHEMY_DATABASE_URI`
 
 When you're ready to deploy, run `eb deploy`.
 
@@ -121,10 +141,10 @@ A MySQL database is set up with RDS on AWS. It's not part of the deployment proc
 In case the database requires changes, access it on the command like with
 
 ```
-mysql --host=deepcell-label-db-1.cbwvcgkyjfot.us-east-2.rds.amazonaws.com --user=deepcelladmin --password -P 3306
+mysql --host=$HOST --user=$USERNAME --password -P $PORT
 ```
 
-and modify it with commands such as these: [MySQL cheat sheet](https://devhints.io/mysql). If you're switching the database that the backend uses (for instance, when the database schema changes dramatically), connect to the MySQL instance and create the new database with `CREATE DATABASE new-database-name`. The Flask backend sets up tables once it connects to the new database.
+and modify it with commands such as these: [MySQL cheat sheet](https://devhints.io/mysql). Make sure to set the HOST, USERNAME, and PORT for the command. If you're switching the database that the backend uses (for instance, when the database schema changes dramatically), connect to the MySQL instance and create the new database with `CREATE DATABASE new-database-name`. The Flask backend sets up tables once it connects to the new database.
 
 ### Switching between deployment and development
 

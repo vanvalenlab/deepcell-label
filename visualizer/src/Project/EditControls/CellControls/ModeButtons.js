@@ -6,17 +6,17 @@ import Box from '@mui/material/Box';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useCells } from '../../ProjectContext';
+import { useCellsMachine } from '../../ProjectContext';
 
 function ModeButtons() {
-  const cells = useCells();
-  const mode = useSelector(cells, (state) => state.context.mode);
+  const cellsMachine = useCellsMachine();
+  const mode = useSelector(cellsMachine, (state) => state.context.mode);
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Mode</FormLabel>
       <ToggleButtonGroup orientation='vertical' value={mode}>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_MODE', mode: 'one' })}
+          onClick={() => cellsMachine.send({ type: 'SET_MODE', mode: 'one' })}
           value={'one'}
           sx={{ px: 0.5, py: 0 }}
         >
@@ -24,21 +24,21 @@ function ModeButtons() {
           <SquareSharpIcon fontSize='small' />
         </ToggleButton>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_MODE', mode: 'past' })}
+          onClick={() => cellsMachine.send({ type: 'SET_MODE', mode: 'past' })}
           value={'past'}
           sx={{ px: 0.5, py: 0 }}
         >
           Past <ForwardIcon sx={{ transform: 'rotate(180deg)' }} />
         </ToggleButton>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_MODE', mode: 'future' })}
+          onClick={() => cellsMachine.send({ type: 'SET_MODE', mode: 'future' })}
           value={'future'}
           sx={{ px: 0.5, py: 0 }}
         >
           Future <ForwardIcon />
         </ToggleButton>
         <ToggleButton
-          onClick={() => cells.send({ type: 'SET_MODE', mode: 'all' })}
+          onClick={() => cellsMachine.send({ type: 'SET_MODE', mode: 'all' })}
           value={'all'}
           sx={{ px: 0.5, py: 0 }}
         >

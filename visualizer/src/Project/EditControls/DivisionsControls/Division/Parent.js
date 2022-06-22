@@ -1,5 +1,4 @@
 import { useTheme } from '@mui/material/styles';
-import { useSelector } from '@xstate/react';
 import React from 'react';
 import { ArcherElement } from 'react-archer';
 import { useCells, useImage, useSelect } from '../../../ProjectContext';
@@ -7,8 +6,7 @@ import Cell from './Cell';
 
 function Parent({ division }) {
   const { parent, daughters, t } = division;
-  const cellsMachine = useCells();
-  const cells = useSelector(cellsMachine, (state) => state.context.cells);
+  const cells = useCells();
   const times = cells.getTimes(parent);
   const theme = useTheme();
   const strokeColor = theme.palette.secondary.main;

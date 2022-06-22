@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import {
   useArrays,
   useCanvas,
-  useCells,
+  useColormap,
   useFullResolutionCanvas,
   useSpots,
 } from '../ProjectContext';
@@ -42,8 +42,7 @@ function SpotsCanvas({ setBitmaps }) {
   const width = sw * scale * window.devicePixelRatio;
   const height = sh * scale * window.devicePixelRatio;
 
-  const cells = useCells();
-  const colormap = useSelector(cells, (state) => state.context.colormap);
+  const colormap = useColormap();
 
   const drawCanvas = useFullResolutionCanvas();
   const movingCanvas = useFullResolutionCanvas();
