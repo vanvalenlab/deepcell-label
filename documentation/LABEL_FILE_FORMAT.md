@@ -56,3 +56,23 @@ The first row is a header that says the first column is x coordinates, the secon
 Each other row is a spot, with the x coordinate, y coordinate, and cell assignments.
 
 Currently, the cell assignments are ignored and instead determined from y.ome.tiff. Overlapping cells do not display properly with spots, and this may be a use case for the cell assignment columns.
+
+## Edit and export zips
+
+DeepCell Label can only create OME-TIFFs through its Python based server, not through the Javascript based client. Therefore, the zip files sent from the client to the server when editing or exporting data do not contain .ome.tiff files but rather a .dat file with the buffer for the image and an additional file edit.json (for editing) or dimensions.json (for exporting) with the dimensions of the buffer.
+
+`dimensions.json` has properties
+
+- `height`
+- `width`
+- `duration`
+- `numChannels` (channels for X.ome.tiff)
+- `numFeatures` (channels for y.ome.tiff).
+
+`edit.json` has properties
+
+- `height`
+- `width`
+- `action` (which editing function to use)
+- `writeMode` ("overlap", "overwrite", or "exclude"
+- `args` (the arguments to pass to the editing function)
