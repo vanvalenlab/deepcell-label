@@ -1,7 +1,7 @@
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import { GPU } from 'gpu.js';
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Cells from './cells';
 
 export const Context = createContext();
