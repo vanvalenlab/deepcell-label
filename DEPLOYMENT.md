@@ -135,10 +135,10 @@ A MySQL database is set up with RDS on AWS. It's not part of the deployment proc
 In case the database requires changes, access it on the command like with
 
 ```
-mysql --host=deepcell-label-db-1.cbwvcgkyjfot.us-east-2.rds.amazonaws.com --user=deepcelladmin --password -P 3306
+mysql --host=$HOST --user=$USERNAME --password -P $PORT
 ```
 
-and modify it with commands such as these: [MySQL cheat sheet](https://devhints.io/mysql). If you're switching the database that the backend uses (for instance, when the database schema changes dramatically), connect to the MySQL instance and create the new database with `CREATE DATABASE new-database-name`. The Flask backend sets up tables once it connects to the new database.
+and modify it with commands such as these: [MySQL cheat sheet](https://devhints.io/mysql). Make sure to set the HOST, USERNAME, and PORT for the command. If you're switching the database that the backend uses (for instance, when the database schema changes dramatically), connect to the MySQL instance and create the new database with `CREATE DATABASE new-database-name`. The Flask backend sets up tables once it connects to the new database.
 
 ### Switching between deployment and development
 
