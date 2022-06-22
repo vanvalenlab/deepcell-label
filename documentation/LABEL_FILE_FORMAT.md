@@ -29,7 +29,11 @@ This is the image being labeled. It is a 4 dimensional uint8 image with dimensio
 
 This is the segmentation image. It is a 4 dimensional int32 image with dimension order CZYX and it is stored as an [OME-TIFF](https://docs.openmicroscopy.org/ome-model/5.6.3/ome-tiff/).
 
-Each pixel in the image may encode multiple cells. The cells.json describes how to map values to cells at each time (and soon in each channel as well).
+Each pixel in the image may encode multiple cells. The cells.json describes how to map values to cells at each time (and soon in each channel as well). When exporting a project, the segmentation image is remade so
+
+- values that do not appear in cells.json are removed from the image
+- values that encode only one cell are replaced with the cell
+- values that encode multiple cells are strictly higher than the largest cell
 
 ### cells.json
 
