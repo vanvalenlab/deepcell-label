@@ -1,3 +1,7 @@
+/** Manages the controls for the labeled image, including
+ * the opacity of the cells, the opacity of the outlines, whether to highlight the selected label, and what feature to show.
+ */
+
 import { actions, assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 

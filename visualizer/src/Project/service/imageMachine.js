@@ -1,3 +1,8 @@
+/** Manages the controls the image, such as what time to show.
+ *
+ * Spawns rawMachine and labeledMachine to control the raw and labeled images.
+ */
+
 import { actions, assign, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from './eventBus';
 import createLabeledMachine from './labeledMachine';

@@ -1,3 +1,7 @@
+/** Edits the segmentation through the /api/edit route on the backend.
+ * Creates an edit zip to send to /api/edit and parses the response zip to send an EDITED_SEGMENT event.
+ */
+
 import * as zip from '@zip.js/zip.js';
 import { assign, Machine, sendParent } from 'xstate';
 import { fromEventBus } from '../eventBus';

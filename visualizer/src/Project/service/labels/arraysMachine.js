@@ -1,4 +1,7 @@
-/** Loads and stores image arrays. */
+/** Manages raw and labeled image arrays.
+ * Broadcasts the current frame in RAW and LABELED events when the frame, feature, channel, or array changes.
+ * Invokes segmentApiMachine to edit the labeled array.
+ */
 
 import { assign, forwardTo, Machine, send } from 'xstate';
 import { respond } from 'xstate/lib/actions';

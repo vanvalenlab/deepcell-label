@@ -1,3 +1,6 @@
+/** Manages the controls for a layer in color mode, including
+ * which channel to show, the dynamic range, whether to show the layer, and the color.
+ */
 import { assign, Machine } from 'xstate';
 
 const CHANNEL_COLORS = ['#FF0000', '#00FF00', '#0000FF', '#00FFFF', '#FF00FF', '#FFFF00'];

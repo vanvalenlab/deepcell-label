@@ -1,3 +1,7 @@
+/**
+ * Manages the controls to edit the divisions.
+ * Sends ADD_DAUGHTER and REMOVE_DAUGHTER to the divisions event bus when interacting with the UI.
+ */
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../eventBus';
 

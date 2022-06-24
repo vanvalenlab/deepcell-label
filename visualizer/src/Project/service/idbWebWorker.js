@@ -1,3 +1,13 @@
+/** Reads and writes project data to the projects table in the deepcell-label IndexedDB in a web worker.
+ *
+ * When initialized, waits for a PROJECT_ID event, then checks if that project is in the database.
+ * If yes, responds with a LOADED event, and if not, responds with PROJECT_NOT_IN_DB and
+ * waits for a LOADED event and writes the loaded data to the database.
+ *
+ * Once the project is in the database, the machine rewrites updated project data after receiving
+ * EDITED_SEGMENT, RESTORED_SEGMENT, CELLS, DIVISIONS, and SPOTS events.
+ */
+
 import { openDB } from 'idb';
 import { assign, createMachine, sendParent } from 'xstate';
 import { interpretInWebWorker } from './from-web-worker';

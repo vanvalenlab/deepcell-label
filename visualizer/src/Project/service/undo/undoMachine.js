@@ -1,3 +1,12 @@
+/** Manages recording the UI and labeled data as actions are done, undone, and redone.
+ *
+ * Spawns historyMachines to track the state of UI and labelHistoryMachines to track the labeled data.
+ *
+ * UI state machines send REGISTER_UI events to track their state.
+ * Label state machines send REGISTER_LABELS events to track their state.
+ *
+ * UI histories record state every action, while label histories record state only when
+ */
 import { actions, assign, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
@@ -23,9 +32,7 @@ const createUndoMachine = ({ eventBuses }) =>
       },
       on: {
         REGISTER_UI: { actions: 'registerUi' },
-        REGISTER_LABELS: {
-          actions: 'registerLabels',
-        },
+        REGISTER_LABELS: { actions: 'registerLabels' },
       },
       initial: 'idle',
       states: {

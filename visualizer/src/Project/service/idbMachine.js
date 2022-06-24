@@ -1,4 +1,5 @@
-/** Records the current project state in IDB so that it can be restored when closing.
+/**
+ * Listens to event buses with label updates and forwards them to a web worker to be persisted in IndexedDB.
  * MVP only records the labeled data state, not the UI state or the undo/redo history.
  */
 import IdbWorker from 'worker-loader!./idbWebWorker'; // eslint-disable-line import/no-webpack-loader-syntax

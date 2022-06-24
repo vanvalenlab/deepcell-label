@@ -1,8 +1,10 @@
+/**
+ * Records UI state before each action.
+ * Sends SAVE events to an actor.
+ * Records the actor's RESTORE response to send back on UNDO and REDO.
+ */
 import { assign, Machine, send, sendParent } from 'xstate';
 
-/** Records a stack of snapshots of an actor's state before each action.
- * Sends SAVE events to an actor and stores the actor's responses to send back when undoing or redoing actions.
- */
 function createHistoryMachine(actor) {
   return Machine(
     {
