@@ -7,6 +7,7 @@ export interface Typegen0 {
     'set divisions': 'done.invoke.load.loading:invocation[0]';
     'set cells': 'done.invoke.load.loading:invocation[0]';
     'set metadata': 'done.invoke.load.loading:invocation[0]';
+    'send project not in output bucket': 'error.platform.load.loading:invocation[0]';
     'set arrays': 'done.invoke.load.splitArrays:invocation[0]';
     'send loaded': 'done.invoke.load.splitArrays:invocation[0]';
   };
@@ -15,6 +16,10 @@ export interface Typegen0 {
       type: 'done.invoke.load.loading:invocation[0]';
       data: unknown;
       __tip: 'See the XState TS docs to learn how to strongly type this.';
+    };
+    'error.platform.load.loading:invocation[0]': {
+      type: 'error.platform.load.loading:invocation[0]';
+      data: unknown;
     };
     'done.invoke.load.splitArrays:invocation[0]': {
       type: 'done.invoke.load.splitArrays:invocation[0]';

@@ -1,4 +1,5 @@
 import { assign, Machine, send } from 'xstate';
+import Cells from '../../../cells';
 import { fromEventBus } from '../../eventBus';
 
 const createWatershedMachine = (context) =>
@@ -101,7 +102,7 @@ const createWatershedMachine = (context) =>
         setFirstPoint: assign({ x1: (ctx) => ctx.x, y1: (ctx) => ctx.y }),
         setSecondPoint: assign({ x2: (ctx) => ctx.x, y2: (ctx) => ctx.y }),
         setCell: assign({ cell: (_, evt) => evt.selected }),
-        setNewCell: assign({ newCell: (_, evt) => evt.cells.getNewCell() }),
+        setNewCell: assign({ newCell: (_, evt) => new Cells(evt.cells).getNewCell() }),
         select: send('SELECT', { to: 'select' }),
         watershed: send(
           (ctx) => ({

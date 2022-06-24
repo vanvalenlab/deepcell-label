@@ -3,7 +3,6 @@
 import { loadOmeTiff } from '@hms-dbmi/viv';
 import * as zip from '@zip.js/zip.js';
 import { assign, createMachine, sendParent } from 'xstate';
-import Cells from '../cells';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
@@ -12,6 +11,7 @@ type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
 type Spots = [number, number][];
 type Divisions = { parent: number; daughters: number[]; t: number }[];
+type Cells = { value: number; cell: number; t: number }[];
 type Files = {
   [filename: string]: OmeTiff | Spots | Cells | Divisions;
 };
@@ -49,7 +49,7 @@ async function parseZip(response: Response) {
     if (entry.filename === 'cells.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
-      const cells = new Cells(JSON.parse(json));
+      const cells = JSON.parse(json);
       files[entry.filename] = cells;
     }
   }
@@ -58,6 +58,12 @@ async function parseZip(response: Response) {
 
 function fetchZip(context: Context) {
   const { projectId } = context;
+  const forceLoadOutput =
+    new URLSearchParams(window.location.search).get('forceLoadOutput') === 'true';
+  if (forceLoadOutput) {
+    const params = new URLSearchParams({ bucket: 'deepcell-label-output' });
+    return fetch(`/api/project/${projectId}?` + params).then(parseZip);
+  }
   return fetch(`/api/project/${projectId}`).then(parseZip);
 }
 
@@ -183,6 +189,9 @@ const createLoadMachine = (projectId: string) =>
               target: 'splitArrays',
               actions: ['set spots', 'set divisions', 'set cells', 'set metadata'],
             },
+            onError: {
+              actions: 'send project not in output bucket',
+            },
           },
         },
         splitArrays: {
@@ -203,6 +212,7 @@ const createLoadMachine = (projectId: string) =>
         'split arrays': (ctx, evt) => splitArrays(evt.data.files),
       },
       actions: {
+        'send project not in output bucket': sendParent('PROJECT_NOT_IN_OUTPUT_BUCKET'),
         'set spots': assign({
           // @ts-ignore
           spots: (context, event) => event.data.files['spots.csv'] as Spots,

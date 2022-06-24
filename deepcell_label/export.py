@@ -117,7 +117,7 @@ def rewrite_labeled(labeled, cells):
     Returns:
         (numpy array of shape (num_features, duration, height, width), cells with updated values)
     """
-    new_labeled = np.zeros(labeled.shape)
+    new_labeled = np.zeros(labeled.shape, dtype=np.int32)
     # TODO: add 'c' to cell labels to independently reassign cells between features & rewrite each feature separately
     (f, duration, height, width) = labeled.shape
     new_cells = []

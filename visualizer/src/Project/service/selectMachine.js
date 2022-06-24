@@ -1,5 +1,6 @@
 import { assign, Machine, send } from 'xstate';
 import { pure, respond } from 'xstate/lib/actions';
+import Cells from '../cells';
 import { fromEventBus } from './eventBus';
 
 const createSelectMachine = ({ eventBuses, undoRef }) =>
@@ -67,7 +68,7 @@ const createSelectMachine = ({ eventBuses, undoRef }) =>
           };
         }),
         setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-        setCells: assign({ cells: (_, { cells }) => cells }),
+        setCells: assign({ cells: (_, { cells }) => new Cells(cells) }),
         setSelected: assign({ selected: (_, { selected }) => selected }),
         save: respond(({ selected }) => ({ type: 'RESTORE', selected })),
         restore: pure((_, { selected }) => [

@@ -7,12 +7,6 @@ import Loading from './Loading';
 import NavBar from './Navbar';
 import Label from './Project';
 
-// inspect({
-//   // options
-//   // url: 'https://statecharts.io/inspect', // (default)
-//   iframe: false // open in new window
-// });
-
 const Div = styled('div')``;
 const theme = createTheme();
 

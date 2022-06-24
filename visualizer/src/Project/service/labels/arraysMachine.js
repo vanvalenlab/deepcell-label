@@ -65,7 +65,7 @@ const createArraysMachine = (context) =>
           },
           onDone: {
             target: 'idle',
-            actions: ['sendLabeledFrame', 'sendRawFrame', 'sendInitialLabelsToHistory'],
+            actions: ['sendLabeledFrame', 'sendRawFrame'],
           },
         },
         idle: {
@@ -79,7 +79,7 @@ const createArraysMachine = (context) =>
             EDITED_SEGMENT: {
               actions: ['setLabeledFrame', 'sendLabeledFrame', forwardTo('eventBus')],
             },
-            RESTORE: { actions: ['setLabeledFrame', 'sendLabeledFrame'] },
+            RESTORE: { actions: ['setLabeledFrame', 'sendLabeledFrame', 'sendRestored'] },
           },
         },
         editing: {
@@ -148,13 +148,6 @@ const createArraysMachine = (context) =>
           raw: ctx.raw,
           labeled: ctx.labeled,
         })),
-        sendInitialLabelsToHistory: send(
-          (ctx) => ({
-            type: 'LABELS',
-            labels: ctx.labeled,
-          }),
-          { to: (ctx) => ctx.historyRef }
-        ),
         save: send('SAVE', { to: (ctx) => ctx.undoRef }),
         revertSave: send((ctx) => ({ type: 'REVERT_SAVE', edit: ctx.edit }), {
           to: (ctx) => ctx.undoRef,
@@ -163,6 +156,7 @@ const createArraysMachine = (context) =>
         setEdit: assign({ edit: (_, evt) => evt.edit }),
         setEdited: assign({ edited: (_, evt) => evt }),
         sendEdited: send((ctx) => ({ ...ctx.edited, edit: ctx.edit })),
+        sendRestored: send((ctx, evt) => ({ type: 'RESTORED_SEGMENT', ...evt })),
         sendSnapshot: send(
           (ctx) => {
             const { labeled, t, feature } = ctx.edited;

@@ -26,19 +26,19 @@ function WriteModeButtons() {
         value={writeMode}
         exclusive
         onChange={handleWriteMode}
-        aria-label='label write mode'
+        aria-label='segmentation write mode'
       >
-        <Tooltip title='Exclude labels' value='exclude' placement='right'>
+        <Tooltip title='Exclude' value='exclude' placement='right'>
           <ToggleButton value='exclude'>
             <ExcludeIcon />
           </ToggleButton>
         </Tooltip>
-        <Tooltip title='Overwrite labels' value='overwrite' placement='right'>
+        <Tooltip title='Overwrite' value='overwrite' placement='right'>
           <ToggleButton value='overwrite'>
             <OverwriteIcon />
           </ToggleButton>
         </Tooltip>
-        <Tooltip title='Overlap labels' value='overlap' placement='right'>
+        <Tooltip title='Overlap' value='overlap' placement='right'>
           <ToggleButton value='overlap'>
             <OverlapIcon />
           </ToggleButton>

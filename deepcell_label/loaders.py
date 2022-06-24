@@ -212,8 +212,8 @@ def load_divisions(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         divisions = load_zip_json(zf, filename='divisions.json')
-        if divisions is None:
-            lineage = load_zip_json(zf, filename='lineage.json')
+        lineage = load_zip_json(zf, filename='lineage.json')
+        if lineage:
             divisions = convert_lineage(lineage)
     elif tarfile.is_tarfile(f.name):
         lineage = load_trk(f, filename='lineage.json')
@@ -459,11 +459,19 @@ def load_png(f):
     if 'PNG image data' in magic.from_buffer(f.read(2048)):
         f.seek(0)
         image = Image.open(f, formats=['PNG'])
-        # Luminance should add channel dimension at end
-        if image.mode == 'L':
+        # Add channel dimension at end to single channel images
+        if image.mode == 'L':  # uint8
             X = np.array(image)
             X = np.expand_dims(X, -1)
-        else:
+        # TODO: support higher bit raw images
+        # Currently all images are converted to uint8
+        elif image.mode == 'I' or image.mode == 'F':  # int32 and float32
+            # Rescale data
+            max, min = np.max(image), np.min(image)
+            X = (image - min) / (max - min if max - min > 0 else 1) * 255
+            X = X.astype(np.uint8)
+            X = np.expand_dims(X, -1)
+        else:  # P, RGB, RGBA, CMYK,YCbCr
             # Create three RGB channels
             # Handles RGB, RGBA, P modes
             X = np.array(image.convert('RGB'))

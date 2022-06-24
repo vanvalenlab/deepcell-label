@@ -9,7 +9,7 @@ function Cells() {
   return (
     <Box display='flex' flexDirection='column'>
       <HighlightToggle />
-      <Box display='flex' justifyContent='space-between' width='100%'>
+      <Box display='flex' justifyContent='space-between' width='100%' sx={{ gap: 1 }}>
         <FormLabel>Selected</FormLabel>
         <FormLabel>Hovering</FormLabel>
       </Box>

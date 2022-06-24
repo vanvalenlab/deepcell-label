@@ -8,13 +8,17 @@ const idbMachine = createMachine(
     context: {
       db: null,
       projectId: null,
+      project: {
+        raw: null, // Uint8Array[][][]
+        labeled: null, // Int32Array[][][]
+        cells: null, // list of cells (not the Cells object) { value: number, cell, number, t: number}[]
+        divisions: null, // list of divisions { parent: number, daughters: number[], t: number}[]
+        spots: null, // list of spot coordinates [number, number][]
+      },
     },
-    on: {
-      PUT_PROJECT: 'putProject',
-    },
-    initial: 'getId',
+    initial: 'waitForId',
     states: {
-      getId: {
+      waitForId: {
         on: {
           PROJECT_ID: { target: 'openDb', actions: 'setProjectId' },
         },
@@ -25,21 +29,47 @@ const idbMachine = createMachine(
           onDone: { target: 'getProject', actions: 'setDb' },
         },
       },
-      idle: {},
-      putProject: {
-        invoke: { src: 'putProject', onDone: 'idle' },
-      },
       getProject: {
         invoke: {
           src: 'getProject',
           onDone: [
             {
               cond: 'projectInDb',
-              target: 'idle',
-              actions: [(c, e) => console.log(c, e), 'sendLoaded'],
+              target: 'loading',
+              actions: 'sendLoaded',
             },
-            { target: 'idle', actions: 'sendProjectNotInDB' },
+            { target: 'loading', actions: 'sendProjectNotInDB' },
           ],
+        },
+      },
+      loading: {
+        on: {
+          LOADED: { target: 'idle.putProject', actions: 'setProject' },
+        },
+      },
+      idle: {
+        on: {
+          EDITED_SEGMENT: {
+            target: '.putProject',
+            actions: 'updateLabeled',
+          },
+          RESTORED_SEGMENT: {
+            target: '.putProject',
+            actions: 'updateLabeled',
+          },
+          CELLS: { target: '.putProject', actions: 'updateCells' },
+          DIVISIONS: {
+            target: '.putProject',
+            actions: 'updateDivisions',
+          },
+          SPOTS: { target: '.putProject', actions: 'updateSpots' },
+        },
+        initial: 'idle',
+        states: {
+          idle: {},
+          putProject: {
+            invoke: { src: 'putProject', onDone: 'idle' },
+          },
         },
       },
     },
@@ -56,7 +86,7 @@ const idbMachine = createMachine(
           },
         }),
       getProject: (ctx) => ctx.db.get('projects', ctx.projectId),
-      putProject: (ctx, evt) => ctx.db.put('projects', evt.project, ctx.projectId),
+      putProject: (ctx, evt) => ctx.db.put('projects', ctx.project, ctx.projectId),
     },
     actions: {
       setProjectId: assign({ projectId: (ctx, evt) => evt.projectId }),
@@ -67,6 +97,27 @@ const idbMachine = createMachine(
         ...evt.data,
         message: 'from idb web worker machine',
       })),
+      setProject: assign((ctx, evt) => ({
+        project: { ...evt },
+      })),
+      updateLabeled: assign({
+        project: (ctx, evt) => {
+          const { t, feature } = evt;
+          const labeled = ctx.project.labeled.map((arr, i) =>
+            i === feature ? arr.map((arr, j) => (j === t ? evt.labeled : arr)) : arr
+          );
+          return { ...ctx.project, labeled };
+        },
+      }),
+      updateCells: assign({
+        project: (ctx, evt) => ({ ...ctx.project, cells: evt.cells }),
+      }),
+      updateDivisions: assign({
+        project: (ctx, evt) => ({ ...ctx.project, divisions: evt.divisions }),
+      }),
+      updateSpots: assign({
+        project: (ctx, evt) => ({ ...ctx.project, spots: evt.spots }),
+      }),
     },
   }
 );

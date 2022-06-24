@@ -9,7 +9,6 @@ function createLabelHistoryMachine(actor) {
         actor,
         past: {},
         future: {},
-        currentLabels: null,
       },
       entry: send('LABEL_HISTORY', { to: actor }),
       initial: 'idle',

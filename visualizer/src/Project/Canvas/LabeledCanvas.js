@@ -1,13 +1,12 @@
 import { useSelector } from '@xstate/react';
-import equal from 'fast-deep-equal';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaGpu,
-  useArrays,
   useCanvas,
-  useCells,
-  useImage,
+  useCellMatrix,
+  useColormap,
   useLabeled,
+  useLabeledArray,
   useSelectedCell,
 } from '../ProjectContext';
 
@@ -19,23 +18,12 @@ export const LabeledCanvas = ({ setBitmaps }) => {
   const height = useSelector(canvas, (state) => state.context.height);
 
   const labeled = useLabeled();
-  const feature = useSelector(labeled, (state) => state.context.feature);
   const highlight = useSelector(labeled, (state) => state.context.highlight);
   const opacity = useSelector(labeled, (state) => state.context.cellsOpacity);
 
-  const image = useImage();
-  const t = useSelector(image, (state) => state.context.t);
-
-  const arrays = useArrays();
-  const labeledArray = useSelector(
-    arrays,
-    (state) => state.context.labeled && state.context.labeled[feature][t]
-  );
-
-  const cells = useCells();
-  const cellMatrix = useSelector(cells, (state) => state.context.cells?.getMatrix(t), equal);
-  const colormap = useSelector(cells, (state) => state.context.colormap);
-
+  const labeledArray = useLabeledArray();
+  const cellMatrix = useCellMatrix();
+  const colormap = useColormap();
   const cell = useSelectedCell();
 
   const gpu = useAlphaGpu();

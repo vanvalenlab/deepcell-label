@@ -76,12 +76,12 @@ function updateFromCells(divisions, cells) {
       .map((d) => {
         let { parent, daughters, t } = d;
         // check parent exists before division
-        if (!cells.cells.some((cell) => cell.cell === parent && cell.t < t)) {
+        if (!cells.some((cell) => cell.cell === parent && cell.t < t)) {
           return { ...d, parent: null };
         }
         // check daughters exist after division
         daughters = daughters.filter((daughter) =>
-          cells.cells.some((cell) => cell.cell === daughter && cell.t >= t)
+          cells.some((cell) => cell.cell === daughter && cell.t >= t)
         );
         return { ...d, daughters };
       })
