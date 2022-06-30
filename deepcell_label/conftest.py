@@ -1,6 +1,7 @@
 """Tests for the DeepCell Label Flask App."""
 
 import os
+import tempfile
 
 import numpy as np
 import pytest
@@ -18,23 +19,42 @@ TEST_DATABASE_URI = 'sqlite:///{}'.format(TESTDB_PATH)
 
 # TODO: Could this become a fixture?
 class DummyLoader(Loader):
-    def __init__(self, raw=None, labels=None, cell_info=None, path='test.npz'):
-        super().__init__()
+    def __init__(self, X=None, y=None, spots=None):
+        self._X = X if X is not None else np.zeros((1, 1, 1, 1))
+        self._y = y if y is not None else np.zeros(self._X.shape)
+        self._spots = spots
+        with tempfile.NamedTemporaryFile() as images, tempfile.NamedTemporaryFile() as labels:
+            super().__init__(images, labels)
 
-        if raw is None:
-            raw = np.zeros((1, 1, 1, 1))
+    # Prevent changing mocked data
+    @property
+    def X(self):
+        return self._X
 
-        if labels is None:
-            labels = np.zeros(raw.shape)
-        elif labels.shape != raw.shape:
-            raw = np.zeros(labels.shape)
+    @X.setter
+    def X(self, value):
+        pass
 
-        self.path = path
-        self.raw_array = raw
-        self.label_array = labels
-        self.add_semantic_labels()  # computes cell_ids
-        if cell_info is not None:
-            self.cell_info = cell_info
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        pass
+
+    @property
+    def spots(self):
+        return self._spots
+
+    @spots.setter
+    def spots(self, value):
+        pass
+
+
+@pytest.fixture(autouse=True)
+def mock_aws(mocker):
+    mocker.patch('deepcell_label.models.boto3.client')
 
 
 @pytest.fixture(scope='session')

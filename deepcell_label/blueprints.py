@@ -1,27 +1,21 @@
 """Flask blueprint for modular routes."""
 from __future__ import absolute_import, division, print_function
 
-import gzip
-import json
+import io
 import subprocess
+import tempfile
 import timeit
 import traceback
 
-import matplotlib
-import numpy as np
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    jsonify,
-    make_response,
-    request,
-    send_file,
-)
-from werkzeug.exceptions import BadRequestKeyError, HTTPException
+import boto3
+import requests
+from flask import Blueprint, abort, current_app, jsonify, request, send_file
+from werkzeug.exceptions import HTTPException
 
-from deepcell_label import exporters, loaders
-from deepcell_label.label import TrackEdit, ZStackEdit
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from deepcell_label.export import Export
+from deepcell_label.label import Edit
+from deepcell_label.loaders import Loader
 from deepcell_label.models import Project
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
@@ -60,13 +54,6 @@ def version():
     )
 
 
-@bp.errorhandler(loaders.InvalidExtension)
-def handle_invalid_extension(error):
-    response = jsonify(error.to_dict())
-    response.status_code = error.status_code
-    return response
-
-
 @bp.errorhandler(Exception)
 def handle_exception(error):
     """Handle all uncaught exceptions"""
@@ -83,197 +70,70 @@ def handle_exception(error):
     return jsonify({'error': str(error)}), 500
 
 
-@bp.route('/api/raw/<token>/<int:channel>/<int:frame>', methods=['GET'])
-def raw(token, channel, frame):
-    project = Project.get(token)
+@bp.route('/api/project/<project>', methods=['GET'])
+def get_project(project):
+    start = timeit.default_timer()
+    project = Project.get(project)
     if not project:
-        return abort(404, description=f'project {token} not found')
-    png = project.get_raw_png(channel, frame)
-    return send_file(png, mimetype='image/png')
+        return abort(404, description=f'project {project} not found')
+    bucket = request.args.get('bucket', default=project.bucket)
+    s3 = boto3.client('s3')
+    data = io.BytesIO()
+    s3.download_fileobj(bucket, project.key, data)
+    data.seek(0)
+    current_app.logger.info(
+        f'Loaded project {project.key} from {bucket} in {timeit.default_timer() - start} s.',
+    )
+    return send_file(data, mimetype='application/zip')
 
 
-@bp.route('/api/raw/<token>', methods=['POST'])
-def add_raw(token):
-    """Add new channel to the project."""
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    # Load channel from first array in attached file
-    try:
-        npz = np.load(request.files.get('file'))
-    except BadRequestKeyError:  # could not get file from request.files
+@bp.route('/api/project', methods=['POST'])
+def create_project():
+    """
+    Create a new Project from URL.
+    """
+    start = timeit.default_timer()
+    if 'images' in request.form:
+        images_url = request.form['images']
+    else:
         return abort(
-            400, description='Attach a new channel file in a form under the file field.'
+            400,
+            description='Include "images" in the request form with a URL to download the project data.',
         )
-    except TypeError:
-        return abort(
-            400, description='Could not load the attached file. Attach an .npz file.'
-        )
-    channel = npz[npz.files[0]]
-    # Check channel is the right shape
-    expected_shape = (project.num_frames, project.width, project.height, 1)
-    if channel.shape != expected_shape:
-        raise ValueError(f'New channel must have shape {expected_shape}')
-    # Add channel to project
-    project.add_channel(channel)
-    return {'numChannels': project.num_channels}
-
-
-@bp.route('/api/labeled/<token>/<int:feature>/<int:frame>')
-def labeled(token, feature, frame):
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    png = project.get_labeled_png(feature, frame)
-    return send_file(png, mimetype='image/png', cache_timeout=0)
-
-
-@bp.route('/api/array/<token>/<int:feature>/<int:frame>')
-def array(token, feature, frame):
-    """ """
-    project = Project.get(token)
-    if not project:
-        return jsonify({'error': f'project {token} not found'}), 404
-    labeled_array = project.get_labeled_array(feature, frame)
-    content = gzip.compress(json.dumps(labeled_array.tolist()).encode('utf8'), 5)
-    response = make_response(content)
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
-    return response
-    # seg_array = project.get_labeled_array(feature, frame)
-    # filename = f'{token}_array_feature{feature}_frame{frame}.npy'
-    # return send_file(seg_array, attachment_filename=filename, cache_timeout=0)
-
-
-@bp.route('/api/semantic-labels/<project_id>/<int:feature>')
-def semantic_labels(project_id, feature):
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': f'project {project_id} not found'}), 404
-    cell_info = project.labels.cell_info[feature]
-    return cell_info
-
-
-@bp.route('/api/colormap/<project_id>/<int:feature>')
-def colormap(project_id, feature):
-    project = Project.get(project_id)
-    if not project:
-        return jsonify({'error': f'project {project_id} not found'}), 404
-    max_label = project.get_max_label(feature)
-    colormap = matplotlib.pyplot.get_cmap('viridis', max_label)
-    colors = list(map(matplotlib.colors.rgb2hex, colormap.colors))
-    colors.insert(0, '#000000')  # No label (label 0) is black
-    colors.append('#FFFFFF')  # New label (last label) is white
-    response = make_response({'colors': colors})
-    response.headers['Cache-Control'] = 'max-age=0'
-
-    return response
-
-
-@bp.route('/api/edit/<token>/<action_type>', methods=['POST'])
-def edit(token, action_type):
-    """
-    Edit the labeling of the project and
-    update the project in the database.
-    """
-    start = timeit.default_timer()
-    # obtain 'info' parameter data sent by .js script
-    info = {k: json.loads(v) for k, v in request.values.to_dict().items()}
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    # TODO: remove frame/feature/channel columns from db schema? or keep them around
-    # to load projects on the last edited frame
-    project.frame = info['frame']
-    project.feature = info['feature']
-    project.channel = info['channel']
-    del info['frame']
-    del info['feature']
-    del info['channel']
-
-    edit = get_edit(project)
-    edit.dispatch_action(action_type, info)
-    project.create_memento(action_type)
-    project.update()
-
-    changed_frames = [frame.frame_id for frame in project.action.frames]
-    payload = {
-        'feature': project.feature,
-        'frames': changed_frames,
-        'labels': edit.labels_changed,
-    }
-
-    current_app.logger.debug(
-        'Finished action %s for project %s in %s s.',
-        action_type,
-        token,
+    labels_url = request.form['labels'] if 'labels' in request.form else None
+    axes = request.form['axes'] if 'axes' in request.form else None
+    with tempfile.NamedTemporaryFile() as image_file, tempfile.NamedTemporaryFile() as label_file:
+        if images_url is not None:
+            image_response = requests.get(images_url)
+            if image_response.status_code != 200:
+                return (
+                    image_response.text,
+                    image_response.status_code,
+                    image_response.headers.items(),
+                )
+            image_file.write(image_response.content)
+            image_file.seek(0)
+        if labels_url is not None:
+            labels_response = requests.get(labels_url)
+            if labels_response.status_code != 200:
+                return (
+                    labels_response.text,
+                    labels_response.status_code,
+                    labels_response.headers.items(),
+                )
+            label_file.write(labels_response.content)
+            label_file.seek(0)
+        else:
+            label_file = image_file
+        loader = Loader(image_file, label_file, axes)
+        project = Project.create(loader)
+    current_app.logger.info(
+        'Created project %s from %s in %s s.',
+        project.project,
+        f'{images_url}' if labels_url is None else f'{images_url} and {labels_url}',
         timeit.default_timer() - start,
     )
-    return jsonify(payload)
-
-
-@bp.route('/api/undo/<token>', methods=['POST'])
-def undo(token):
-    start = timeit.default_timer()
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    payload = project.undo()
-
-    current_app.logger.debug(
-        'Undid action for project %s finished in %s s.',
-        token,
-        timeit.default_timer() - start,
-    )
-    return jsonify(payload)
-
-
-@bp.route('/api/redo/<token>', methods=['POST'])
-def redo(token):
-    start = timeit.default_timer()
-
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    payload = project.redo()
-
-    current_app.logger.debug(
-        'Redid action for project %s finished in %s s.',
-        token,
-        timeit.default_timer() - start,
-    )
-    return jsonify(payload)
-
-
-@bp.route('/api/project/<token>', methods=['GET'])
-def get_project(token):
-    """
-    Retrieve data from a project already in the Project table.
-    """
-    start = timeit.default_timer()
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-    payload = project.make_first_payload()
-    current_app.logger.debug(
-        'Loaded project %s in %s s.', project.token, timeit.default_timer() - start
-    )
-    return jsonify(payload)
-
-
-# @bp.route('/api/project', methods=['POST'])
-# def create_project():
-#     """
-#     Create a new Project.
-#     """
-#     start = timeit.default_timer()
-#     loader = loaders.get_loader(request)
-#     project = Project.create(loader)
-#     current_app.logger.info('Created project from %s in %s s.',
-#                             loader.path, timeit.default_timer() - start)
-#     return jsonify({'projectId': project.token})
+    return jsonify(project.project)
 
 
 @bp.route('/api/project/dropped', methods=['POST'])
@@ -282,71 +142,84 @@ def create_project_from_dropped_file():
     Create a new Project from drag & dropped file.
     """
     start = timeit.default_timer()
-    loader = loaders.FileLoader(request)
-    project = Project.create(loader)
+    input_file = request.files.get('images')
+    # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(input_file.read())
+        f.seek(0)
+        loader = Loader(f)
+        project = Project.create(loader)
     current_app.logger.info(
-        'Created project from %s in %s s.', loader.path, timeit.default_timer() - start
+        'Created project %s from %s in %s s.',
+        project.project,
+        input_file.filename,
+        timeit.default_timer() - start,
     )
-    return jsonify({'projectId': project.token})
+    return jsonify(project.project)
 
 
-@bp.route('/api/project', methods=['POST'])
-def create_project_from_url():
+@bp.route('/api/edit', methods=['POST'])
+def edit():
+    """Loads labeled data from a zip, edits them, and responds with a zip with the edited labels."""
+    start = timeit.default_timer()
+    if 'labels' not in request.files:
+        return abort(400, description='Attach the labeled data to edit in labels.zip.')
+    labels_zip = request.files['labels']
+    edit = Edit(labels_zip)
+    current_app.logger.debug(
+        'Finished action %s in %s s.',
+        edit.action,
+        timeit.default_timer() - start,
+    )
+    return send_file(edit.response_zip, mimetype='application/zip')
+
+
+@bp.route('/api/download', methods=['POST'])
+def download_project():
     """
-    Create a new Project from URL.
+    Create a DeepCell Label zip file for the user to download
+    The submitted zip should contain the raw and labeled array buffers
+    in .dat files with the dimensions in dimensions.json,
+    which are transformed into OME TIFFs in the submitted zips.
+    """
+    if 'labels' not in request.files:
+        return abort(400, description='Attach labels.zip to download.')
+    labels_zip = request.files['labels']
+    id = request.form['id']
+    export = Export(labels_zip)
+    data = export.export_zip
+    return send_file(data, as_attachment=True, attachment_filename=f'{id}.zip')
+
+
+@bp.route('/api/upload', methods=['POST'])
+def submit_project():
+    """
+    Create and upload an edited DeepCell Label zip file to an S3 bucket.
+    The submitted zip should contain the raw and labeled array buffers
+    in .dat files with the dimensions in dimensions.json,
+    which are transformed into OME TIFFs in the submitted zips.
     """
     start = timeit.default_timer()
-    url_form = request.form
-    loader = loaders.URLLoader(url_form)
-    project = Project.create(loader)
-    current_app.logger.info(
-        'Created project from %s in %s s.', loader.path, timeit.default_timer() - start
+    if 'labels' not in request.files:
+        return abort(400, description='Attach labels.zip to submit.')
+    labels_zip = request.files['labels']
+    id = request.form['id']
+    bucket = request.form['bucket']
+    export = Export(labels_zip)
+    data = export.export_zip
+
+    # store npz file object in bucket/path
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     )
-    return jsonify({'projectId': project.token})
-
-
-@bp.route('/api/download/<token>', methods=['GET'])
-def download_project(token):
-    """
-    Download a DeepCell Label project as a .npz file
-    """
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-
-    exporter = exporters.Exporter(project)
-    filestream = exporter.export()
-
-    return send_file(filestream, as_attachment=True, attachment_filename=exporter.path)
-
-
-@bp.route('/api/upload/<bucket>/<token>', methods=['GET', 'POST'])
-def upload_project_to_s3(bucket, token):
-    """Upload .trk/.npz data file to AWS S3 bucket."""
-    start = timeit.default_timer()
-    project = Project.get(token)
-    if not project:
-        return abort(404, description=f'project {token} not found')
-
-    # Save data file and send to S3 bucket
-    exporter = exporters.S3Exporter(project)
-    exporter.export(bucket)
-    # add "finished" timestamp and null out PickleType columns
-    # project.finish()
+    s3.upload_fileobj(data, bucket, f'{id}.zip')
 
     current_app.logger.debug(
-        'Uploaded %s to S3 bucket %s from project %s in %s s.',
-        exporter.path,
+        'Uploaded %s to S3 bucket %s in %s s.',
+        f'{id}.zip',
         bucket,
-        token,
         timeit.default_timer() - start,
     )
     return {}
-
-
-def get_edit(project):
-    """Factory for Edit objects"""
-    if project.is_track:
-        return TrackEdit(project)
-    else:
-        return ZStackEdit(project)

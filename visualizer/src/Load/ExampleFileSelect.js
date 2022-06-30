@@ -1,28 +1,8 @@
-import { Box, Button, LinearProgress, makeStyles } from '@material-ui/core';
-import Select from '@material-ui/core/Select';
-import SendIcon from '@material-ui/icons/Send';
+import SendIcon from '@mui/icons-material/Send';
+import { Box, Button, LinearProgress } from '@mui/material';
+import Select from '@mui/material/Select';
 import { useSelector } from '@xstate/react';
 import React from 'react';
-
-const useStyles = makeStyles((theme) => ({
-  examplesBox: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  select: {
-    margin: theme.spacing(3),
-    padding: theme.spacing(1),
-  },
-  submit: {
-    width: '100%',
-  },
-  progress: {
-    margin: theme.spacing(1),
-    width: '100%',
-  },
-}));
 
 const exampleFiles = [
   {
@@ -35,28 +15,33 @@ const exampleFiles = [
     path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
     name: '3D organoid segmentation',
   },
-  // {
-  //   value: 2,
-  //   path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_corrected.trk',
-  //   name: 'corrected tracking timelapse',
-  // },
-  // {
-  //   value: 3,
-  //   path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_uncorrected.trk',
-  //   name: 'uncorrected tracking timelapse',
-  // },
+  {
+    value: 2,
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_track_corrected.zip',
+    name: 'corrected tracking timelapse',
+  },
+  {
+    value: 3,
+    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_track_uncorrected.zip',
+    name: 'uncorrected tracking timelapse',
+  },
 ];
 
 function ExampleFileSelect({ loadService }) {
   const file = useSelector(loadService, (state) => state.context.exampleFile);
   const loading = useSelector(loadService, (state) => state.matches('submittingExample'));
 
-  const styles = useStyles();
-
   return (
-    <Box className={styles.examplesBox}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
       <Select
-        className={styles.select}
+        sx={{ m: 3, p: 1 }}
         native
         value={file ? file.path : false}
         onChange={(e) => loadService.send({ type: 'SET_EXAMPLE_FILE', file: e.target.value })}
@@ -73,7 +58,7 @@ function ExampleFileSelect({ loadService }) {
       </Select>
       <Button
         id='submitExample'
-        className={styles.submit}
+        sx={{ width: '100%' }}
         variant='contained'
         color='primary'
         endIcon={<SendIcon />}
@@ -82,7 +67,7 @@ function ExampleFileSelect({ loadService }) {
       >
         Submit
       </Button>
-      {loading && <LinearProgress className={styles.progress} />}
+      {loading && <LinearProgress sx={{ m: 1, width: '100%' }} />}
     </Box>
   );
 }

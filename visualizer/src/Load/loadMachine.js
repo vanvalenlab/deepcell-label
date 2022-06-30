@@ -61,7 +61,7 @@ const loadMachine = Machine(
       submitExample: (context) => {
         const { exampleFile } = context;
         const formData = new FormData();
-        formData.append('url', exampleFile);
+        formData.append('images', exampleFile);
         return axios.post('/api/project', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -69,7 +69,7 @@ const loadMachine = Machine(
       submitUpload: (context) => {
         const { uploadFile, axes } = context;
         const formData = new FormData();
-        formData.append('file', uploadFile);
+        formData.append('images', uploadFile);
         formData.append('axes', axes);
         return axios.post('/api/project/dropped', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -77,7 +77,9 @@ const loadMachine = Machine(
       },
     },
     actions: {
-      setExampleFile: assign({ exampleFile: (_, { file }) => file }),
+      setExampleFile: assign({
+        exampleFile: (_, { file }) => file,
+      }),
       setUploadFile: assign({
         uploadFile: ({ uploadFile }, { files }) => {
           // Revoke the data uris of existing file previews to avoid memory leaks
@@ -92,9 +94,10 @@ const loadMachine = Machine(
       setAxes: assign({ axes: (_, { axes }) => axes }),
       setErrorText: assign({ errorText: (_, event) => `${event.error}` }),
       setSingleFileError: assign({ errorText: 'Please upload a single file.' }),
-      redirectToProject: (_, event) => {
-        const { projectId } = event.data.data;
-        window.location.href = `${document.location.origin}/project?projectId=${projectId}&download=true`;
+      redirectToProject: (ctx, evt) => {
+        const projectId = evt.data.data;
+        let url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
+        window.location.href = url;
       },
     },
   }
