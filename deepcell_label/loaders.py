@@ -295,7 +295,7 @@ def load_zip_tiffs(zf, filename):
                 tiff = TiffFile(f).asarray()
                 tiffs[name] = tiff
     if len(tiffs) > 0:
-        regex = r'(.*)_batch_(\d*)_feature_(\d*)\.tif'
+        regex = r'(.*)batch_(\d*)_feature_(\d*)\.tif'
 
         def get_batch(filename):
             match = re.match(regex, filename)
@@ -319,7 +319,7 @@ def load_zip_tiffs(zf, filename):
                 ]
                 batches[batch] = np.stack(features, axis=-1)
             # Stack batches on first axis
-            batches = map(lambda x: x[1], sorted(batches.items()))
+            batches = map(lambda x: x[1][0], sorted(batches.items()))
             array = np.stack(batches, axis=0)
             return array
         else:  # Use each tiff as a channel and stack on the last axis
