@@ -294,40 +294,40 @@ def load_zip_tiffs(zf, filename):
                 f.seek(0)
                 tiff = TiffFile(f).asarray()
                 tiffs[name] = tiff
+    if len(tiffs) > 0:
+        regex = r'(.*)_batch_(\d*)_feature_(\d*)\.tif'
 
-    regex = r'(.*)_batch_(\d*)_feature_(\d*)\.tif'
+        def get_batch(filename):
+            match = re.match(regex, filename)
+            if match:
+                return int(match.group(2))
 
-    def get_batch(filename):
-        match = re.match(regex, filename)
-        if match:
-            return int(match.group(2))
+        def get_feature(filename):
+            match = re.match(regex, filename)
+            if match:
+                return int(match.group(3))
 
-    def get_feature(filename):
-        match = re.match(regex, filename)
-        if match:
-            return int(match.group(3))
-
-    filenames = list(tiffs.keys())
-    all_have_batch = all(map(lambda x: x is not None, map(get_batch, filenames)))
-    if all_have_batch:  # Use batches as Z dimension
-        batches = {}
-        for batch, batch_group in itertools.groupby(filenames, get_batch):
-            # Stack features on last axis
-            features = [
-                tiffs[filename]
-                for filename in sorted(list(batch_group), key=get_feature)
-            ]
-            batches[batch] = np.stack(features, axis=-1)
-        # Stack batches on first axis
-        batches = map(lambda x: x[1], sorted(batches.items()))
-        array = np.stack(batches, axis=0)
-        return array
-    else:  # Use each tiff as a channel and stack on the last axis
-        y = np.stack(tiffs, axis=-1)
-        # Add Z axis
-        if y.ndim == 3:
-            y = y[np.newaxis, ...]
-        return y
+        filenames = list(tiffs.keys())
+        all_have_batch = all(map(lambda x: x is not None, map(get_batch, filenames)))
+        if all_have_batch:  # Use batches as Z dimension
+            batches = {}
+            for batch, batch_group in itertools.groupby(filenames, get_batch):
+                # Stack features on last axis
+                features = [
+                    tiffs[filename]
+                    for filename in sorted(list(batch_group), key=get_feature)
+                ]
+                batches[batch] = np.stack(features, axis=-1)
+            # Stack batches on first axis
+            batches = map(lambda x: x[1], sorted(batches.items()))
+            array = np.stack(batches, axis=0)
+            return array
+        else:  # Use each tiff as a channel and stack on the last axis
+            y = np.stack(tiffs.values(), axis=-1)
+            # Add Z axis
+            if y.ndim == 3:
+                y = y[np.newaxis, ...]
+            return y
 
 
 def load_zip_png(zf):
