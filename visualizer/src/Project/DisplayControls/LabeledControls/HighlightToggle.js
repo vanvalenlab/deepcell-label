@@ -1,54 +1,37 @@
+import { Checkbox } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
-import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
-import React, { useEffect, useRef } from 'react';
-import { useLabeled } from '../../ProjectContext';
+import React, { useEffect } from 'react';
+import { useLabeled, useMousetrapRef } from '../../ProjectContext';
 
 function HighlightToggle() {
   const labeled = useLabeled();
   const highlight = useSelector(labeled, (state) => state.context.highlight);
 
-  // Adds mousetrap class so hotkeys work after using switch
-  const inputRef = useRef();
-  useEffect(() => {
-    const input = inputRef.current;
-    input.className = `${input.className}  mousetrap`;
-  }, []);
-
-  const tooltipText = (
-    <span>
-      Toggle with <kbd>H</kbd>
-    </span>
-  );
+  const inputRef = useMousetrapRef();
 
   useEffect(() => {
     bind('h', () => labeled.send('TOGGLE_HIGHLIGHT'));
-    // const sendToggleHighlight = e => {
-    //   if (e.key === 'h') {
-    //     labeled.send('TOGGLE_HIGHLIGHT');
-    //   }
-    // };
-    // document.addEventListener('keydown', sendToggleHighlight);
-    // return () => document.removeEventListener('keydown', sendToggleHighlight);
   }, [labeled]);
 
   return (
-    <Tooltip title={tooltipText}>
+    <Tooltip title={<kbd>H</kbd>} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
-            <Switch
+            <Checkbox
               size='small'
               checked={highlight}
               onChange={() => labeled.send('TOGGLE_HIGHLIGHT')}
               inputRef={inputRef}
+              sx={{ py: 0 }}
             />
           }
           label='Highlight'
-          labelPlacement='start'
+          labelPlacement='end'
         />
       </FormGroup>
     </Tooltip>

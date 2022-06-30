@@ -1,49 +1,51 @@
 """Utility functions for DeepCell Label"""
 
-import re
-
 import numpy as np
 
 
-def add_frame_div_parent(cell_info):
+def convert_lineage(lineage):
     """
-    Adds the frame a cells parent divides on to cell info.
+    Converts a lineage from .trk files into a list of divisions.
 
     Args:
-        cell_info (dict): dict that maps cells to cell info
+        lineage (dict): dict that maps cells to lineage info
+            e.g. {
+                '1': {'frame_div': 1, 'parent': None, 'daughters': [2, 3]},
+                '2': {'frame_div': None, 'parent': 1, 'daughters': []},
+                '3': {'frame_div': None, 'parent': 1, 'daughters': []},
+            }
+
     Returns:
-        dict: cell info with added frame_div_parent
+        list: divisions derived from lineage
+            e.g. [{ 'parent': 1, 'daughters': [2, 3], 't': 1 }]
+
     """
-    new_info = cell_info.copy()
-    for info in new_info.values():
-        if info['parent']:
-            parent = info['parent']
-            info['frame_div_parent'] = new_info[parent]['frame_div']
-        else:
-            info['frame_div_parent'] = None
-    return new_info
-
-
-def snakecase_to_camelcase(name):
-    snake_pattern = re.compile(r'_([a-z])')
-    return snake_pattern.sub(lambda x: x.group(1).upper(), name)
-
-
-def reformat_cell_info(cell_info):
-    """
-    Reformats snake case to camel case and renames frame_div to divisionFrame.
-    """
-    reformated = {}
-    for cell, info in cell_info.items():
-        reformated[cell] = {}
-        for key in info:
-            if key == 'frame_div':
-                reformated[cell]['divisionFrame'] = info[key]
-            elif key == 'frame_div_parent':
-                reformated[cell]['parentDivisionFrame'] = info[key]
-            else:
-                reformated[cell][snakecase_to_camelcase(key)] = info[key]
-    return reformated
+    divisions = []
+    lineage = {int(k): v for k, v in lineage.items()}
+    for cell, info in lineage.items():
+        parent, daughters, frame_div = (
+            info['parent'],
+            info['daughters'],
+            info['frame_div'],
+        )
+        # Check for missing daughters
+        if parent is not None:
+            if cell not in lineage[parent]['daughters']:
+                raise ValueError(
+                    f'cell {cell} with parent {parent} not in daughters {lineage[parent]["daughters"]}'
+                )
+        if len(daughters) > 0:
+            # Check for missing frame_div
+            if frame_div is None:
+                raise ValueError(f'cell {cell} missing frame_div')
+            # Check for missing parent
+            for d in daughters:
+                if lineage[d]['parent'] != cell:
+                    raise ValueError(
+                        f'cell {cell} divides into cell {d} but parent of {d} is {lineage[d]["parent"]}'
+                    )
+            divisions.append({'parent': cell, 'daughters': daughters, 't': frame_div})
+    return divisions
 
 
 def reshape(array, input_axes, output_axes):

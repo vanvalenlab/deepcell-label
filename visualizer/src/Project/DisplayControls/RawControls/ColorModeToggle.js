@@ -1,22 +1,16 @@
-import { FormGroup } from '@mui/material';
+import { FormGroup, Switch } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { useRaw } from '../../ProjectContext';
+import React, { useCallback, useEffect } from 'react';
+import { useMousetrapRef, useRaw } from '../../ProjectContext';
 
 function ColorModeToggle() {
   const raw = useRaw();
   const grayscale = useSelector(raw, (state) => state.context.isGrayscale);
 
-  // Adds mousetrap class so hotkeys work after using switch
-  const inputRef = useRef();
-  useEffect(() => {
-    const input = inputRef.current;
-    input.className = `${input.className} mousetrap`;
-  }, []);
+  const inputRef = useMousetrapRef();
 
   const onClick = useCallback(() => raw.send('TOGGLE_COLOR_MODE'), [raw]);
 
@@ -24,14 +18,8 @@ function ColorModeToggle() {
     bind('y', onClick);
   }, [onClick]);
 
-  const toggleTooltip = (
-    <span>
-      Toggle with <kbd>Y</kbd>
-    </span>
-  );
-
   return (
-    <Tooltip title={toggleTooltip}>
+    <Tooltip title={<kbd>Y</kbd>} placement='right'>
       <FormGroup row>
         <FormControlLabel
           control={
@@ -42,8 +30,8 @@ function ColorModeToggle() {
               inputRef={inputRef}
             />
           }
-          label='Multi-channel'
-          labelPlacement='start'
+          label='Color'
+          labelPlacement='end'
         />
       </FormGroup>
     </Tooltip>

@@ -1,9 +1,9 @@
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import { useCanvas, useLayers, usePixelatedCanvas, useProject } from '../../ProjectContext';
+import { useCanvas, useLayers, useProject } from '../../ProjectContext';
 import ChannelCanvas from './ChannelCanvas';
 
-export const RGBCanvas = ({ setCanvases }) => {
+export const RGBCanvas = ({ setBitmaps }) => {
   const project = useProject();
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
@@ -11,24 +11,28 @@ export const RGBCanvas = ({ setCanvases }) => {
 
   const layers = useLayers();
   // keys: layer index, values: ref to canvas for each layer
-  const [layerCanvases, setLayerCanvases] = useState({});
-  const drawCanvas = usePixelatedCanvas();
+  const [layerBitmaps, setLayerBitmaps] = useState({});
+  const [composeCanvas] = useState(document.createElement('canvas'));
 
   useEffect(() => {
-    drawCanvas.getContext('2d').globalCompositeOperation = 'lighter';
-  }, [drawCanvas, project]);
+    composeCanvas.width = width;
+    composeCanvas.height = height;
+    composeCanvas.getContext('2d').globalCompositeOperation = 'lighter';
+  }, [project, composeCanvas, width, height]);
 
   useEffect(() => {
-    const ctx = drawCanvas.getContext('2d');
+    const ctx = composeCanvas.getContext('2d');
     ctx.clearRect(0, 0, width, height);
-    for (let key in layerCanvases) {
-      ctx.drawImage(layerCanvases[key], 0, 0);
+    for (let key in layerBitmaps) {
+      ctx.drawImage(layerBitmaps[key], 0, 0);
     }
-    setCanvases((canvases) => ({ ...canvases, raw: drawCanvas }));
-  }, [layerCanvases, width, height, setCanvases, drawCanvas]);
+    createImageBitmap(composeCanvas).then((bitmap) => {
+      setBitmaps((bitmaps) => ({ ...bitmaps, raw: bitmap }));
+    });
+  }, [layerBitmaps, width, height, setBitmaps, composeCanvas]);
 
   return layers.map((layer) => (
-    <ChannelCanvas layer={layer} setCanvases={setLayerCanvases} key={layer.sessionId} />
+    <ChannelCanvas layer={layer} setBitmaps={setLayerBitmaps} key={layer.sessionId} />
   ));
 };
 

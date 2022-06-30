@@ -1,27 +1,18 @@
 """Flask blueprint for modular routes."""
 from __future__ import absolute_import, division, print_function
 
-import gzip
 import io
-import json
 import tempfile
 import timeit
 import traceback
 
 import boto3
-import numpy as np
 import requests
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    jsonify,
-    make_response,
-    request,
-    send_file,
-)
+from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from deepcell_label.export import Export
 from deepcell_label.label import Edit
 from deepcell_label.loaders import Loader
 from deepcell_label.models import Project
@@ -53,13 +44,18 @@ def handle_exception(error):
 
 @bp.route('/api/project/<project>', methods=['GET'])
 def get_project(project):
+    start = timeit.default_timer()
     project = Project.get(project)
     if not project:
         return abort(404, description=f'project {project} not found')
+    bucket = request.args.get('bucket', default=project.bucket)
     s3 = boto3.client('s3')
     data = io.BytesIO()
-    s3.download_fileobj(project.bucket, project.key, data)
+    s3.download_fileobj(bucket, project.key, data)
     data.seek(0)
+    current_app.logger.info(
+        f'Loaded project {project.key} from {bucket} in {timeit.default_timer() - start} s.',
+    )
     return send_file(data, mimetype='application/zip')
 
 
@@ -69,21 +65,39 @@ def create_project():
     Create a new Project from URL.
     """
     start = timeit.default_timer()
-    images_url = request.form['images'] if 'images' in request.form else None
+    if 'images' in request.form:
+        images_url = request.form['images']
+    else:
+        return abort(
+            400,
+            description='Include "images" in the request form with a URL to download the project data.',
+        )
     labels_url = request.form['labels'] if 'labels' in request.form else None
-    dimension_order = (
-        request.form['dimension_order'] if 'dimension_order' in request.form else None
-    )
-    with tempfile.TemporaryFile() as image_file, tempfile.TemporaryFile() as label_file:
+    axes = request.form['axes'] if 'axes' in request.form else None
+    with tempfile.NamedTemporaryFile() as image_file, tempfile.NamedTemporaryFile() as label_file:
         if images_url is not None:
-            image_file.write(requests.get(images_url).content)
+            image_response = requests.get(images_url)
+            if image_response.status_code != 200:
+                return (
+                    image_response.text,
+                    image_response.status_code,
+                    image_response.headers.items(),
+                )
+            image_file.write(image_response.content)
             image_file.seek(0)
         if labels_url is not None:
-            label_file.write(requests.get(labels_url).content)
+            labels_response = requests.get(labels_url)
+            if labels_response.status_code != 200:
+                return (
+                    labels_response.text,
+                    labels_response.status_code,
+                    labels_response.headers.items(),
+                )
+            label_file.write(labels_response.content)
             label_file.seek(0)
         else:
             label_file = image_file
-        loader = Loader(image_file, label_file, dimension_order)
+        loader = Loader(image_file, label_file, axes)
         project = Project.create(loader)
     current_app.logger.info(
         'Created project %s from %s in %s s.',
@@ -100,10 +114,13 @@ def create_project_from_dropped_file():
     Create a new Project from drag & dropped file.
     """
     start = timeit.default_timer()
-    input_file = request.files.get('file')
+    input_file = request.files.get('images')
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
-    loader = Loader(input_file)
-    project = Project.create(loader)
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(input_file.read())
+        f.seek(0)
+        loader = Loader(f)
+        project = Project.create(loader)
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,
@@ -113,61 +130,68 @@ def create_project_from_dropped_file():
     return jsonify(project.project)
 
 
-@bp.route('/api/edit/<action>', methods=['POST'])
-def edit(action):
-    """Edits a label image and returns the updated label image and segments in the label image."""
+@bp.route('/api/edit', methods=['POST'])
+def edit():
+    """Loads labeled data from a zip, edits them, and responds with a zip with the edited labels."""
     start = timeit.default_timer()
-    # Get arguments for action
-    args = {k: json.loads(v) for k, v in request.values.to_dict().items()}
-    # Separate height and width from args
-    height = args['height']
-    width = args['width']
-    del args['height']
-    del args['width']
-
-    # Parse label and raw arrays
     if 'labels' not in request.files:
-        return abort(400, description='Attach the labels.')
-    else:
-        labels = request.files['labels']
-        labels_array = np.fromfile(labels, 'int32')
-        labels_array = labels_array.reshape((height, width))
-    if 'raw' in request.files:
-        raw = request.files['raw']
-        raw_array = np.fromfile(raw, 'uint8')
-        raw_array = raw_array.reshape((height, width))
-    elif action in ['watershed', 'threshold', 'autofit']:
-        return abort(400, description=f'Attach a raw image to use the {action} action.')
-    else:
-        raw_array = None
-
-    edit = Edit(labels_array, raw_array)
-    edit.dispatch_action(action, args)
-
-    content = gzip.compress(json.dumps(edit.labels.tolist()).encode('utf8'), 5)
-    response = make_response(content)
-    response.headers['Content-length'] = len(content)
-    response.headers['Content-Encoding'] = 'gzip'
-
+        return abort(400, description='Attach the labeled data to edit in labels.zip.')
+    labels_zip = request.files['labels']
+    edit = Edit(labels_zip)
     current_app.logger.debug(
         'Finished action %s in %s s.',
-        action,
+        edit.action,
         timeit.default_timer() - start,
     )
-    return response
+    return send_file(edit.response_zip, mimetype='application/zip')
 
 
-@bp.route('/api/download', methods=['GET'])
+@bp.route('/api/download', methods=['POST'])
 def download_project():
     """
-    Download a DeepCell Label project as a .npz file
+    Create a DeepCell Label zip file for the user to download
+    The submitted zip should contain the raw and labeled array buffers
+    in .dat files with the dimensions in dimensions.json,
+    which are transformed into OME TIFFs in the submitted zips.
     """
-    id = request.args.get('id')
-    project = Project.get(id)
-    if not project:
-        return abort(404, description=f'project {id} not found')
-    s3 = boto3.client('s3')
-    data = io.BytesIO()
-    s3.download_fileobj(project.bucket, project.key, data)
-    data.seek(0)
-    return send_file(data, as_attachment=True, attachment_filename=project.key)
+    if 'labels' not in request.files:
+        return abort(400, description='Attach labels.zip to download.')
+    labels_zip = request.files['labels']
+    id = request.form['id']
+    export = Export(labels_zip)
+    data = export.export_zip
+    return send_file(data, as_attachment=True, attachment_filename=f'{id}.zip')
+
+
+@bp.route('/api/upload', methods=['POST'])
+def submit_project():
+    """
+    Create and upload an edited DeepCell Label zip file to an S3 bucket.
+    The submitted zip should contain the raw and labeled array buffers
+    in .dat files with the dimensions in dimensions.json,
+    which are transformed into OME TIFFs in the submitted zips.
+    """
+    start = timeit.default_timer()
+    if 'labels' not in request.files:
+        return abort(400, description='Attach labels.zip to submit.')
+    labels_zip = request.files['labels']
+    id = request.form['id']
+    bucket = request.form['bucket']
+    export = Export(labels_zip)
+    data = export.export_zip
+
+    # store npz file object in bucket/path
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    )
+    s3.upload_fileobj(data, bucket, f'{id}.zip')
+
+    current_app.logger.debug(
+        'Uploaded %s to S3 bucket %s in %s s.',
+        f'{id}.zip',
+        bucket,
+        timeit.default_timer() - start,
+    )
+    return {}

@@ -1,189 +1,80 @@
-import { actions, assign, Machine, send } from 'xstate';
-import { respond } from 'xstate/lib/actions';
+import { assign, Machine, send } from 'xstate';
+import { pure, respond } from 'xstate/lib/actions';
+import Cells from '../cells';
 import { fromEventBus } from './eventBus';
 
-const { pure } = actions;
-
-function prevLabel(label, labels) {
-  const allLabels = Object.keys(labels).map(Number);
-  const smallerLabels = allLabels.filter((val) => val < label);
-  const prevLabel = Math.max(...smallerLabels);
-  if (prevLabel === -Infinity) {
-    return Math.max(...allLabels);
-  }
-  return prevLabel;
-}
-
-function nextLabel(label, labels) {
-  const allLabels = Object.keys(labels).map(Number);
-  const largerLabels = Object.keys(labels)
-    .map(Number)
-    .filter((val) => val > label);
-  const nextLabel = Math.min(...largerLabels);
-  if (nextLabel === Infinity) {
-    return Math.min(...allLabels);
-  }
-  return nextLabel;
-}
-
-const selectActions = {
-  selectForeground: pure(({ hovering, foreground, background }) => {
-    return [
-      send({ type: 'FOREGROUND', foreground: hovering }),
-      send({
-        type: 'BACKGROUND',
-        background: hovering === background ? foreground : background,
-      }),
-    ];
-  }),
-  selectBackground: pure(({ hovering, foreground, background }) => {
-    return [
-      send({ type: 'BACKGROUND', background: hovering }),
-      send({
-        type: 'FOREGROUND',
-        foreground: hovering === foreground ? background : foreground,
-      }),
-    ];
-  }),
-  sendSelected: send(({ foreground, background }) => ({
-    type: 'SELECTED',
-    selected: foreground === 0 ? background : foreground,
-  })),
-};
-
-const selectShortcutActions = {
-  switch: pure(({ foreground, background }) => {
-    return [
-      send({ type: 'FOREGROUND', foreground: background }),
-      send({ type: 'BACKGROUND', background: foreground }),
-    ];
-  }),
-  newForeground: send(({ labels }) => ({
-    type: 'FOREGROUND',
-    foreground: Math.max(0, ...Object.keys(labels).map(Number)) + 1,
-  })),
-  resetForeground: send({ type: 'FOREGROUND', foreground: 0 }),
-  resetBackground: send({ type: 'BACKGROUND', background: 0 }),
-};
-
-const cycleActions = {
-  prevForeground: send(({ foreground, labels }) => ({
-    type: 'FOREGROUND',
-    foreground: prevLabel(foreground, labels),
-  })),
-  nextForeground: send(({ foreground, labels }) => ({
-    type: 'FOREGROUND',
-    foreground: nextLabel(foreground, labels),
-  })),
-  prevBackground: send(({ background, labels }) => ({
-    type: 'BACKGROUND',
-    background: prevLabel(background, labels),
-  })),
-  nextBackground: send(({ background, labels }) => ({
-    type: 'BACKGROUND',
-    background: nextLabel(background, labels),
-  })),
-};
-
-const setActions = {
-  setHovering: assign({ hovering: (_, { hovering }) => hovering }),
-  setLabels: assign({ labels: (_, { labels }) => labels }),
-  setForeground: assign({ foreground: (_, { foreground }) => foreground }),
-  setBackground: assign({ background: (_, { background }) => background }),
-  setSelected: assign({ selected: (_, { selected }) => selected }),
-};
-
-const createSelectMachine = ({ eventBuses }) =>
+const createSelectMachine = ({ eventBuses, undoRef }) =>
   Machine(
     {
       id: 'select',
       invoke: [
-        {
-          id: 'eventBus',
-          src: fromEventBus('select', () => eventBuses.select),
-        },
-        { src: fromEventBus('select', () => eventBuses.canvas) },
-        { src: fromEventBus('select', () => eventBuses.labeled) },
-        { src: fromEventBus('select', () => eventBuses.labels) },
+        { id: 'eventBus', src: fromEventBus('select', () => eventBuses.select) },
+        { src: fromEventBus('select', () => eventBuses.cells, 'CELLS') },
+        { src: fromEventBus('select', () => eventBuses.hovering, 'HOVERING') },
       ],
+      entry: send('REGISTER_UI', { to: undoRef }),
       context: {
         selected: 1,
-        foreground: 1,
-        background: 0,
         hovering: null,
-        labels: {},
+        cells: null,
       },
       on: {
-        SHIFT_CLICK: [
-          {
-            cond: 'doubleClick',
-            actions: ['selectForeground', send({ type: 'BACKGROUND', background: 0 })],
-          },
-          { cond: 'onBackground', actions: 'selectForeground' },
-          { actions: 'selectBackground' },
-        ],
-
-        GET_STATE: {
-          actions: ['sendSelected', 'sendForeground', 'sendBackground'],
-        },
+        GET_SELECTED: { actions: 'sendSelected' },
 
         HOVERING: { actions: 'setHovering' },
-        LABELS: { actions: 'setLabels' },
+        CELLS: { actions: 'setCells' },
         SELECTED: { actions: ['setSelected', 'sendToEventBus'] },
-        FOREGROUND: {
-          actions: ['setForeground', 'sendSelected', 'sendToEventBus'],
-        },
-        BACKGROUND: {
-          actions: ['setBackground', 'sendSelected', 'sendToEventBus'],
-        },
-        SET_FOREGROUND: {
-          actions: send((_, { foreground }) => ({
-            type: 'FOREGROUND',
-            foreground,
-          })),
-        },
-        SELECT_FOREGROUND: { actions: 'selectForeground' },
-        SELECT_BACKGROUND: { actions: 'selectBackground' },
-        SWITCH: { actions: 'switch' },
-        NEW_FOREGROUND: { actions: 'newForeground' },
-        RESET_FOREGROUND: { actions: 'resetForeground' },
-        RESET_BACKGROUND: { actions: 'resetBackground' },
-        PREV_FOREGROUND: { actions: 'prevForeground' },
-        NEXT_FOREGROUND: { actions: 'nextForeground' },
-        PREV_BACKGROUND: { actions: 'prevBackground' },
-        NEXT_BACKGROUND: { actions: 'nextBackground' },
+        SELECT: { actions: 'select' },
+        SELECT_NEW: { actions: 'selectNew' },
+        RESET: { actions: 'reset' },
+        SELECT_PREVIOUS: { actions: 'selectPrevious' },
+        SELECT_NEXT: { actions: 'selectNext' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: 'restore' },
       },
     },
     {
-      guards: {
-        doubleClick: (_, event) => event.detail === 2,
-        onBackground: ({ hovering, background }) => hovering === background,
-      },
       actions: {
-        ...selectActions,
-        ...selectShortcutActions,
-        ...cycleActions,
-        ...setActions,
-        save: respond(({ foreground, background }) => ({
-          type: 'RESTORE',
-          foreground,
-          background,
+        sendSelected: send(({ selected }) => ({ type: 'SELECTED', selected }), { to: 'eventBus' }),
+        select: pure((ctx, evt) => {
+          if (evt.cell) {
+            return send({ type: 'SELECTED', selected: evt.cell });
+          }
+          const { selected, hovering } = ctx;
+          const i = hovering.indexOf(selected);
+          let newCell;
+          if (hovering.length === 0 || i === hovering.length - 1) {
+            newCell = 0;
+          } else if (i === -1) {
+            newCell = hovering[0];
+          } else {
+            newCell = hovering[i + 1];
+          }
+          return send({ type: 'SELECTED', selected: newCell });
+        }),
+        reset: send({ type: 'SELECTED', selected: 0 }),
+        selectNew: send(({ cells }) => ({
+          type: 'SELECTED',
+          selected: cells.getNewCell(),
         })),
-        restore: pure((_, { foreground, background }) => [
+        selectPrevious: send(({ selected, cells }) => ({
+          type: 'SELECTED',
+          selected: selected - 1 < 1 ? cells.getNewCell() : selected - 1,
+        })),
+        selectNext: send(({ selected, cells }) => {
+          return {
+            type: 'SELECTED',
+            selected: selected + 1 > cells.getNewCell() ? 1 : selected + 1,
+          };
+        }),
+        setHovering: assign({ hovering: (_, { hovering }) => hovering }),
+        setCells: assign({ cells: (_, { cells }) => new Cells(cells) }),
+        setSelected: assign({ selected: (_, { selected }) => selected }),
+        save: respond(({ selected }) => ({ type: 'RESTORE', selected })),
+        restore: pure((_, { selected }) => [
           respond('RESTORED'),
-          send({ type: 'FOREGROUND', foreground }),
-          send({ type: 'BACKGROUND', background }),
+          send({ type: 'SELECTED', selected }),
         ]),
-        sendForeground: send((ctx) => ({
-          type: 'FOREGROUND',
-          foreground: ctx.foreground,
-        })),
-        sendBackground: send((ctx) => ({
-          type: 'BACKGROUND',
-          background: ctx.background,
-        })),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
       },
     }

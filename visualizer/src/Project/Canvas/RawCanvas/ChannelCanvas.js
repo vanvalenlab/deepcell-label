@@ -1,7 +1,6 @@
 import { useSelector } from '@xstate/react';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
-import { useArrays, useCanvas, useImage } from '../../ProjectContext';
+import { useArrays, useCanvas, useGpu, useImage } from '../../ProjectContext';
 
 /** Converts a hex string like #FF0000 to three element array for the RGB values. */
 const hexToRGB = (hex) => {
@@ -11,7 +10,7 @@ const hexToRGB = (hex) => {
   return [r, g, b];
 };
 
-export const ChannelCanvas = ({ layer, setCanvases }) => {
+export const ChannelCanvas = ({ layer, setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -23,18 +22,15 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
   const channel = useSelector(layer, (state) => state.context.channel);
 
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
+  const t = useSelector(image, (state) => state.context.t);
 
   const arrays = useArrays();
-  const rawArray = useSelector(
-    arrays,
-    (state) => state.context.rawArrays && state.context.rawArrays[channel][frame]
-  );
+  const raw = useSelector(arrays, (state) => state.context.raw && state.context.raw[channel][t]);
 
   const kernelRef = useRef();
-  const canvasRef = useRef();
+  const gpu = useGpu();
+
   useEffect(() => {
-    const gpu = new GPU();
     const kernel = gpu.createKernel(
       `function (data, on, color, min, max) {
         if (on) {
@@ -56,30 +52,28 @@ export const ChannelCanvas = ({ layer, setCanvases }) => {
       }
     );
     kernelRef.current = kernel;
-    canvasRef.current = kernel.canvas;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
-    if (rawArray) {
+    if (raw) {
+      const kernel = kernelRef.current;
       // Rerender the canvas for this component
-      kernelRef.current(rawArray, on, hexToRGB(color), min, max);
+      kernel(raw, on, hexToRGB(color), min, max);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, [layerIndex]: canvasRef.current }));
+      createImageBitmap(kernel.canvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, [layerIndex]: bitmap }));
+      });
     }
-  }, [rawArray, on, color, min, max, width, height, layerIndex, setCanvases]);
+  }, [raw, on, color, min, max, width, height, layerIndex, setBitmaps]);
 
-  // Remove canvas from canvases when layer is removed
+  // Remove bitmap when layer is removed
   useEffect(() => {
     return () =>
-      setCanvases((prevCanvases) => {
-        delete prevCanvases[layerIndex];
-        return { ...prevCanvases };
+      setBitmaps((bitmaps) => {
+        const { [layerIndex]: removed, ...rest } = bitmaps;
+        return rest;
       });
-  }, [setCanvases, layerIndex]);
+  }, [setBitmaps, layerIndex]);
 
   return null;
 };

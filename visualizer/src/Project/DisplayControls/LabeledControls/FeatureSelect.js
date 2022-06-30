@@ -16,7 +16,7 @@ function FeatureSelect() {
 
   const tooltipText = (
     <span>
-      Cycle with <kbd>F</kbd> or <kbd>Shift</kbd> + <kbd>F</kbd>
+      <kbd>F</kbd> / <kbd>Shift</kbd> + <kbd>F</kbd>
     </span>
   );
 
@@ -30,7 +30,7 @@ function FeatureSelect() {
   return (
     numFeatures > 1 && (
       <Grid item>
-        <Tooltip title={tooltipText} placement='top'>
+        <Tooltip title={tooltipText} placement='right'>
           <TextField select size='small' value={feature} onChange={handleFeatureChange}>
             {featureNames.map((name, index) => (
               <MenuItem key={index} value={index}>

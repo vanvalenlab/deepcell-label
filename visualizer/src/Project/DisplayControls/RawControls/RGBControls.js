@@ -8,6 +8,7 @@ import LayerController from './LayerController';
 function RGBControls() {
   const raw = useRaw();
   const layers = useSelector(raw, (state) => state.context.layers);
+  const numChannels = useSelector(raw, (state) => state.context.numChannels);
 
   return (
     <>
@@ -16,16 +17,18 @@ function RGBControls() {
           <LayerController layer={layer} />
         </Grid>
       ))}
-      <Button
-        onClick={() => raw.send('ADD_LAYER')}
-        fullWidth
-        variant='outlined'
-        sx={{ borderStyle: 'dashed' }}
-        startIcon={<AddIcon />}
-        size='medium'
-      >
-        Add Channel
-      </Button>
+      {numChannels > 1 && (
+        <Button
+          onClick={() => raw.send('ADD_LAYER')}
+          fullWidth
+          variant='outlined'
+          sx={{ borderStyle: 'dashed', p: 0.5 }}
+          startIcon={<AddIcon />}
+          size='small'
+        >
+          Add Channel
+        </Button>
+      )}
     </>
   );
 }

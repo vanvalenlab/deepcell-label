@@ -1,60 +1,71 @@
-import colormap from 'colormap';
 import { actions, assign, Machine, send } from 'xstate';
 import { fromEventBus } from './eventBus';
 
 const { respond } = actions;
 
-const createLabeledMachine = ({ projectId, eventBuses }) =>
+const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
   Machine(
     {
       invoke: [
         { id: 'eventBus', src: fromEventBus('labeled', () => eventBuses.labeled) },
-        { src: fromEventBus('labeled', () => eventBuses.load) },
+        { src: fromEventBus('labeled', () => eventBuses.load, 'DIMENSIONS') },
       ],
+      entry: send('REGISTER_UI', { to: undoRef }),
       context: {
         projectId,
         numFeatures: 1,
         feature: 0,
         featureNames: ['feature 0'],
-        opacity: 0,
-        lastOpacity: 0.3,
+        cellsOpacity: 0.3, // [0, 0.3],
+        outlineOpacity: 0.3, // [0.5, 1],
         highlight: true,
-        outline: true,
-        colormap: [
-          [0, 0, 0, 1],
-          ...colormap({ colormap: 'viridis', format: 'rgba' }),
-          [255, 255, 255, 1],
-        ],
       },
       on: {
         DIMENSIONS: { actions: 'setNumFeatures' },
         SET_FEATURE: { actions: ['setFeature', 'sendToEventBus'] },
         TOGGLE_HIGHLIGHT: { actions: 'toggleHighlight' },
-        TOGGLE_OUTLINE: { actions: 'toggleOutline' },
-        SET_OPACITY: { actions: 'setOpacity' },
-        CYCLE_OPACITY: { actions: 'cycleOpacity' },
+        SET_CELLS_OPACITY: { actions: 'setCellsOpacity' },
+        CYCLE_CELLS_OPACITY: { actions: 'cycleCellsOpacity' },
+        CYCLE_OUTLINE_OPACITY: { actions: 'cycleOutlineOpacity' },
+        SET_OUTLINE_OPACITY: { actions: 'setOutlineOpacity' },
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
       },
     },
     {
       actions: {
+        setOutlineOpacity: assign({ outlineOpacity: (ctx, event) => event.opacity }),
+        setCellsOpacity: assign({ cellsOpacity: (ctx, event) => event.opacity }),
+        cycleCellsOpacity: assign({
+          cellsOpacity: (ctx) => {
+            switch (ctx.cellsOpacity) {
+              case 0:
+                return 0.3;
+              case 1:
+                return 0;
+              default:
+                return 1;
+            }
+          },
+        }),
+        cycleOutlineOpacity: assign({
+          outlineOpacity: (ctx) => {
+            switch (ctx.outlineOpacity) {
+              case 0:
+                return 0.3;
+              case 1:
+                return 0;
+              default:
+                return 1;
+            }
+          },
+        }),
         setNumFeatures: assign({
           numFeatures: (ctx, evt) => evt.numFeatures,
-          featureNames: (ctx, { numFeatures }) =>
-            [...Array(numFeatures).keys()].map((i) => `feature ${i}`),
+          featureNames: (ctx, evt) => [...Array(evt.numFeatures).keys()].map((i) => `feature ${i}`),
         }),
         setFeature: assign({ feature: (_, { feature }) => feature }),
         toggleHighlight: assign({ highlight: ({ highlight }) => !highlight }),
-        setOpacity: assign({
-          opacity: (_, { opacity }) => Math.min(1, Math.max(0, opacity)),
-          lastOpacity: (_, { opacity }) => (opacity === 1 || opacity === 0 ? 0.3 : opacity),
-        }),
-        cycleOpacity: assign({
-          opacity: ({ opacity, lastOpacity }) =>
-            opacity === 0 ? lastOpacity : opacity === 1 ? 0 : 1,
-        }),
-        toggleOutline: assign({ outline: ({ outline }) => !outline }),
         save: respond(({ feature }) => ({ type: 'RESTORE', feature })),
         restore: send((_, { feature }) => ({ type: 'SET_FEATURE', feature })),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),

@@ -3,14 +3,9 @@ import { styled } from '@mui/system';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer';
 import Load from './Load';
+import Loading from './Loading';
 import NavBar from './Navbar';
-import Project from './Project';
-
-// inspect({
-//   // options
-//   // url: 'https://statecharts.io/inspect', // (default)
-//   iframe: false // open in new window
-// });
+import Label from './Project';
 
 const Div = styled('div')``;
 const theme = createTheme();
@@ -31,7 +26,8 @@ function App() {
           <Router>
             <Routes>
               <Route path='/' element={<Load />} />
-              <Route path='/project' element={<Project />} />
+              <Route path='/loading' element={<Loading />} />
+              <Route path='/project' element={<Label />} />
             </Routes>
           </Router>
           <Footer />

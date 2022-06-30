@@ -1,29 +1,19 @@
 /** Fetches data from the project storage API, including raw image data, label image data, and labels. */
 
-import * as zip from '@zip.js/zip.js';
-import { assign, createMachine } from 'xstate';
 import { loadOmeTiff } from '@hms-dbmi/viv';
+import * as zip from '@zip.js/zip.js';
+import { assign, createMachine, sendParent } from 'xstate';
 
 type PropType<TObj, TProp extends keyof TObj> = TObj[TProp];
 type UnboxPromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
 
 type OmeTiff = UnboxPromise<ReturnType<typeof loadOmeTiff>>;
 type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
-type Spots = number[][];
-type Cells = {
-  [feature: number]: {
-    [cell: number]: {
-      label: number;
-      frames: number[];
-      frame_div: number | null;
-      daughters: number[];
-      capped: boolean;
-      parent: number | null;
-    };
-  };
-};
+type Spots = [number, number][];
+type Divisions = { parent: number; daughters: number[]; t: number }[];
+type Cells = { value: number; cell: number; t: number }[];
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells;
+  [filename: string]: OmeTiff | Spots | Cells | Divisions;
 };
 
 async function parseZip(response: Response) {
@@ -42,13 +32,24 @@ async function parseZip(response: Response) {
     if (entry.filename === 'spots.csv') {
       // @ts-ignore
       const csv = await entry.getData(new zip.TextWriter());
-      const spots: Spots = csv.split('\n').map((row: string) => row.split(',').map(Number));
+      let spots: Spots = csv
+        .split('\n')
+        .map((row: string) => row.split(',').map(Number))
+        .map(([x, y]: number[]) => [x, y]); // Use only x and y columns
+      spots.shift(); // Remove header row
+      spots.pop(); // Remove last empty row from final newline
       files[entry.filename] = spots;
+    }
+    if (entry.filename === 'divisions.json') {
+      // @ts-ignore
+      const json = await entry.getData(new zip.TextWriter());
+      const divisions: Divisions = JSON.parse(json);
+      files[entry.filename] = divisions;
     }
     if (entry.filename === 'cells.json') {
       // @ts-ignore
       const json = await entry.getData(new zip.TextWriter());
-      const cells: Cells = JSON.parse(json);
+      const cells = JSON.parse(json);
       files[entry.filename] = cells;
     }
   }
@@ -57,15 +58,21 @@ async function parseZip(response: Response) {
 
 function fetchZip(context: Context) {
   const { projectId } = context;
+  const forceLoadOutput =
+    new URLSearchParams(window.location.search).get('forceLoadOutput') === 'true';
+  if (forceLoadOutput) {
+    const params = new URLSearchParams({ bucket: 'deepcell-label-output' });
+    return fetch(`/api/project/${projectId}?` + params).then(parseZip);
+  }
   return fetch(`/api/project/${projectId}`).then(parseZip);
 }
 
 async function splitArrays(files: Files) {
   const rawFile = files['X.ome.tiff'] as OmeTiff;
   const labeledFile = files['y.ome.tiff'] as OmeTiff;
-  const rawArrays = await getRawRasters(rawFile.data[0]);
-  const labeledArrays = await getLabelRasters(labeledFile.data[0]);
-  return { rawArrays, labeledArrays };
+  const raw = await getRawRasters(rawFile.data[0]);
+  const labeled = await getLabelRasters(labeledFile.data[0]);
+  return { raw, labeled };
 }
 
 async function getRawRasters(source: TiffPixelSource) {
@@ -125,13 +132,15 @@ interface Context {
   // shape: [number, number, number, number] | null;
   width: number | null;
   height: number | null;
-  numFrames: number | null;
+  t: number | null;
   numChannels: number | null;
   numFeatures: number | null;
-  rawArrays: Uint8Array[][][] | null;
-  labeledArrays: Int32Array[][][] | null;
+  raw: Uint8Array[][][] | null;
+  labeled: Int32Array[][][] | null;
   labels: Cells | null;
   spots: Spots | null;
+  divisions: Divisions | null;
+  cells: Cells | null;
 }
 
 const createLoadMachine = (projectId: string) =>
@@ -143,13 +152,15 @@ const createLoadMachine = (projectId: string) =>
         // shape: null,
         width: null,
         height: null,
-        numFrames: null,
+        t: null,
         numChannels: null,
         numFeatures: null,
-        rawArrays: null,
-        labeledArrays: null,
+        raw: null,
+        labeled: null,
         labels: null,
         spots: null,
+        divisions: null,
+        cells: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
       schema: {
@@ -162,8 +173,8 @@ const createLoadMachine = (projectId: string) =>
           };
           'split arrays': {
             data: {
-              rawArrays: Uint8Array[][][];
-              labeledArrays: Int32Array[][][];
+              raw: Uint8Array[][][];
+              labeled: Int32Array[][][];
             };
           };
         },
@@ -174,7 +185,13 @@ const createLoadMachine = (projectId: string) =>
         loading: {
           invoke: {
             src: 'fetch project zip',
-            onDone: { target: 'splitArrays', actions: ['set spots', 'set cells', 'set metadata'] },
+            onDone: {
+              target: 'splitArrays',
+              actions: ['set spots', 'set divisions', 'set cells', 'set metadata'],
+            },
+            onError: {
+              actions: 'send project not in output bucket',
+            },
           },
         },
         splitArrays: {
@@ -185,6 +202,7 @@ const createLoadMachine = (projectId: string) =>
         },
         loaded: {
           type: 'final',
+          entry: 'send loaded',
         },
       },
     },
@@ -194,13 +212,18 @@ const createLoadMachine = (projectId: string) =>
         'split arrays': (ctx, evt) => splitArrays(evt.data.files),
       },
       actions: {
+        'send project not in output bucket': sendParent('PROJECT_NOT_IN_OUTPUT_BUCKET'),
         'set spots': assign({
           // @ts-ignore
           spots: (context, event) => event.data.files['spots.csv'] as Spots,
         }),
+        'set divisions': assign({
+          // @ts-ignore
+          divisions: (context, event) => event.data.files['divisions.json'] as Divisions,
+        }),
         'set cells': assign({
           // @ts-ignore
-          labels: (context, event) => event.data.files['cells.json'] as Cells,
+          cells: (context, event) => event.data.files['cells.json'] as Cells,
         }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
@@ -212,16 +235,24 @@ const createLoadMachine = (projectId: string) =>
           return {
             width: SizeX,
             height: SizeY,
-            numFrames: SizeZ,
+            t: SizeZ,
             // SizeT,
             numChannels: SizeC,
             numFeatures: labelSizeC,
           };
         }),
         'set arrays': assign({
-          rawArrays: (_, event) => event.data.rawArrays,
-          labeledArrays: (_, event) => event.data.labeledArrays,
+          raw: (_, event) => event.data.raw,
+          labeled: (_, event) => event.data.labeled,
         }),
+        'send loaded': sendParent((ctx) => ({
+          type: 'LOADED',
+          raw: ctx.raw,
+          labeled: ctx.labeled,
+          spots: ctx.spots,
+          divisions: ctx.divisions,
+          cells: ctx.cells,
+        })),
       },
     }
   );

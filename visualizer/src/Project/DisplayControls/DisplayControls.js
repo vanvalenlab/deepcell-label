@@ -1,14 +1,16 @@
 import { Box } from '@mui/material';
+import { useSelector } from '@xstate/react';
 import React from 'react';
-import DownloadButton from './DownloadButton';
-import LabeledControls from './LabeledControls/LabeledControls';
-import RawControls from './RawControls/RawControls';
-import SpotsControls from './SpotsControls';
-import SubmitButton from './SubmitButton';
+import EditTabs from '../EditControls/EditTabs';
+import UndoRedo from '../EditControls/UndoRedo';
+import { useImage } from '../ProjectContext';
+import Cells from './Cells';
+import ExportButton from './ExportButton';
+import TimeControls from './TimeControls';
 
-const DisplayControls = () => {
-  const search = new URLSearchParams(window.location.search);
-  const download = search.get('download');
+function DisplayControls() {
+  const image = useImage();
+  const duration = useSelector(image, (state) => state.context.duration);
 
   return (
     <Box
@@ -16,20 +18,15 @@ const DisplayControls = () => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
-        p: 1,
       }}
     >
-      {download ? (
-        <DownloadButton sx={{ width: '100%' }} />
-      ) : (
-        <SubmitButton sx={{ width: '100%' }} />
-      )}
-      {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && <SpotsControls />}
-      <LabeledControls />
-      <RawControls />
+      <ExportButton />
+      <UndoRedo />
+      <EditTabs />
+      {duration > 1 && <TimeControls />}
+      <Cells />
     </Box>
   );
-};
+}
 
 export default DisplayControls;

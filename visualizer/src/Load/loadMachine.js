@@ -8,7 +8,6 @@ const loadMachine = Machine(
       uploadFile: null,
       axes: 'ZYXC',
       errorText: '',
-      track: false,
     },
     initial: 'idle',
     states: {
@@ -70,7 +69,7 @@ const loadMachine = Machine(
       submitUpload: (context) => {
         const { uploadFile, axes } = context;
         const formData = new FormData();
-        formData.append('file', uploadFile);
+        formData.append('images', uploadFile);
         formData.append('axes', axes);
         return axios.post('/api/project/dropped', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -80,7 +79,6 @@ const loadMachine = Machine(
     actions: {
       setExampleFile: assign({
         exampleFile: (_, { file }) => file,
-        track: (_, { file }) => /\.trk$/.test(file),
       }),
       setUploadFile: assign({
         uploadFile: ({ uploadFile }, { files }) => {
@@ -96,12 +94,9 @@ const loadMachine = Machine(
       setAxes: assign({ axes: (_, { axes }) => axes }),
       setErrorText: assign({ errorText: (_, event) => `${event.error}` }),
       setSingleFileError: assign({ errorText: 'Please upload a single file.' }),
-      redirectToProject: ({ track }, event) => {
-        const projectId = event.data.data;
+      redirectToProject: (ctx, evt) => {
+        const projectId = evt.data.data;
         let url = `${document.location.origin}/project?projectId=${projectId}&download=true`;
-        if (track) {
-          url = url.concat('&track=true');
-        }
         window.location.href = url;
       },
     },

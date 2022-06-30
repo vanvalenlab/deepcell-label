@@ -1,16 +1,16 @@
-import { actions, assign, Machine, send, sendParent, spawn } from 'xstate';
+import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from '../eventBus';
 import createChannelMachine from './channelMachine';
 import createLayerMachine from './layerMachine';
 
 const { pure, respond } = actions;
 
-const createRawMachine = ({ projectId, eventBuses }) =>
+const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
   Machine(
     {
       invoke: [
         { id: 'eventBus', src: fromEventBus('raw', () => eventBuses.raw) },
-        { src: fromEventBus('raw', () => eventBuses.load) },
+        { src: fromEventBus('raw', () => eventBuses.load, 'DIMENSIONS') },
       ],
       context: {
         projectId,
@@ -21,7 +21,7 @@ const createRawMachine = ({ projectId, eventBuses }) =>
         layers: [],
         isGrayscale: true,
       },
-      entry: ['spawnLayers', 'spawnChannels'],
+      entry: [send('REGISTER_UI', { to: undoRef }), 'spawnLayers', 'spawnChannels'],
       initial: 'checkDisplay',
       states: {
         checkDisplay: {
@@ -84,6 +84,7 @@ const createRawMachine = ({ projectId, eventBuses }) =>
             return names;
           },
         }),
+        forwardToChannel: forwardTo((ctx) => `channel${ctx.channel}`),
         spawnLayers: assign({
           layers: ({ numChannels }) => {
             const layers = [];

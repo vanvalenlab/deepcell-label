@@ -2,18 +2,16 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useArrays, useCanvas, useSelect } from '../ProjectContext';
-import ComposeCanvas from './ComposeCanvases';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useArrays, useCanvas } from '../ProjectContext';
+import ComposeCanvas from './ComposeCanvas';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
 import RawCanvas from './RawCanvas';
 import SpotsCanvas from './SpotsCanvas';
 import ToolCanvas from './ToolCanvas';
 
-export const Canvas = () => {
-  const select = useSelect();
-
+function Canvas() {
   const canvas = useCanvas();
   const { sx, sy, zoom, sw, sh, scale, grab, grabbing, dragged } = useSelector(
     canvas,
@@ -65,22 +63,10 @@ export const Canvas = () => {
     };
   }, []);
 
-  const handleMouseDown = useCallback(
-    (event) => {
-      event.preventDefault();
-      if (event.shiftKey) {
-        select.send({ ...event, type: 'SHIFT_CLICK' });
-      } else {
-        canvas.send(event);
-      }
-    },
-    [canvas, select]
-  );
-
-  const [canvases, setCanvases] = useState([]);
+  const [bitmaps, setBitmaps] = useState([]);
 
   const arrays = useArrays();
-  const loading = useSelector(arrays, (state) => state.matches('waiting'));
+  const loading = useSelector(arrays, (state) => state.matches('setUp'));
 
   return (
     <Box
@@ -91,27 +77,26 @@ export const Canvas = () => {
       height={scale * sh}
       onMouseMove={canvas.send}
       onWheel={canvas.send}
-      onMouseDown={handleMouseDown}
+      onMouseDown={(e) => {
+        canvas.send(e);
+        e.preventDefault(); // avoid selecting copyright text when double clicking
+      }}
       onMouseUp={canvas.send}
     >
       {loading ? (
         <CircularProgress style={{ margin: '25%', width: '50%', height: '50%' }} />
       ) : (
         <>
-          <ComposeCanvas canvases={canvases} />
-          <RawCanvas setCanvases={setCanvases} />
-          <LabeledCanvas setCanvases={setCanvases} />
-          <OutlineCanvas setCanvases={setCanvases} />
-          {process.env.REACT_APP_SPOTS_VISUALIZER === 'true' && (
-            <SpotsCanvas setCanvases={setCanvases} />
-          )}
-          {process.env.REACT_APP_SPOTS_VISUALIZER !== 'true' && (
-            <ToolCanvas setCanvases={setCanvases} />
-          )}
+          <ComposeCanvas bitmaps={bitmaps} />
+          <RawCanvas setBitmaps={setBitmaps} />
+          <LabeledCanvas setBitmaps={setBitmaps} />
+          <OutlineCanvas setBitmaps={setBitmaps} />
+          <SpotsCanvas setBitmaps={setBitmaps} />
+          <ToolCanvas setBitmaps={setBitmaps} />
         </>
       )}
     </Box>
   );
-};
+}
 
 export default Canvas;

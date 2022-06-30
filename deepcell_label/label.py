@@ -1,219 +1,313 @@
 """Classes to view and edit DeepCell Label Projects"""
 from __future__ import absolute_import, division, print_function
 
-import jsonpatch
+import io
+import json
+import zipfile
+
 import numpy as np
 import skimage
 from matplotlib.colors import Normalize
-from scipy.ndimage import find_objects
 from skimage import filters
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
-from skimage.morphology import dilation, disk, erosion, flood, flood_fill, square
+from skimage.morphology import dilation, disk, erosion, flood, square
 from skimage.segmentation import morphological_chan_vese, watershed
-
-
-def make_segments(labels):
-    """
-    Returns a list of the segments in a label image.
-    """
-    objects = find_objects(labels)
-    segments = {
-        (i + 1): {
-            # Does not contain
-            # image coordinates (t, z, c); could be added server side or client side
-            # id: likely added on client side
-            'x': obj[1].start,
-            'y': obj[0].start,
-            'width': obj[1].stop - obj[1].start,
-            'height': obj[0].stop - obj[0].start,
-        }
-        for i, obj in enumerate(objects)
-        if obj is not None
-    }
-    return segments
 
 
 class Edit(object):
     """
-    Class for editing label images in DeepCell Label.
-    Expected lifespan is a single action.
+    Loads labeled data from a zip file,
+    edits the labels according to edit.json in the zip,
+    and writes the edited labels to a new zip file.
 
-    Actions have three phases:
-        1. select and edit the image currently on display
-        3. make changes to the label metadata
-        4. assign the image to the frame
-
-    NOTE: Actions must directly assign changes to the frame attribute for the
-    MutableNdarray class to detect the change and for the database to persist the change.
-    Changes to a view of a MutableNdarray will not be detected by the original
-    TODO: modify MutableNdarray class to share changed() signals from arrays view
+    The labels zipfile must contain:
+        labeled.dat - a binary array buffer of the labeled data (int32)
+        overlaps.json - a 2D json array describing values encode which cells
+                        the (i, j)th element of overlaps.json is 1 if value i encodes cell j and 0 otherwise
+        edit.json - a json object describing the edit to be made including
+                    - action (e.g. )
+                    - the args for the action
+                    - write_mode: one of 'overlap', 'overwrite', or 'exclude'
+                    - height: the height of the labeled (and raw) arrays
+                    - width: the width of the labeled (and raw) arrays
+    It additionally may contain:
+        raw.dat - a binary array buffer of the raw data (uint8)
+        lineage.json - a json object describing the lineage of the cells
     """
 
-    def __init__(self, labels, raw=None):
-        self.initial_labels = labels.copy()
-        self.labels = labels
-        self.raw = raw
-        self.new_label = np.max(labels) + 1
+    def __init__(self, labels_zip):
+
+        self.valid_modes = ['overlap', 'overwrite', 'exclude']
+        self.raw_required = ['watershed', 'active_contour', 'threshold']
+
+        self.load(labels_zip)
+        self.dispatch_action()
+        self.write_response_zip()
 
     @property
-    def patch(self):
-        initial = make_segments(self.initial_labels)
-        final = make_segments(self.labels)
-        patch = jsonpatch.make_patch(initial, final)
-        return patch.patch
+    def new_value(self):
+        """Returns a value not in the segmentation."""
+        if len(self.cells) == 0:
+            return 1
+        return max(map(lambda c: c['value'], self.cells)) + 1
 
-    def clean_label(self, label):
-        """Ensures that a label is a valid integer between 0 and an unused label"""
-        return int(min(self.new_label, max(0, label)))
+    @property
+    def new_cell(self):
+        """Returns a cell not in the segmentation."""
+        if len(self.cells) == 0:
+            return 1
+        return max(map(lambda c: c['cell'], self.cells)) + 1
 
-    def dispatch_action(self, action, info):
+    def load(self, labels_zip):
+        """
+        Load the project data to edit from a zip file.
+        """
+        if not zipfile.is_zipfile(labels_zip):
+            raise ValueError('Attached labels.zip is not a zip file.')
+        zf = zipfile.ZipFile(labels_zip)
+
+        # Load edit args
+        if 'edit.json' not in zf.namelist():
+            raise ValueError('Attached labels.zip must contain edit.json.')
+        with zf.open('edit.json') as f:
+            edit = json.load(f)
+            if 'action' not in edit:
+                raise ValueError('No action specified in edit.json.')
+            self.action = edit['action']
+            self.height = edit['height']
+            self.width = edit['width']
+            self.args = edit.get('args', None)
+            # TODO: specify write mode per cell?
+            self.write_mode = edit.get('writeMode', 'overlap')
+            if self.write_mode not in self.valid_modes:
+                raise ValueError(
+                    f'Invalid writeMode {self.write_mode} in edit.json. Choose from cell, overwrite, or exclude.'
+                )
+
+        # Load label array
+        if 'labeled.dat' not in zf.namelist():
+            raise ValueError('zip must contain labeled.dat.')
+        with zf.open('labeled.dat') as f:
+            labels = np.frombuffer(f.read(), np.int32)
+            self.initial_labels = np.reshape(labels, (self.height, self.width))
+            self.labels = self.initial_labels.copy()
+
+        # Load cells array
+        if 'cells.json' not in zf.namelist():
+            raise ValueError('zip must contain cells.json.')
+        with zf.open('cells.json') as f:
+            self.cells = json.load(f)
+
+        # Load raw image
+        if 'raw.dat' in zf.namelist():
+            with zf.open('raw.dat') as f:
+                raw = np.frombuffer(f.read(), np.uint8)
+                self.raw = np.reshape(raw, (self.width, self.height))
+        elif self.action in self.raw_required:
+            raise ValueError(
+                f'Include raw array in raw.json to use action {self.action}.'
+            )
+
+    def write_response_zip(self):
+        """Write edited segmentation to zip."""
+        f = io.BytesIO()
+        with zipfile.ZipFile(f, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr('labeled.dat', self.labels.tobytes())
+            # Remove cell labels that are not in the segmentation
+            values = np.unique(self.labels)
+            self.cells = list(filter(lambda c: c['value'] in values, self.cells))
+            zf.writestr('cells.json', json.dumps(self.cells))
+        f.seek(0)
+        self.response_zip = f
+
+    def get_cells(self, value):
+        """
+        Returns a list of cells encoded by the value
+        """
+        return list(
+            map(lambda c: c['cell'], filter(lambda c: c['value'] == value, self.cells))
+        )
+
+    def get_values(self, cell):
+        """
+        Returns a list of values that encode a cell
+        """
+        return list(
+            map(lambda c: c['value'], filter(lambda c: c['cell'] == cell, self.cells))
+        )
+
+    def get_value(self, cells):
+        """
+        Returns the value that encodes the list of cells
+        """
+        if cells == []:
+            return 0
+        values = set(map(lambda c: c['value'], self.cells))
+        for cell in cells:
+            values = values & set(self.get_values(cell))
+        for value in values:
+            if set(self.get_cells(value)) == set(cells):
+                return value
+        value = self.new_value
+        for cell in cells:
+            self.cells.append({'value': value, 'cell': cell})
+        return value
+
+    def get_mask(self, cell):
+        """
+        Returns a boolean mask of the cell (or the background when cell == 0)
+        """
+        if cell == 0:
+            return self.labels == 0
+        mask = np.zeros(self.labels.shape, dtype=bool)
+        for value in self.get_values(cell):
+            mask[self.labels == value] = True
+        return mask
+
+    def add_mask(self, mask, cell):
+        if self.write_mode == 'overwrite':
+            self.labels[mask] = self.get_value([cell])
+        elif self.write_mode == 'exclude':
+            mask = mask & (self.labels == 0)
+            self.labels[mask] = self.get_value([cell])
+        else:  # self.write_mode == 'overlap'
+            self.overlap_mask(mask, cell)
+
+    def remove_mask(self, mask, cell):
+        self.overlap_mask(mask, cell, remove=True)
+
+    def overlap_mask(self, mask, cell, remove=False):
+        """
+        Adds the cell to the segmentation in the mask area,
+        overlapping with existing cells.
+        """
+        # Rewrite values inside mask to encode label
+        values = np.unique(self.labels[mask])
+        for value in values:
+            # Get value to encode new set of labels
+            cells = self.get_cells(value)
+            if remove:
+                if cell in cells:
+                    cells.remove(cell)
+            else:
+                cells.append(cell)
+            new_value = self.get_value(cells)
+            self.labels[mask & (self.labels == value)] = new_value
+
+    def clean_cell(self, cell):
+        """Ensures that a cell is a positive integer"""
+        return int(max(0, cell))
+
+    def dispatch_action(self):
         """
         Call an action method based on an action type.
 
         Args:
             action (str): name of action method after "action_"
-                          e.g. "handle_draw" to call "action_handle_draw"
+                          e.g. "draw" to call "action_draw"
             info (dict): key value pairs with arguments for action
         """
-        attr_name = 'action_{}'.format(action)
+        attr_name = 'action_{}'.format(self.action)
         try:
             action_fn = getattr(self, attr_name)
-            action_fn(**info)
         except AttributeError:
-            raise ValueError('Invalid action "{}"'.format(action))
+            raise ValueError('Invalid action "{}"'.format(self.action))
+        action_fn(**self.args)
 
-    def action_replace(self, a, b):
-        """
-        Replaces b with a in the current frame.
-        """
-        a = self.clean_label(a)
-        b = self.clean_label(b)
-        self.labels = np.where(self.labels == b, a, self.labels)
-
-    def action_handle_draw(self, trace, foreground, background, brush_size):
+    def action_draw(self, trace, brush_size, cell, erase=False):
         """
         Use a "brush" to draw in the brush value along trace locations of
         the annotated data.
 
         Args:
             trace (list): list of (x, y) coordinates where the brush has painted
-            foreground (int): label written by the bush
-            background (int): label overwritten by the brush
             brush_size (int): radius of the brush in pixels
+            cell (int): cell to edit with the brush
+            erase (bool): whether to add or remove label from brush stroke area
         """
-        foreground = self.clean_label(foreground)
-        background = self.clean_label(background)
-
-        image = np.copy(self.labels)
-        # only overwrite the background image
-        image_replaced = np.where(image == background, foreground, image)
-
+        trace = json.loads(trace)
+        # Create mask for brush stroke
+        brush_mask = np.zeros(self.labels.shape, dtype=bool)
         for loc in trace:
             x = loc[0]
             y = loc[1]
-            brush_area = skimage.draw.disk((y, x), brush_size, shape=self.labels.shape)
-            image[brush_area] = image_replaced[brush_area]
+            disk = skimage.draw.disk((y, x), brush_size, shape=self.labels.shape)
+            brush_mask[disk] = True
 
-        self.labels = image
+        if erase:
+            self.remove_mask(brush_mask, cell)
+        else:
+            self.add_mask(brush_mask, cell)
 
-    def action_trim_pixels(self, label, x, y):
+    def action_trim_pixels(self, cell, x, y):
         """
-        Removes label pixels that are not connected to (x, y).
+        Removes parts of cell not connected to (x, y).
 
         Args:
-            label (int): label to trim
+            cell (int): cell to trim
             x (int): x position of seed
-                              remove label that is not connect to this seed
             y (int): y position of seed
         """
-        image = self.labels
+        mask = self.get_mask(cell)
+        if mask[y, x]:
+            connected_mask = flood(mask, (y, x))
+            self.remove_mask(~connected_mask, cell)
 
-        seed_point = (int(y), int(x))
-        contiguous_label = flood(image=image, seed_point=seed_point)
-        stray_pixels = np.logical_and(np.invert(contiguous_label), image == label)
-        image_trimmed = np.where(stray_pixels, 0, image)
-
-        self.labels = image_trimmed
-
-    def action_flood(self, label, x, y):
+    # TODO: come back to flooding with overlaps...
+    def action_flood(self, foreground, background, x, y):
         """
-        Floods the region at (x, y) with the label.
-        Only floods diagonally connected pixels (connectivity == 2) when label != 0.
+        Floods the connected component of the background label at (x, y) with the foreground label.
+        When the background label is 0, does not flood diagonally connected pixels.
 
         Args:
-            label (int): label to fill region with
+            foreground (int): label to flood with
+            bacgkround (int): label to flood
             x (int): x coordinate of region to flood
             y (int): y coordinate of region to flood
         """
-        label = self.clean_label(label)
+        mask = self.get_mask(background)
+        flooded = flood(mask, (y, x), connectivity=2 if background != 0 else 1)
+        self.add_mask(flooded, foreground)
 
-        image = self.labels
-        # Rescale click location to corresponding location in label array
-        hole_fill_seed = (int(y), int(x))
-        # Check current label
-        old_label = image[hole_fill_seed]
-
-        # Flood region with label
-        # helps prevents hole fill from spilling into background
-        connectivity = 1 if old_label == 0 else 2
-        flooded = flood_fill(image, hole_fill_seed, label, connectivity=connectivity)
-        self.labels = flooded
-
-    def action_watershed(self, label, x1, y1, x2, y2):
+    def action_watershed(self, cell, new_cell, x1, y1, x2, y2):
         """Use watershed to segment different objects"""
-        # Pull the label that is being split and find a new valid label
-        current_label = label
-        new_label = self.new_label
+        # Create markers for to seed watershed labels
+        markers = np.zeros(self.labels.shape)
+        markers[y1, x1] = cell
+        markers[y2, x2] = new_cell
 
-        # define the bounding box to apply the transform on and select
-        # appropriate sections of 3 inputs (raw, seeds, annotation mask)
-        props = regionprops(np.squeeze(np.int32(self.labels == current_label)))
+        # Cut images to cell bounding box
+        mask = self.get_mask(cell)
+        props = regionprops(mask.astype(np.uint8))
         top, left, bottom, right = props[0].bbox
-
-        # Pull the 2 seed locations and store locally
-        # define a new seeds labeled img the same size as raw/annotation imgs
-        seeds = np.zeros(self.labels.shape)
-        seeds[int(y1), int(x1)] = current_label
-        seeds[int(y2), int(x2)] = new_label
-
-        # store these subsections to run the watershed on
         raw = np.copy(self.raw[top:bottom, left:right])
-        label = np.copy(self.labels[top:bottom, left:right])
-        seeds = np.copy(seeds[top:bottom, left:right])
+        markers = np.copy(markers[top:bottom, left:right])
+        mask = np.copy(mask[top:bottom, left:right])
 
-        # contrast adjust the raw image to assist the transform
-        raw = rescale_intensity(raw)
+        # Contrast adjust and invert the raw image
+        raw = -rescale_intensity(raw)
+        # Apply watershed
+        results = watershed(raw, markers, mask=mask)
 
-        # apply watershed transform to the subsections
-        results = watershed(-raw, seeds, mask=label.astype(bool))
+        # Dilate small cells to prevent "dimmer" cell from being eroded by the "brighter" cell
+        if np.sum(results == new_cell) < 5:
+            dilated = dilation(results == new_cell, disk(3))
+            results[dilated] = new_cell
+        if np.sum(results == cell) < 5:
+            dilated = dilation(results == cell, disk(3))
+            results[dilated] = cell
 
-        # did watershed effectively create a new label
-        num_new_pixels = np.count_nonzero(
-            np.logical_and(results == new_label, label == current_label)
-        )
+        # Update cells where watershed changed cell
+        new_cell_mask = np.zeros(self.labels.shape, dtype=bool)
+        cell_mask = np.zeros(self.labels.shape, dtype=bool)
+        new_cell_mask[top:bottom, left:right] = results == new_cell
+        cell_mask[top:bottom, left:right] = results == cell
+        self.remove_mask(self.get_mask(cell), cell)
+        self.add_mask(cell_mask, cell)
+        self.add_mask(new_cell_mask, new_cell)
 
-        # Dilate small new labels
-        # New label is "brightest" so will expand over other labels and increase area
-        if num_new_pixels < 5:
-            results = dilation(results, disk(3))
-
-        # watershed may only leave a few pixels of old label
-        num_old_pixels = np.count_nonzero(results == current_label)
-        if num_old_pixels < 5:
-            # Dilate to prevent "dimmer" label from being eroded by the "brighter" label
-            dilated = dilation(np.where(results == current_label, results, 0), disk(3))
-            results = np.where(dilated == current_label, dilated, results)
-
-        # Update labels where watershed changed label
-        label = np.where(
-            np.logical_and(results == new_label, label == current_label), results, label
-        )
-
-        # Write new labels back to original label image
-        self.labels[top:bottom, left:right] = label
-
-    def action_threshold(self, y1, x1, y2, x2, label):
+    def action_threshold(self, y1, x1, y2, x2, cell):
         """
         Threshold the raw image for annotation prediction within the
         user-determined bounding box.
@@ -223,125 +317,79 @@ class Edit(object):
             x1 (int): first x coordinate to bound threshold area
             y2 (int): second y coordinate to bound threshold area
             x2 (int): second x coordinate to bound threshold area
-            label (int): label drawn in threshold area
+            cell (int): cell drawn in threshold area
         """
-        label = self.clean_label(label)
+        cell = self.clean_cell(cell)
+        # Make bounding box from coordinates
         top = min(y1, y2)
         bottom = max(y1, y2) + 1
         left = min(x1, x2)
         right = max(x1, x2) + 1
-
-        # pull out the selection portion of the raw frame
-        predict_area = self.raw[top:bottom, left:right]
-
+        image = self.raw[top:bottom, left:right].astype('float64')
+        # Hysteresis thresholding strategy needs two thresholds
         # triangle threshold picked after trying a few on one dataset
-        # may not be the best threshold approach for other datasets!
-        # pick two thresholds to use hysteresis thresholding strategy
-        threshold = filters.threshold_triangle(image=predict_area.astype('float64'))
-        threshold_stringent = 1.10 * threshold
+        # it may not be the best approach for other datasets!
+        low = filters.threshold_triangle(image=image)
+        high = 1.10 * low
+        # Limit stray pixelst
+        thresholded = filters.apply_hysteresis_threshold(image, low, high)
+        mask = np.zeros(self.labels.shape, dtype=bool)
+        mask[top:bottom, left:right] = thresholded
+        self.add_mask(mask, cell)
 
-        # try to keep stray pixels from appearing
-        hyst = filters.apply_hysteresis_threshold(
-            image=predict_area, low=threshold, high=threshold_stringent
-        )
-        ann_threshold = np.where(hyst, label, 0)
+    def action_active_contour(self, cell, min_pixels=20, iterations=100, dilate=0):
+        """
+        Uses active contouring to reshape a cell to match the raw image.
+        """
+        mask = self.get_mask(cell)
+        # Limit contouring to a bounding box twice the size of the cell
+        props = regionprops(mask.astype(np.uint8))[0]
+        top, left, bottom, right = props.bbox
+        cell_height = bottom - top
+        cell_width = right - left
+        # Double size of bounding box
+        height, width = self.labels.shape
+        top = max(0, top - height // 2)
+        bottom = min(height, bottom + cell_height // 2)
+        left = max(0, left - width // 2)
+        right = min(width, right + cell_width // 2)
 
-        # put prediction in without overwriting
-        predict_area = self.labels[top:bottom, left:right]
-        safe_overlay = np.where(predict_area == 0, ann_threshold, predict_area)
-
-        self.labels[top:bottom, left:right] = safe_overlay
-
-    def action_active_contour(self, label, min_pixels=20, iterations=100):
-        labels = np.copy(self.labels)
-
-        # get centroid of selected label
-        props = regionprops(np.where(labels == label, label, 0))[0]
-
-        # make bounding box size to encompass some background
-        box_height = props['bbox'][2] - props['bbox'][0]
-        top = max(0, props['bbox'][0] - box_height // 2)
-        bottom = min(self.labels.shape[0], props['bbox'][2] + box_height // 2)
-
-        box_width = props['bbox'][3] - props['bbox'][1]
-        left = max(0, props['bbox'][1] - box_width // 2)
-        right = min(self.labels.shape[1], props['bbox'][3] + box_width // 2)
-
-        # relevant region of label image to work on
-        labels = labels[top:bottom, left:right]
-
-        # use existing label as initial level set for contour calculations
-        level_set = np.where(labels == label, 1, 0)
-
-        # normalize input 2D frame data values to range [0.0, 1.0]
-        adjusted_raw_frame = Normalize()(self.raw)
-        predict_area = adjusted_raw_frame[top:bottom, left:right]
-
-        # returns 1 where label is predicted to be based on contouring, 0 background
+        # Contour the cell
+        init_level_set = mask[top:bottom, left:right]
+        image = Normalize()(self.raw)[top:bottom, left:right]
         contoured = morphological_chan_vese(
-            predict_area, iterations, init_level_set=level_set
+            image, iterations, init_level_set=init_level_set
         )
 
-        # contoured area should get original label value
-        contoured_label = contoured * label
-        # contours tend to fit very tightly, a small expansion here works well
-        contoured_label = dilation(contoured_label, disk(3))
+        # Dilate to adjust for tight fit
+        contoured = dilation(contoured, disk(dilate))
 
-        # don't want to leave the original (un-contoured) label in the image
-        # never overwrite other labels with new contoured label
-        cond = np.logical_or(labels == label, labels == 0)
-        safe_overlay = np.where(cond, contoured_label, labels)
-
-        # label must be present in safe_overlay for this to be a valid contour result
-        # very few pixels of contoured label indicate contour prediction not worth keeping
-        pixel_count = np.count_nonzero(safe_overlay == label)
-        if pixel_count < min_pixels:
-            safe_overlay = np.copy(self.labels[top:bottom, left:right])
-
-        # put it back in the full image so can use centroid coords for post-contour cleanup
-        full_frame = np.copy(self.labels)
-        full_frame[top:bottom, left:right] = safe_overlay
-
-        # avoid automated label cleanup if centroid (flood seed point) is not the right label
-        if full_frame[int(props['centroid'][0]), int(props['centroid'][1])] != label:
-            image_trimmed = full_frame
-        else:
-            # morphology and logic used by pixel-trimming action, with object centroid as seed
-            contiguous_label = flood(
-                image=full_frame,
-                seed_point=(int(props['centroid'][0]), int(props['centroid'][1])),
+        # Keep only the largest connected component
+        regions = skimage.measure.label(contoured)
+        if np.any(regions):
+            largest_component = regions == (
+                np.argmax(np.bincount(regions.flat)[1:]) + 1
             )
+            mask = np.zeros(self.labels.shape, dtype=bool)
+            mask[top:bottom, left:right] = largest_component
 
-            # any pixels in image_ann that have value 'label' and are NOT connected to
-            # hole_fill_seed get changed to 0, all other pixels retain their original value
-            image_trimmed = np.where(
-                np.logical_and(np.invert(contiguous_label), full_frame == label),
-                0,
-                full_frame,
-            )
+        # Throw away small contoured cells
+        if np.count_nonzero(mask) >= min_pixels:
+            self.remove_mask(~mask, cell)
+            self.add_mask(mask, cell)
 
-        self.labels[top:bottom, left:right] = image_trimmed[top:bottom, left:right]
+    def action_erode(self, cell):
+        """
+        Shrink the selected cell.
+        """
+        mask = self.get_mask(cell)
+        eroded = erosion(mask, square(3))
+        self.remove_mask(mask & ~eroded, cell)
 
-    def action_erode(self, label):
+    def action_dilate(self, cell):
         """
-        Use morphological erosion to incrementally shrink the selected label.
+        Expand the selected cell.
         """
-        image = self.labels
-        # Isolate the label and erode it
-        masked = np.where(image == label, label, 0)
-        eroded = erosion(masked, square(3))
-        # Put the eroded label back in the original image
-        image = np.where(image == label, eroded, image)
-        self.labels = image
-
-    def action_dilate(self, label):
-        """
-        Use morphological dilation to incrementally increase the selected label.
-        Does not overwrite bordering labels.
-        """
-        image = self.labels
-        masked = np.where(image == label, label, 0)
-        dilated = dilation(masked, square(3))
-        self.labels = np.where(
-            np.logical_and(dilated == label, image == 0), dilated, image
-        )
+        mask = self.get_mask(cell)
+        dilated = dilation(mask, square(3))
+        self.add_mask(dilated, cell)

@@ -4,14 +4,14 @@ import { useRaw } from '../../ProjectContext';
 import GrayscaleCanvas from './GrayscaleCanvas';
 import RGBCanvas from './RGBCanvas';
 
-export const RawCanvas = ({ setCanvases }) => {
+export const RawCanvas = ({ setBitmaps }) => {
   const raw = useRaw();
   const isGrayscale = useSelector(raw, (state) => state.context.isGrayscale);
 
   return isGrayscale ? (
-    <GrayscaleCanvas setCanvases={setCanvases} />
+    <GrayscaleCanvas setBitmaps={setBitmaps} />
   ) : (
-    <RGBCanvas setCanvases={setCanvases} />
+    <RGBCanvas setBitmaps={setBitmaps} />
   );
 };
 

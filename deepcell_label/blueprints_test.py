@@ -1,9 +1,10 @@
 """Test for DeepCell Label Blueprints"""
 
-import io
+import tempfile
 
 import numpy as np
 import pytest
+import responses
 from PIL import Image
 from tifffile import TiffWriter
 
@@ -29,44 +30,52 @@ def test_edit(client):
     pass
 
 
-def test_create_project(client, mocker):
+def test_create_project_no_url(client, mocker):
     mocker.patch('deepcell_label.blueprints.Loader', lambda *args: DummyLoader())
     response = client.post('/api/project')
+    assert response.status_code == 400
+
+
+@responses.activate
+def test_create_project(client, mocker):
+    mocker.patch('deepcell_label.blueprints.Loader', lambda *args: DummyLoader())
+    responses.add(responses.GET, 'https://test.com', body=b'', status=200)
+    response = client.post('/api/project', data={'images': 'https://test.com'})
     assert response.status_code == 200
 
 
 def test_create_project_dropped_npz(client):
-    npz = io.BytesIO()
-    np.savez(npz, X=np.zeros((1, 1, 1, 1)), y=np.ones((1, 1, 1, 1)))
-    npz.seek(0)
-    data = {'file': (npz, 'test.npz')}
-    response = client.post(
-        '/api/project/dropped', data=data, content_type='multipart/form-data'
-    )
+    with tempfile.NamedTemporaryFile() as f:
+        np.savez(f, X=np.zeros((1, 1, 1, 1)), y=np.ones((1, 1, 1, 1)))
+        f.seek(0)
+        data = {'images': (f, 'test.npz')}
+        response = client.post(
+            '/api/project/dropped', data=data, content_type='multipart/form-data'
+        )
     assert response.status_code == 200
 
 
 def test_create_project_dropped_tiff(client):
-    tifffile = io.BytesIO()
-    with TiffWriter(tifffile) as writer:
-        writer.save(np.zeros((1, 1, 1, 1)))
-        tifffile.seek(0)
-    data = {'file': (tifffile, 'test.tiff')}
-    response = client.post(
-        '/api/project/dropped', data=data, content_type='multipart/form-data'
-    )
+    with tempfile.NamedTemporaryFile() as f:
+        with TiffWriter(f) as writer:
+            writer.save(np.zeros((1, 1, 1, 1)))
+            f.seek(0)
+        data = {'images': (f, 'test.tiff')}
+        response = client.post(
+            '/api/project/dropped', data=data, content_type='multipart/form-data'
+        )
     assert response.status_code == 200
 
 
 def test_create_project_dropped_png(client):
-    png = io.BytesIO()
-    img = Image.fromarray(np.zeros((1, 1)), mode='L')
-    img.save(png, format='png')
-    png.seek(0)
-    data = {'file': (png, 'test.png')}
-    response = client.post(
-        '/api/project/dropped', data=data, content_type='multipart/form-data'
-    )
+    with tempfile.NamedTemporaryFile() as f:
+        img = Image.fromarray(np.zeros((1, 1)), mode='L')
+        img.save(f, format='png')
+        f.seek(0)
+        data = {'images': (f, 'test.png')}
+        response = client.post(
+            '/api/project/dropped', data=data, content_type='multipart/form-data'
+        )
     assert response.status_code == 200
 
 

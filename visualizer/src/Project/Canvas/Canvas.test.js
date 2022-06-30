@@ -1,23 +1,23 @@
 import { fireEvent, render } from '@testing-library/react';
 import { interpret } from 'xstate';
-import createArraysMachine from '../service/arraysMachine';
 import createCanvasMachine from '../service/canvasMachine';
+import createSegmentMachine from '../service/edit/segment/editSegmentMachine';
 import { EventBus } from '../service/eventBus';
+import createArraysMachine from '../service/labels/arraysMachine';
 import createSelectMachine from '../service/selectMachine';
-import createSegmentMachine from '../service/tools/segmentMachine';
 import Canvas from './Canvas';
 
 const eventBuses = {
+  undo: new EventBus('undo'),
+  load: new EventBus('load'),
   canvas: new EventBus('canvas'),
+  hovering: new EventBus('hovering'),
   image: new EventBus('image'),
   labeled: new EventBus('labeled'),
   raw: new EventBus('raw'),
   select: new EventBus('select'),
-  undo: new EventBus('undo'),
-  api: new EventBus('api'),
   arrays: new EventBus('arrays'),
-  labels: new EventBus('labels'),
-  load: new EventBus('load'),
+  cells: new EventBus('cells'),
 };
 const context = {
   projectId: 'testId',
@@ -25,7 +25,7 @@ const context = {
   eventBuses,
   numFeatures: 2,
   numChannels: 3,
-  numFrames: 2,
+  duration: 2,
   width: 100,
   height: 100,
 };
@@ -41,15 +41,21 @@ let mockSegmentActor = interpret(createSegmentMachine(context), {
 jest.mock('../ProjectContext', () => ({
   useArrays: () => mockArraysActor,
   useCanvas: () => mockCanvasActor,
-  useSegment: () => mockSegmentActor,
+  useEditSegment: () => mockSegmentActor,
   useSelect: () => mockSelectActor,
 }));
 
-jest.mock('./ComposeCanvases', () => () => 'ComposeCanvases');
+jest.mock('./ComposeCanvas', () => () => 'ComposeCanvas');
 jest.mock('./LabeledCanvas', () => () => 'LabeledCanvas');
 jest.mock('./OutlineCanvas', () => () => 'OutlineCanvas');
 jest.mock('./RawCanvas', () => () => 'RawCanvas');
 jest.mock('./ToolCanvas', () => () => 'ToolCanvas');
+
+jest.mock('@zip.js/zip.js', () => ({
+  __esModule: true,
+  default: 'mockedDefaultExport',
+  namedExport: jest.fn(),
+}));
 
 test('canvas sends interaction to actors', () => {
   const eventsSentToCanvas = [];

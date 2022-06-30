@@ -1,34 +1,17 @@
-import { useMachine } from '@xstate/react';
-import { useEffect, useState } from 'react';
-import { interpret } from 'xstate';
-import Display from './Display';
+import { useInterpret } from '@xstate/react';
+import { useState } from 'react';
+import Project from './Project';
 import ProjectContext from './ProjectContext';
-import createLoadMachine from './service/loadMachine';
 import createProjectMachine from './service/projectMachine';
 
-function Load({ id, track, spots }) {
-  const [loadMachine] = useState(createLoadMachine(id));
-  const [load] = useMachine(loadMachine);
-  const [project] = useState(interpret(createProjectMachine(id)).start());
+function Load({ id }) {
+  const [projectMachine] = useState(createProjectMachine(id));
+  const project = useInterpret(projectMachine);
   window.dcl = project;
-  window.loadMachine = load;
-
-  useEffect(() => {
-    if (load.matches('loaded')) {
-      const { rawArrays, labeledArrays, labels, spots } = load.context;
-      project.send({
-        type: 'LOADED',
-        rawArrays,
-        labeledArrays,
-        labels,
-        spots,
-      });
-    }
-  }, [load, project]);
 
   return (
     <ProjectContext project={project}>
-      <Display review={false} track={track} spots={spots} />
+      <Project review={false} />
     </ProjectContext>
   );
 }

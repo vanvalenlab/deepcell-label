@@ -1,40 +1,51 @@
-import InvalidId from './InvalidId';
-import LoadProject from './Load';
-import LoadProjects from './LoadReview';
+import Box from '@mui/material/Box';
+import { useSelector } from '@xstate/react';
+import Canvas from './Canvas';
+import DisplayControls from './DisplayControls';
+import EditControls from './EditControls';
+import ForceLoadOutputModal from './ForceLoadOutputModal';
+import Instructions from './Instructions';
+import MissingProject from './MissingProject';
+import { useProject } from './ProjectContext';
+import ReviewControls from './ReviewControls';
 
-/** Checks if id is a 12 character URL-safe base64 string
-  URL-safe base 64 uses - instead of + and _ instead of /
-  @param {string} id
-  @returns {boolean}
-*/
-function isProjectId(id) {
-  const projectIdRegex = /^[\w-]{12}$/;
-  return projectIdRegex.test(id);
-}
+function Project({ review }) {
+  const project = useProject();
+  const missing = useSelector(project, (state) => state.matches('missingProject'));
 
-/** Checks if ids is a comma separated list of valid project IDs
- */
-function isReview(ids) {
-  const idList = ids?.split(',');
-  return idList?.every(isProjectId) && idList?.length > 1;
-}
-
-function Project() {
-  const id = new URLSearchParams(window.location.search).get('projectId');
-  const review = isReview(id);
-  const invalid = !isProjectId(id) && !review;
-  const track = new URLSearchParams(window.location.search).get('track');
-  const spots = process.env.REACT_APP_SPOTS_VISUALIZER === 'true';
-
-  if (invalid) {
-    return <InvalidId id={id} />;
+  if (missing) {
+    return <MissingProject />;
   }
 
-  if (review) {
-    return <LoadProjects ids={id} spots={spots} track={track} />;
-  }
-
-  return <LoadProject id={id} spots={spots} track={track} />;
+  return (
+    <>
+      <ForceLoadOutputModal />
+      <Instructions />
+      <Box
+        sx={{
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexGrow: 1,
+          p: 1,
+          alignItems: 'stretch',
+          justifyContent: 'space-evenly',
+          minHeight: 'calc(100vh - 73px - 56px - 76px - 2px)',
+        }}
+      >
+        <Box
+          sx={{
+            flex: '0 0 auto',
+            px: 1,
+          }}
+        >
+          {review && <ReviewControls />}
+          <DisplayControls />
+        </Box>
+        <EditControls />
+        <Canvas />
+      </Box>
+    </>
+  );
 }
 
 export default Project;

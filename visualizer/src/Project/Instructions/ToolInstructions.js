@@ -28,28 +28,16 @@ function ToolInstructions() {
           To switch between tools, click on the Tools menu or use the shortcuts on the right.
         </Typography>
         <Typography variant='h5'>Select</Typography>
-        <Typography>
-          Select changes the foreground and background labels.
-          <br />
-          Click on a label to select the foreground, or double click on a label to select the
-          background.
-          <br />
-          Double clicking also deselects other selected labels.
-        </Typography>
+        <Typography>Click on a label with the Select tool to select it.</Typography>
         <Typography variant='h5'>Brush and Erase</Typography>
         <Typography>
-          Brush and Erase can make detailed pixel-level changes to labels.
-          <br />
-          Use them to correct label borders, draw labels from scratch, or remove labels entirely.
+          Brush and Erase can make detailed pixel-level changes to labels, like correcting label
+          borders, draw labels from scratch, or remove labels entirely.
           <br />
           Brush adds the selected label and Erase removes it.
           <br />
-          With two labels selected, both Brush and Erase are on, replacing one label with another.
-          <br />
-          To edit a single label again, press the Brush or Eraser button.
-          <br />
-          Click and drag to make a brush stroke, and release to paint the selected labels within the
-          stroke.
+          Click and drag to make a brush stroke, and release to fill the stroke with the selected
+          label.
         </Typography>
         <Typography variant='h5'>Trim</Typography>
         <Typography>
@@ -59,10 +47,12 @@ function ToolInstructions() {
         </Typography>
         <Typography variant='h5'>Flood</Typography>
         <Typography>
-          Flood fills a labeled region with another label.
+          Flood fills a connected region of one label with another label.
           <br />
-          Click on any label to select it to flood, then click again to flood it with the foreground
-          label.
+          Click on any label to select it to flood, then click again to flood it with the selected
+          label. label. The label that will be flooded is outlined in red.
+          <br />
+          Hold <kbd>Shift</kbd> and click to change the label to be flooded.
         </Typography>
         <Typography variant='h5'>Threshold</Typography>
         <Typography>

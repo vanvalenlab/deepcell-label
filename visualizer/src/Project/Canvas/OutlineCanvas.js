@@ -1,89 +1,113 @@
 import { useSelector } from '@xstate/react';
-import { GPU } from 'gpu.js';
 import { useEffect, useRef } from 'react';
 import {
-  useAlphaKernelCanvas,
+  useAlphaGpu,
   useArrays,
   useCanvas,
+  useCellMatrix,
+  useChannel,
   useImage,
   useLabeled,
-  useSelect,
+  useRaw,
+  useSelectedCell,
 } from '../ProjectContext';
 
-const OutlineCanvas = ({ setCanvases }) => {
+const OutlineCanvas = ({ setBitmaps }) => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
-  const select = useSelect();
-  const foreground = useSelector(select, (state) => state.context.foreground);
-  const background = useSelector(select, (state) => state.context.background);
+  const cell = useSelectedCell();
 
   const labeled = useLabeled();
-  const outlineAll = useSelector(labeled, (state) => state.context.outline);
+  const opacity = useSelector(labeled, (state) => state.context.outlineOpacity);
   const feature = useSelector(labeled, (state) => state.context.feature);
 
+  const raw = useRaw();
+  const isGrayscale = useSelector(raw, (state) => state.context.isGrayscale);
+  const channelIndex = useSelector(raw, (state) => state.context.channel);
+  const channel = useChannel(channelIndex);
+  const invert = useSelector(channel, (state) => state.context.invert && isGrayscale);
+
   const image = useImage();
-  const frame = useSelector(image, (state) => state.context.frame);
+  const t = useSelector(image, (state) => state.context.t);
 
   const arrays = useArrays();
   const labeledArray = useSelector(
     arrays,
-    (state) => state.context.labeledArrays && state.context.labeledArrays[feature][frame]
+    (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
+  const cellMatrix = useCellMatrix();
+
+  const gpu = useAlphaGpu();
   const kernelRef = useRef();
-  const kernelCanvas = useAlphaKernelCanvas();
 
   useEffect(() => {
-    const gpu = new GPU({ canvas: kernelCanvas });
     const kernel = gpu.createKernel(
-      // template string needed to avoid minification breaking function
-      // by changing if (x) { y } to x && y
-      // TODO: research how to work around minification changes
-      `function (data, outlineAll, foreground, background) {
+      `function (data, cells, numLabels, opacity, cell, invert) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
-        const label = data[y][x];
-        const onOutline =
-          label !== 0 &&
-          ((x !== 0 && data[y][x - 1] !== label) ||
-            (x !== this.constants.w - 1 && data[y][x + 1] !== label) ||
-            (y !== 0 && data[y - 1][x] !== label) ||
-            (y !== this.constants.h - 1 && data[y + 1][x] !== label));
-
-        // always outline selected labels
-        if (onOutline && label === background) {
-          this.color(1, 0, 0, 1);
-        } else if (onOutline && label === foreground) {
-          this.color(1, 1, 1, 1);
-        } else if (label === foreground && foreground !== 0) {
-          this.color(1, 1, 1, 0.5);
-        } else if (outlineAll && onOutline) {
-          this.color(1, 1, 1, 1);
+        const value = data[y][x];
+        let north = value;
+        let south = value;
+        let east = value;
+        let west = value;
+        if (x !== 0) {
+          north = data[y][x - 1];
         }
+        if (x !== this.constants.w - 1) {
+          south = data[y][x + 1];
+        }
+        if (y !== 0) {
+          west = data[y - 1][x];
+        }
+        if (y !== this.constants.h - 1) {
+          east = data[y + 1][x];
+        }
+        let outlineOpacity = 1;
+        for (let i = 0; i < numLabels; i++) {
+          if (cells[value][i] === 1) {
+            if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0)
+           {
+              if (cell === i) {
+                outlineOpacity = outlineOpacity * (1 - opacity[1]);
+              } else {
+                outlineOpacity = outlineOpacity * (1 - opacity[0]);
+              }
+            }
+          }
+        }
+        let [r, g, b] = [1, 1, 1];
+        if (invert) {
+          r = 0;
+          g = 0;
+          b = 0;
+        }
+        this.color(r, g, b, 1 - outlineOpacity);
       }`,
       {
         constants: { w: width, h: height },
         output: [width, height],
         graphical: true,
+        dynamicArguments: true,
       }
     );
     kernelRef.current = kernel;
-    return () => {
-      kernel.destroy();
-      gpu.destroy();
-    };
-  }, [kernelCanvas, width, height]);
+  }, [gpu, width, height]);
 
   useEffect(() => {
-    if (labeledArray) {
+    const kernel = kernelRef.current;
+    if (labeledArray && cellMatrix) {
+      const numLabels = cellMatrix[0].length;
       // Compute the outline of the labels with the kernel
-      kernelRef.current(labeledArray, outlineAll, foreground, background);
+      kernel(labeledArray, cellMatrix, numLabels, [opacity, opacity], cell, invert);
       // Rerender the parent canvas
-      setCanvases((canvases) => ({ ...canvases, outline: kernelCanvas }));
+      createImageBitmap(kernel.canvas).then((bitmap) => {
+        setBitmaps((bitmaps) => ({ ...bitmaps, outline: bitmap }));
+      });
     }
-  }, [labeledArray, outlineAll, foreground, background, setCanvases, kernelCanvas]);
+  }, [labeledArray, cellMatrix, opacity, cell, invert, setBitmaps, width, height]);
 
   return null;
 };
