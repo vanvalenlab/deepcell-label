@@ -4,7 +4,9 @@ Loads both raw image data and labels
 """
 
 import io
+import itertools
 import json
+import re
 import tarfile
 import tempfile
 import zipfile
@@ -269,7 +271,7 @@ def load_zip_tiffs(zf, filename):
         zf: a ZipFile containing tiffs to load
 
     Returns:
-        numpy array or None if no png in zip
+        numpy array or None if no tiffs in zip
     """
     if filename in zf.namelist():
         with zf.open(filename) as f:
@@ -285,20 +287,47 @@ def load_zip_tiffs(zf, filename):
     else:
         print(f'{filename} not found in zip.')
     print('Loading all tiffs in zip.')
-    tiffs = []
+    tiffs = {}
     for name in zf.namelist():
         with zf.open(name) as f:
             if 'TIFF image data' in magic.from_buffer(f.read(2048)):
                 f.seek(0)
                 tiff = TiffFile(f).asarray()
-                tiffs.append(tiff)
+                tiffs[name] = tiff
     if len(tiffs) > 0:
-        # Stack channels on last axis
-        y = np.stack(tiffs, axis=-1)
-        # Add t axis
-        if y.ndim == 3:
-            y = y[np.newaxis, ...]
-        return y
+        regex = r'(.*)batch_(\d*)_feature_(\d*)\.tif'
+
+        def get_batch(filename):
+            match = re.match(regex, filename)
+            if match:
+                return int(match.group(2))
+
+        def get_feature(filename):
+            match = re.match(regex, filename)
+            if match:
+                return int(match.group(3))
+
+        filenames = list(tiffs.keys())
+        all_have_batch = all(map(lambda x: x is not None, map(get_batch, filenames)))
+        if all_have_batch:  # Use batches as Z dimension
+            batches = {}
+            for batch, batch_group in itertools.groupby(filenames, get_batch):
+                # Stack features on last axis
+                features = [
+                    tiffs[filename]
+                    for filename in sorted(list(batch_group), key=get_feature)
+                ]
+                batches[batch] = np.stack(features, axis=-1)
+            # Stack batches on first axis
+            batches = map(lambda x: x[1][0], sorted(batches.items()))
+            array = np.stack(batches, axis=0)
+            return array
+        else:  # Use each tiff as a channel and stack on the last axis
+            y = np.stack(tiffs.values(), axis=-1)
+            # Add Z axis
+            if y.ndim == 3:
+                y = y[np.newaxis, ...]
+            return y
 
 
 def load_zip_png(zf):
@@ -405,7 +434,7 @@ def load_tiff(f, axes=None):
         numpy array or None if not a tiff file
 
     Raises:
-        ValueError: loaded image data is more than 4 dimensional
+        ValueError: tiff has less than 2 or more than 4 dimensions
     """
     f.seek(0)
     if 'TIFF image data' in magic.from_buffer(f.read(2048)):
@@ -426,23 +455,50 @@ def load_tiff(f, axes=None):
             X = tiff.asarray(squeeze=False)
         else:
             X = tiff.asarray(squeeze=False)
-        # Reshape array
-        if X.ndim == 2:
-            # Add C and T axes
+        # Standardize dimensions
+        if X.ndim == 0:
+            raise ValueError('Loaded image has no data')
+        elif X.ndim == 1:
+            raise ValueError('Loaded tiff is 1 dimensional')
+        elif X.ndim == 2:
+            # Add Z and C axes
             return X[np.newaxis, ..., np.newaxis]
-        if X.ndim == 3:
-            # TODO: more general axis handling
-            if axes is None:
+        elif X.ndim == 3:
+            if axes == 'BXY':
+                return X[..., np.newaxis]
+            elif axes == 'XYC':
                 return X[np.newaxis, ...]
-            if axes[0] == 'C':  # Move C to last axis and add T axis
+            elif axes == 'CXY':
                 X = np.moveaxis(X, 0, -1)
                 return X[np.newaxis, ...]
-            else:  # Add C axis
+            elif axes == 'XYB':
+                X = np.moveaxis(X, -1, 0)
                 return X[..., np.newaxis]
-        if X.ndim == 4:
-            return X
-        if X.ndim > 4:
-            raise ValueError('Tiff file has more than 4 dimensions')
+            else:  # Treat smallest axis as channels
+                print(
+                    f'Warning: tiff with shape {X.shape} has 3 dimensions '
+                    f'with unsupported axes {axes}. '
+                    'Using smallest axis as channels.'
+                )
+                smallest_axis = np.argmin(X.shape)
+                X = np.moveaxis(X, smallest_axis, -1)
+                return X[np.newaxis, ...]
+        elif X.ndim == 4:
+            if axes == 'BXYC':
+                return X
+            elif axes == 'CXYB':
+                X = np.moveaxis(X, (0, -1), (-1, 0))
+                return X
+            else:
+                print(
+                    f'Warning: tiff with shape {X.shape} has 4 dimensions, '
+                    f'but axes is {axes}. Assuming BXYC.'
+                )
+                return X
+        else:
+            raise ValueError(
+                f'Loaded tiff with shape {X.shape} has more than 4 dimensions.'
+            )
 
 
 def load_png(f):
