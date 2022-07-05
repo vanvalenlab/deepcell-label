@@ -20,6 +20,20 @@ class Edit(object):
     Loads labeled data from a zip file,
     edits the labels according to edit.json in the zip,
     and writes the edited labels to a new zip file.
+
+    The labels zipfile must contain:
+        labeled.dat - a binary array buffer of the labeled data (int32)
+        overlaps.json - a 2D json array describing values encode which cells
+                        the (i, j)th element of overlaps.json is 1 if value i encodes cell j and 0 otherwise
+        edit.json - a json object describing the edit to be made including
+                    - action (e.g. )
+                    - the args for the action
+                    - write_mode: one of 'overlap', 'overwrite', or 'exclude'
+                    - height: the height of the labeled (and raw) arrays
+                    - width: the width of the labeled (and raw) arrays
+    It additionally may contain:
+        raw.dat - a binary array buffer of the raw data (uint8)
+        lineage.json - a json object describing the lineage of the cells
     """
 
     def __init__(self, labels_zip):

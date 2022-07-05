@@ -253,7 +253,7 @@ class TestEdit:
             np.testing.assert_array_equal(edit.labels, expected_labels)
 
     def test_action_dilate_exclude(self, app):
-        """Filated label does not affect other labels when write_mode is exclude."""
+        """Dilating label does not affect other labels when write_mode is exclude."""
         labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
         expected_labels = labels.copy()
         cells = [{'cell': 1, 'value': 1}, {'cell': 2, 'value': 2}]

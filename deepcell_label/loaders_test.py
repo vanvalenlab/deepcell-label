@@ -9,7 +9,7 @@ import zipfile
 
 import numpy as np
 from PIL import Image
-from tifffile import TiffFile, TiffWriter
+from tifffile import TiffFile, TiffWriter, imwrite
 
 from deepcell_label.loaders import Loader
 
@@ -91,7 +91,7 @@ def test_load_image_tiff():
     expected = np.zeros((1, 1, 1, 1))
     with tempfile.NamedTemporaryFile() as images:
         with TiffWriter(images) as writer:
-            writer.save(expected)
+            writer.write(expected)
             images.seek(0)
 
         loader = Loader(images)
@@ -106,12 +106,12 @@ def test_load_image_and_segmentation_tiff():
     expected_segmentation = np.ones((1, 1, 1, 1))
     with tempfile.NamedTemporaryFile() as images, tempfile.NamedTemporaryFile() as labels:
         with TiffWriter(images) as writer:
-            writer.save(expected_image)
+            writer.write(expected_image)
             images.seek(0)
         with zipfile.ZipFile(labels, mode='w') as zf:
             tiff = io.BytesIO()
             with TiffWriter(tiff) as writer:
-                writer.save(np.array([[1]]))
+                writer.write(np.array([[1]]))
                 tiff.seek(0)
             zf.writestr('feature0.tiff', tiff.read())
 
@@ -141,7 +141,7 @@ def test_load_image_zip():
         def make_tiff(array):
             tiff = io.BytesIO()
             with TiffWriter(tiff) as writer:
-                writer.save(array)
+                writer.write(array)
                 tiff.seek(0)
             return tiff.read()
 
@@ -167,29 +167,58 @@ def test_load_segmentation_zip():
         def make_tiff(array):
             tiff = io.BytesIO()
             with TiffWriter(tiff) as writer:
-                writer.save(array)
+                writer.write(array)
                 tiff.seek(0)
             return tiff.read()
 
         with zipfile.ZipFile(images, mode='w') as zf:
-            with zf.open('channel0.tiff', 'w') as tiff:
+            with zf.open('channel_0.tiff', 'w') as tiff:
                 channel_0 = make_tiff(np.zeros((1, 100, 100)))
                 tiff.write(channel_0)
-            with zf.open('channel1.tiff', 'w') as tiff:
+            with zf.open('channel_1.tiff', 'w') as tiff:
                 channel_1 = make_tiff(np.zeros((1, 100, 100)))
                 tiff.write(channel_1)
         images.seek(0)
 
         with zipfile.ZipFile(labels, mode='w') as zf:
-            with zf.open('feature0.tiff', 'w') as tiff:
+            with zf.open('feature_0.tiff', 'w') as tiff:
                 feature_0 = make_tiff(np.zeros((1, 100, 100)))
                 tiff.write(feature_0)
-            with zf.open('feature1.tiff', 'w') as tiff:
+            with zf.open('feature_1.tiff', 'w') as tiff:
                 feature_1 = make_tiff(np.zeros((1, 100, 100)))
                 tiff.write(feature_1)
         labels.seek(0)
 
         loader = Loader(images, labels)
+    loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
+    assert_image(loaded_zip, expected_image)
+    assert_segmentation(loaded_zip, expected_segmentation)
+
+
+def test_load_batches():
+    """Load labeled array from zip of tiff files with multiple batches."""
+    expected_image = np.zeros((2, 100, 100, 1))
+    expected_segmentation = np.zeros((2, 100, 100, 1))
+    expected_segmentation[1, :, :, :] = 1
+    with tempfile.NamedTemporaryFile() as images, tempfile.NamedTemporaryFile() as labels:
+
+        def make_tiff(array):
+            tiff = io.BytesIO()
+            imwrite(tiff, array)
+            tiff.seek(0)
+            return tiff.read()
+
+        images.write(make_tiff(np.zeros((2, 100, 100, 1))))
+        images.seek(0)
+
+        with zipfile.ZipFile(labels, mode='w') as zf:
+            with zf.open('batch_0_feature_0.tiff', 'w') as tiff:
+                tiff.write(make_tiff(np.zeros((1, 100, 100))))
+            with zf.open('batch_1_feature_0.tiff', 'w') as tiff:
+                tiff.write(make_tiff(np.zeros((1, 100, 100)) + 1))
+        labels.seek(0)
+
+        loader = Loader(images, labels, 'BYXC')
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected_image)
     assert_segmentation(loaded_zip, expected_segmentation)
