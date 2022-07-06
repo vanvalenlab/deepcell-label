@@ -1,8 +1,11 @@
 # DeepCell Label Architecture
 
-DeepCell
+DeepCell Label has two subcomponents
 
-Details on how to host these each of these
+- a [backend](#python-backend) that handles data input and output and logic to edit segmentations
+- a [frontend](#client) that shows and edits an image with its labels
+
+See details on how to run them [locally](LOCAL_USE.md) or [on the cloud](DEPLOYMENT.md).
 
 ## Python backend
 
@@ -51,23 +54,15 @@ App.js routes between three pages:
 - `/loading` shows Loading, a page for redirecting from deepcell.org/predict that shows a loading animation or error messages
 - `/project` shows Project, a page for viewing and editing projects
 
-#### Components within Project
-
-When viewing a project on the `/project` page, there must be a project ID provided in the `projectId` parameter.
-
-When only one project ID is provided, we load the project with Load.js, while when multiple comma separated project IDs are provided, we load all of them with LoadReview.js, start and show a dropdown to switch between projects..
-
-- compose canvas
-
 ### State management
 
 The React components use hooks defined in [`ProjectContext.js`](../visualizer/src/Project/ProjectContext.js) to access and render the state.
 
-<!-- insert diagram of spawned actors -->
-
 The root level machine spawns child actors and sets up event buses for these actors to communicate with each other.
 
 Here's a tree diagram of the spawned state machines. The root project state machine, and the child state machine The state machines with stars have event buses that they broadcast events on. The events they broadcast are shown in blue to the right of the state machine. The events that state machines listen to from these event buses on are shown to the left.
+
+![xstate tree diagram](xstateTree.png)
 
 #### UI actors
 
@@ -103,31 +98,36 @@ These actors manage the interactions with the UI
     - `editDivisionsMachine`
     - each of these spawn actors for the tools it manages, and the tool actors send events to a label machine (e.g. `cellMachine`) to edit the labels
 
-#### Labeled data
+#### Labels
 
-These state machine hold the labels and manage the logic to edit the labels.
+These state machines hold the labels and manage the logic that edit labels.
 
-- arrays
+- `arraysMachine`
   - manages the raw image arrays and the segmentation images
   - spawns `segmentApiMachine` that communicates with the segmentation editing API on the Flask backend
-- cells
+- `cellsMachine`
   - manages the cells and how to edite them
   - edits the cells on `DELETE`, `SWAP`, `REPLACE`, and `NEW` events
-- divisions
+- `divisionsMachine`
   - manage the divisions and how to edit them
   - edits the divisions on `ADD_DAUGHTER` and `REMOVE_DAUGHTER` events
   - updates divisions to stay in sync with cells when receiving `DELETE`, `SWAP`, `REPLACE`, and `NEW` events
-- spots
+- `spotsMachine`
   - manages the spots labels
   - no spots editing implemented yet
 
 #### Data management
 
-There are
+These state machines provide additional infrastructure to record changes to labels.
 
-- undo
-- idb (IndexedDB)
-- export
+- `undoMachine`
+  - spawns `uiHistoryMachine` and `labelsHistoryMachine` to save and restore state
+  - tracks how many label edits have been done, undone, and redone
+  - see [undo](#undo) below for more details
+- `idbMachine`
+  - spawns `idbWebWorker` in a web worker to interact with IndexedDB off of the main thread
+- `exportMachine`
+  - sends project data to the backend to be repackaged and exported
 
 ##### Undo
 
@@ -149,9 +149,3 @@ An actor tracked with a `labelHistoryMachine` must
 - restore its labels when receiving these before and after events
 
 A `uiHistoryMachine` records its actor's state for every action, while `labelHistoryMachine` only records the state when it receives a snapshot from the actor.
-
-##### IndexedDB persistence
-
-The
-
-Xst
