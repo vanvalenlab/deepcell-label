@@ -5,7 +5,7 @@ import logging
 
 from flask.logging import default_handler
 
-from deepcell_label import create_app
+from . import create_app
 
 
 def initialize_logger():

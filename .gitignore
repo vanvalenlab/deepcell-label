@@ -162,7 +162,4 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 
-# Webpack builds javascript files into deepcell_label/static
-deepcell_label/static/js/*
-
 .nyc_output

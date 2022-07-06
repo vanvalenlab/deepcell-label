@@ -8,8 +8,8 @@ import responses
 from PIL import Image
 from tifffile import TiffWriter
 
-from deepcell_label import models
-from deepcell_label.conftest import DummyLoader
+from . import models
+from .conftest import DummyLoader
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.
@@ -31,14 +31,14 @@ def test_edit(client):
 
 
 def test_create_project_no_url(client, mocker):
-    mocker.patch('deepcell_label.blueprints.Loader', lambda *args: DummyLoader())
+    mocker.patch('blueprints.Loader', lambda *args: DummyLoader())
     response = client.post('/api/project')
     assert response.status_code == 400
 
 
 @responses.activate
 def test_create_project(client, mocker):
-    mocker.patch('deepcell_label.blueprints.Loader', lambda *args: DummyLoader())
+    mocker.patch('blueprints.Loader', lambda *args: DummyLoader())
     responses.add(responses.GET, 'https://test.com', body=b'', status=200)
     response = client.post('/api/project', data={'images': 'https://test.com'})
     assert response.status_code == 200

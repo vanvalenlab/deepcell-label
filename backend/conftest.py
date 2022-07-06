@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 from flask_sqlalchemy import SQLAlchemy
 
-from deepcell_label import create_app  # pylint: disable=C0413
-from deepcell_label.loaders import Loader
+from . import create_app  # pylint: disable=C0413
+from .loaders import Loader
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -54,7 +54,7 @@ class DummyLoader(Loader):
 
 @pytest.fixture(autouse=True)
 def mock_aws(mocker):
-    mocker.patch('deepcell_label.models.boto3.client')
+    mocker.patch('models.boto3.client')
 
 
 @pytest.fixture(scope='session')

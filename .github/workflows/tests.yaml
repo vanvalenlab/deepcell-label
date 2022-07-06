@@ -123,11 +123,13 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
+          working-directory: backend
           python-version: ${{ matrix.python-version }}
 
       - name: Cache pip
         uses: actions/cache@v2
         with:
+          working-directory: backend
           # This path is specific to Ubuntu
           path: ~/.cache/pip
           # Look to see if there is a cache hit for the corresponding requirements file
@@ -143,8 +145,10 @@ jobs:
           pip install -r requirements-test.txt
 
       - name: Run PyTest
+        with:
+          working-directory: backend
         run: |
-          pytest deepcell_label --cov deepcell_label
+          pytest --cov
 
       - name: Coveralls
         if: env.COVERALLS_REPO_TOKEN != null
@@ -152,6 +156,8 @@ jobs:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           COVERALLS_FLAG_NAME: python-${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
+        with:
+          working-directory: backend
         run: |
           coveralls
 

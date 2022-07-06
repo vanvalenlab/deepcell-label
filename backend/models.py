@@ -9,7 +9,7 @@ from secrets import token_urlsafe
 import boto3
 from flask_sqlalchemy import SQLAlchemy
 
-from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET
+from .config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET
 
 logger = logging.getLogger('models.Project')  # pylint: disable=C0103
 db = SQLAlchemy()  # pylint: disable=C0103
@@ -29,7 +29,7 @@ class Project(db.Model):
     def __init__(self, loader):
         """
         Args:
-            loader: deepcell_label.loaders.Loader object
+            loader: loaders.Loader object
         """
         start = timeit.default_timer()
 
