@@ -48,11 +48,11 @@ Note that you need to update the bucket name at `INSERT_BUCKET_NAME_HERE`.
 
 Build the frontend by running
 
-- `cd visualizer` to open the frontend folder
+- `cd frontend` to open the frontend folder
 - `yarn` to install or update the dependencies
 - `yarn build` to generate the static assets
 
-Open the `visualizer/build` folder and upload all the files to the S3 bucket.
+Open the `frontend/build` folder and upload all the files to the S3 bucket.
 
 ## Host the backend with Elastic Beanstalk
 

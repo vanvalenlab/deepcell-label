@@ -53,7 +53,7 @@ Envrionment variables like `SQLALCHEMY_DATABASE_URI` can be passed to the run co
 Once the server is running, we need to set up the frontend. Install the dependencies for the frontend with:
 
 ```bash
-cd visualizer
+cd frontend
 yarn
 ```
 

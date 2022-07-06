@@ -121,4 +121,4 @@ node_modules/
 src/
 public/
 build/
-visualizer/
+frontend/
