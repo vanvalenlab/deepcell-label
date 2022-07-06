@@ -45,9 +45,7 @@ With the "t" field, values can be reassigned across times to different cells wit
 ### divisions.json
 
 Contains a list of division objects like `{"parent": 1, "daughters": [2, 3], "t": 1}`
-Each division has a parent cell `parent`, a list of daughter cells `daughters`, and the time of the division `t`.
-The time is the frame after the parent divides, or the first frame the daughters appear on
-When creating a division by adding a daughter, the
+Each division has a parent cell `parent`, a list of daughter cells `daughters`, and the time of the division `t`. Our convention for division times is the first time after the division finishes, or the first time the daughters appear on. When creating a new division by adding a daughter, `t` is set to the time where the daughter is selected.
 
 ### spots.csv
 
