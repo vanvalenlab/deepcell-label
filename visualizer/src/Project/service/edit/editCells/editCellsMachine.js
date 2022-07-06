@@ -1,3 +1,7 @@
+/**
+ * Manages the controls to edit the cells, like which tool is in use.
+ * Spawns machines for each tool.
+ */
 import { actions, assign, forwardTo, Machine, send, spawn } from 'xstate';
 import createSelectMachine from '../segment/selectMachine';
 import createDeleteMachine from './deleteMachine';

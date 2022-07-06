@@ -1,5 +1,5 @@
 /**
- * Root statechart for DeepCell Label in XState.
+ * Root statechart for a project in DeepCell Label.
  */
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import createCanvasMachine from './canvasMachine';

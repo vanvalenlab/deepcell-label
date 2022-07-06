@@ -1,3 +1,9 @@
+/**
+ * Manages history of labeled data.
+ * Records data before and after action when receiving SNAPSHOT event.
+ * Resends SNAPSHOTs on UNDO and REDO events.
+ */
+
 import { assign, Machine, send } from 'xstate';
 
 /** Records edited labels before and after each action. */

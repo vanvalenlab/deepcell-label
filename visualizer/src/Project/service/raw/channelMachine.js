@@ -1,3 +1,6 @@
+/** Manages the controls for a channel, including
+ * the dynamic range, brightness, contrast, and whether to invert the channel.
+ */
 import quickselect from 'quickselect';
 import { assign, Machine } from 'xstate';
 

@@ -1,3 +1,4 @@
+/** Manages using the trim tool. */
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 

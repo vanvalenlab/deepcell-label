@@ -1,5 +1,8 @@
-/** Manages division labels. */
-
+/** Manages divisions labels.
+ * Broadcasts DIVISIONS event on divisions event bus.
+ * Updates divisions based on edits to cells with CELLS, REPLACE, DELETE, NEW, and SWAP events.
+ * Edits divisions with ADD_DAUGHTER and REMOVE_DAUGHTER events.
+ */
 import equal from 'fast-deep-equal';
 import { assign, Machine, send } from 'xstate';
 import { pure } from 'xstate/lib/actions';

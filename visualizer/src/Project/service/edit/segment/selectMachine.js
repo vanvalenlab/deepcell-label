@@ -1,3 +1,4 @@
+/** Manages using the select tool. */
 import { Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 

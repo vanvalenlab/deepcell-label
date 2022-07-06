@@ -1,4 +1,6 @@
-/** Manages spots labels. */
+/** Manages spots labels.
+ * Broadcasts SPOTS event on spots event bus.
+ */
 
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../eventBus';

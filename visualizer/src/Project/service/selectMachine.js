@@ -1,3 +1,4 @@
+/** Manages which cell is selected. */
 import { assign, Machine, send } from 'xstate';
 import { pure, respond } from 'xstate/lib/actions';
 import Cells from '../cells';

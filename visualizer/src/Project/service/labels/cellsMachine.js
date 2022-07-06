@@ -1,4 +1,8 @@
-/** Loads and stores cells arrays. */
+/** Manages cells labels.
+ * Broadcasts CELLS event on cells event bus.
+ * Edits cells with REPLACE, DELETE, NEW, and SWAP events.
+ * Sets mode for editing cells across time (past, future, one, or all) with SET_MODE event.
+ */
 
 import colormap from 'colormap';
 import { assign, Machine, send } from 'xstate';

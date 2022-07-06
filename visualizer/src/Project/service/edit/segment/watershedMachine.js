@@ -1,3 +1,4 @@
+/** Manages using the watershed tool. */
 import { assign, Machine, send } from 'xstate';
 import Cells from '../../../cells';
 import { fromEventBus } from '../../eventBus';

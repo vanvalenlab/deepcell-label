@@ -1,3 +1,8 @@
+/**
+ * Manages the controls to edit the segmentation, like which tool is in use.
+ * Sends EDIT to the arrays event bus when interacting with the action buttons.
+ * Spawns machines for each tool that interacts with the canvas to send EDIT events.
+ */
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 import createBrushMachine from './brushMachine';

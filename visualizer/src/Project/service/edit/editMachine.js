@@ -1,5 +1,6 @@
 /**
- * Root statechart for DeepCell Label in XState.
+ * Manages which tab of controls is open.
+ * Spawns editSegment, editCells, and editDivisions machine to control each tab.
  */
 import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';

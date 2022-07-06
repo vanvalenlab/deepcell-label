@@ -1,3 +1,5 @@
+/** Collects all labeled data to be repackaged by the server for exporting. */
+
 import * as zip from '@zip.js/zip.js';
 import { flattenDeep } from 'lodash';
 import { assign, Machine, send } from 'xstate';

@@ -1,5 +1,5 @@
 /**
- * Root statechart for DeepCell Label in XState.
+ * Manages switching between projects for quality control.
  */
 import { assign, Machine, spawn } from 'xstate';
 import createProjectMachine from './projectMachine';

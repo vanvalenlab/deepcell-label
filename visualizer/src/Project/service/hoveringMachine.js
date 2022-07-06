@@ -1,3 +1,9 @@
+/** Manages what cell(s) are under the cursor.
+ *
+ * Gets the labeled array from LABELED events, then reads the value under coordinates from COORDINATES and looks up what cells from CELLS are represented by that value
+ * Broadcasts HOVERING events to the hovering event bus when the list of hovering cells changes.
+ */
+
 import equal from 'fast-deep-equal';
 import { actions, assign, Machine, send } from 'xstate';
 import Cells from '../cells';

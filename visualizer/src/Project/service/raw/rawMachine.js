@@ -1,3 +1,9 @@
+/** Manages the controls for the raw image, including
+ * whether color is on and what channel to show in grayscale mode.
+ *
+ * Spawns layerMachines and channelMachines for controlling each channel in color and grayscale mode respectively.
+ */
+
 import { actions, assign, forwardTo, Machine, send, sendParent, spawn } from 'xstate';
 import { fromEventBus } from '../eventBus';
 import createChannelMachine from './channelMachine';
