@@ -213,9 +213,9 @@ def test_load_batches():
 
         with zipfile.ZipFile(labels, mode='w') as zf:
             with zf.open('batch_0_feature_0.tiff', 'w') as tiff:
-                tiff.write(make_tiff(np.zeros((1, 100, 100))))
+                tiff.write(make_tiff(np.zeros((100, 100))))
             with zf.open('batch_1_feature_0.tiff', 'w') as tiff:
-                tiff.write(make_tiff(np.zeros((1, 100, 100)) + 1))
+                tiff.write(make_tiff(np.zeros((100, 100)) + 1))
         labels.seek(0)
 
         loader = Loader(images, labels, 'BYXC')
