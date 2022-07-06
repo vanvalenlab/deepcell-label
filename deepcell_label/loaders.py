@@ -474,15 +474,8 @@ def load_tiff(f, axes=None):
             elif axes == 'XYB':
                 X = np.moveaxis(X, -1, 0)
                 return X[..., np.newaxis]
-            else:  # Treat smallest axis as channels
-                print(
-                    f'Warning: tiff with shape {X.shape} has 3 dimensions '
-                    f'with unsupported axes {axes}. '
-                    'Using smallest axis as channels.'
-                )
-                smallest_axis = np.argmin(X.shape)
-                X = np.moveaxis(X, smallest_axis, -1)
-                return X[np.newaxis, ...]
+            else:  # Add channel axis
+                return X[..., np.newaxis]
         elif X.ndim == 4:
             if axes == 'BXYC':
                 return X
