@@ -54,7 +54,7 @@ class DummyLoader(Loader):
 
 @pytest.fixture(autouse=True)
 def mock_aws(mocker):
-    mocker.patch('models.boto3.client')
+    mocker.patch('.models.boto3.client')
 
 
 @pytest.fixture(scope='session')
