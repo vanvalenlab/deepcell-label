@@ -29,7 +29,7 @@ class Project(db.Model):
     def __init__(self, loader):
         """
         Args:
-            loader: deepcell_label.loaders.Loader object
+            loader: loaders.Loader object
         """
         start = timeit.default_timer()
 

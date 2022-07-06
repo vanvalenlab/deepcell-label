@@ -46,7 +46,7 @@ The client is a [React](https://reactjs.org/) based user interface with [XState]
 
 ### React UI
 
-The top level component is [App.js](../visualizer/src/App.js), which provides a [NavBar](../visualizer/src/Navbar.js) and [Footer](../visualizer/src/Footer/Footer.js) for all pages and routing with [React Router](https://reactrouter.com/).
+The top level component is [App.js](../frontend/src/App.js), which provides a [NavBar](../frontend/src/Navbar.js) and [Footer](../frontend/src/Footer/Footer.js) for all pages and routing with [React Router](https://reactrouter.com/).
 
 App.js routes between three pages:
 
@@ -56,7 +56,7 @@ App.js routes between three pages:
 
 ### State management
 
-The React components use hooks defined in [`ProjectContext.js`](../visualizer/src/Project/ProjectContext.js) to access and render the state.
+The React components use hooks defined in [`ProjectContext.js`](../frontend/src/Project/ProjectContext.js) to access and render the state.
 
 The root level machine spawns child actors and sets up event buses for these actors to communicate with each other.
 
