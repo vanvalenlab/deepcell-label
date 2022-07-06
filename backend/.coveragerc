@@ -16,14 +16,6 @@ omit =
     **/*_test.py
     env/**/*.py
     venv/**/*.py
+    .venv/**/*.py
     ENV/**/*.py
     VENV/**/*.py
-    desktop/env/**/*.py
-    desktop/venv/**/*.py
-    desktop/ENV/**/*.py
-    desktop/VENV/**/*.py
-    browser/env/**/*.py
-    browser/venv/**/*.py
-    browser/ENV/**/*.py
-    browser/VENV/**/*.py
-    browser/conftest.py

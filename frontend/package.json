@@ -67,7 +67,7 @@
     "eject": "react-scripts eject",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
     "cypress:frontend": "react-scripts -r @cypress/instrument-cra start",
-    "cypress:backend": "cd .. && FLASK_APP=application FLASK_ENV=development coverage run -m flask run"
+    "cypress:backend": "cd ../backend && FLASK_APP=application FLASK_ENV=development coverage run -m flask run"
   },
   "browserslist": {
     "production": [

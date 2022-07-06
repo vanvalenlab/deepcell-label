@@ -464,17 +464,17 @@ def load_tiff(f, axes=None):
             # Add Z and C axes
             return X[np.newaxis, ..., np.newaxis]
         elif X.ndim == 3:
-            if axes == 'BXY':
+            if axes[0] == 'B':
                 return X[..., np.newaxis]
-            elif axes == 'XYC':
-                return X[np.newaxis, ...]
-            elif axes == 'CXY':
-                X = np.moveaxis(X, 0, -1)
-                return X[np.newaxis, ...]
-            elif axes == 'XYB':
+            elif axes[-1] == 'B':
                 X = np.moveaxis(X, -1, 0)
                 return X[..., np.newaxis]
-            else:  # Add channel axis
+            elif axes[0] == 'C':
+                X = np.moveaxis(X, 0, -1)
+                return X[np.newaxis, ...]
+            elif axes[-1] == 'C':
+                return X[np.newaxis, ...]
+            else:  # Add channel axis by default
                 return X[..., np.newaxis]
         elif X.ndim == 4:
             if axes == 'BXYC':
