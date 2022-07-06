@@ -11,11 +11,11 @@ import requests
 from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
-from .config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-from .export import Export
-from .label import Edit
-from .loaders import Loader
-from .models import Project
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from deepcell_label.export import Export
+from deepcell_label.label import Edit
+from deepcell_label.loaders import Loader
+from deepcell_label.models import Project
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 

@@ -11,7 +11,7 @@ import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter, imwrite
 
-from .loaders import Loader
+from deepcell_label.loaders import Loader
 
 
 def assert_image(archive, expected):

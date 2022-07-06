@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from . import utils
+from deepcell_label import utils
 
 
 def test_convert_lineage_with_no_cells():

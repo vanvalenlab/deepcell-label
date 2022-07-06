@@ -2,8 +2,8 @@
 
 import pytest
 
-from . import models
-from .conftest import DummyLoader
+from deepcell_label import models
+from deepcell_label.conftest import DummyLoader
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.

@@ -149,9 +149,9 @@ jobs:
           pip install -r requirements-test.txt
 
       - name: Run PyTest
-        working-directory: backend
+        working-directory: backend/deepcell_label
         run: |
-          pytest --cov
+          PYTHONPATH=. pytest --cov
 
       - name: Coveralls
         if: env.COVERALLS_REPO_TOKEN != null

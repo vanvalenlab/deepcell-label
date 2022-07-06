@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
-from .utils import convert_lineage, reshape
+from deepcell_label.utils import convert_lineage, reshape
 
 
 class Loader:

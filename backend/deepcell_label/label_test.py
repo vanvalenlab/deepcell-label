@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from .label import Edit
+from deepcell_label.label import Edit
 
 
 # Automatically enable transactions for all tests, without importing any extra fixtures.

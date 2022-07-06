@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from .export import rewrite_labeled
+from deepcell_label.export import rewrite_labeled
 
 
 def test_rewrite_labeled_removed_cell():
