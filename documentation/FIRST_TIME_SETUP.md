@@ -14,7 +14,7 @@ If the command fails, install Python with Anaconda by following the installation
 
 ### Create a Python virtual environment
 
-We recommend installing Python dependencies in a virtual environment isolate the project from the rest of your machine. If you're using Anaconda, create a virtual environment named `deepcell-label` with this command: `conda create -n deepcell-label python=3.7`.
+We recommend installing Python dependencies in a virtual environment isolate the project from the rest of your machine. If you're using Anaconda, create a virtual environment named `deepcell-label` with this command: `conda create -n deepcell-label python=3.8`.
 
 Then activate the virtual environment with: `conda activate deepcell-label`.
 
