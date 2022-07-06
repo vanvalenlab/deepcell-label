@@ -8,6 +8,7 @@ To create a project with DeepCell Label, POST a request to `label.deepcell.org/a
   - a .tiff
   - a .png
   - an .npz, or zipped numpy array
+    - uses arrays named `X` for images and `y` for segmentation, otherwise uses the first array in the .npz
   - a .trk file, a legacy format from from [deepcell-tracking](https://github.com/vanvalenlab/deepcell-tracking)
 - `axes` (optional): the dimension order of the images (e.g. `CZYX`)
 - `labels` (optional): a URL that downloads a .trk or a zip containing
@@ -44,9 +45,7 @@ With the "t" field, values can be reassigned across times to different cells wit
 ### divisions.json
 
 Contains a list of division objects like `{"parent": 1, "daughters": [2, 3], "t": 1}`
-Each division has a parent cell `parent`, a list of daughter cells `daughters`, and the time of the division `t`.
-The time is the frame after the parent divides, or the first frame the daughters appear on
-When creating a division by adding a daughter, the
+Each division has a parent cell `parent`, a list of daughter cells `daughters`, and the time of the division `t`. Our convention for division times is the first time after the division finishes, or the first time the daughters appear on. When creating a new division by adding a daughter, `t` is set to the time where the daughter is selected.
 
 ### spots.csv
 
