@@ -20,8 +20,8 @@ jobs:
 
       - name: Cache pip
         uses: actions/cache@v2
-        working-directory: backend
         with:
+          working-directory: backend
           # This path is specific to Ubuntu
           path: ~/.cache/pip
           # Look to see if there is a cache hit for the corresponding requirements file
