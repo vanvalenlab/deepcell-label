@@ -8,6 +8,7 @@ To create a project with DeepCell Label, POST a request to `label.deepcell.org/a
   - a .tiff
   - a .png
   - an .npz, or zipped numpy array
+    - uses arrays named `X` for images and `y` for segmentation, otherwise uses the first array in the .npz
   - a .trk file, a legacy format from from [deepcell-tracking](https://github.com/vanvalenlab/deepcell-tracking)
 - `axes` (optional): the dimension order of the images (e.g. `CZYX`)
 - `labels` (optional): a URL that downloads a .trk or a zip containing
