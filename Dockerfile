@@ -1,4 +1,4 @@
-FROM python:3.7-slim-bullseye as base
+FROM python:3.8-slim-bullseye as base
 
 FROM base as builder
 
@@ -11,11 +11,11 @@ COPY requirements.txt requirements-test.txt ./
 # Installation on Python3.8+ may require
 # pkg-config libfreetype6-dev libxft-dev libpng-dev
 RUN apt-get update && apt-get install -y \
-    build-essential default-libmysqlclient-dev && \
-    rm -rf /var/lib/apt/lists/*
+  build-essential default-libmysqlclient-dev && \
+  rm -rf /var/lib/apt/lists/*
 
 RUN pip install --prefix=/install --no-cache-dir \
-    -r requirements.txt gunicorn
+  -r requirements.txt gunicorn
 
 FROM base
 
