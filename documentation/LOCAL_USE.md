@@ -14,7 +14,13 @@ and open the repository with:
 cd deepcell-label
 ```
 
-## Set up Flask server
+## Set up Flask backend
+
+Open the subfolder for the backend:
+
+```bash
+cd backend
+```
 
 Set up a virtual environment with [conda](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) or [venv](https://docs.python.org/3/library/venv.html).
 After setting up and activating the virtual environment, install the Python dependencies with:
@@ -48,7 +54,7 @@ docker run -p 5000:5000 -it vanvalenlab/deepcell-label:$USER
 
 Envrionment variables like `SQLALCHEMY_DATABASE_URI` can be passed to the run command using the [environment variable flags](https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file): `-e` and `--env`.
 
-## Set up React client
+## Set up Javascript frontend
 
 Once the server is running, we need to set up the frontend. Install the dependencies for the frontend with:
 
