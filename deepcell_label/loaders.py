@@ -319,7 +319,7 @@ def load_zip_tiffs(zf, filename):
                 ]
                 batches[batch] = np.stack(features, axis=-1)
             # Stack batches on first axis
-            batches = map(lambda x: x[1][0], sorted(batches.items()))
+            batches = map(lambda x: x[1], sorted(batches.items()))
             array = np.stack(batches, axis=0)
             return array
         else:  # Use each tiff as a channel and stack on the last axis
