@@ -122,7 +122,7 @@ def rewrite_labeled(labeled, cells):
     (f, duration, height, width) = labeled.shape
     new_cells = []
     for t in range(duration):
-        cells_at_t = list(filter(lambda c: c['t'] == t, cells))
+        cells_at_t = list(filter(lambda c, t=t: c['t'] == t, cells))
         values = itertools.groupby(cells_at_t, lambda c: c['value'])
         overlap_values = []
 
