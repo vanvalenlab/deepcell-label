@@ -143,6 +143,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = [
+            // TODO: filter by c as well
             ...ctx.cells.filter((cell) => cell.t !== evt.t),
             ...evt.cells.map((cell) => ({ ...cell, t: evt.t })),
           ];

@@ -127,11 +127,18 @@ class Loader:
         """Writes cells to cells.json in the output zip."""
         if self.cells is None:
             cells = []
+            # TODO: add channels to cell labels
+            # for c in range(self.y.shape[-1]):
             for t in range(self.y.shape[0]):
-                for value in np.unique(self.y[t]):
+                for value in np.unique(self.y[t]):  # self.y[t,:,:,c]
                     if value != 0:
                         cells.append(
-                            {'cell': int(value), 'value': int(value), 't': int(t)}
+                            {
+                                'cell': int(value),
+                                'value': int(value),
+                                't': int(t),
+                                # 'c': c,
+                            }
                         )
             self.cells = cells
         self.zip.writestr('cells.json', json.dumps(self.cells))
@@ -253,6 +260,7 @@ def load_zip_numpy(zf, name='X'):
     Returns:
         numpy array or None if no png in zip
     """
+    # import pdb; pdb.set_trace()
     for filename in zf.namelist():
         if filename == f'{name}.npy':
             with zf.open(filename) as f:
