@@ -260,7 +260,6 @@ def load_zip_numpy(zf, name='X'):
     Returns:
         numpy array or None if no png in zip
     """
-    # import pdb; pdb.set_trace()
     for filename in zf.namelist():
         if filename == f'{name}.npy':
             with zf.open(filename) as f:
