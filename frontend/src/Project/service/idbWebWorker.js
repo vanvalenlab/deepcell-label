@@ -45,8 +45,8 @@ const idbMachine = createMachine(
           onDone: [
             {
               cond: 'projectInDb',
-              target: 'loading',
-              actions: 'sendLoaded',
+              target: 'idle',
+              actions: ['setProjectFromDb', 'sendLoaded'],
             },
             { target: 'loading', actions: 'sendProjectNotInDB' },
           ],
@@ -107,9 +107,11 @@ const idbMachine = createMachine(
         ...evt.data,
         message: 'from idb web worker machine',
       })),
-      setProject: assign((ctx, evt) => ({
-        project: { ...evt },
-      })),
+      setProject: assign((ctx, evt) => {
+        const { type, ...project } = evt;
+        return { project };
+      }),
+      setProjectFromDb: assign({ project: (ctx, evt) => ({ ...evt.data }) }),
       updateLabeled: assign({
         project: (ctx, evt) => {
           const { t, feature } = evt;
