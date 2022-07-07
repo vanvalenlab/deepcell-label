@@ -12,11 +12,11 @@ def test_rewrite_labeled_removed_cell():
     case = unittest.TestCase()
     segmentation = np.array([1, 2]).reshape((1, 1, 1, 2))
     cells = [
-        {'value': 1, 'cell': 1, 't': 0},
+        {'value': 1, 'cell': 1, 't': 0, 'c': 0},
     ]
     expected_segmentation = np.array([1, 0]).reshape((1, 1, 1, 2))
     expected_cells = [
-        {'value': 1, 'cell': 1, 't': 0},
+        {'value': 1, 'cell': 1, 't': 0, 'c': 0},
     ]
 
     new_segmentation, new_cells = rewrite_labeled(segmentation, cells)
@@ -31,13 +31,13 @@ def test_rewrite_labeled_swapped_cells():
     case = unittest.TestCase()
     segmentation = np.array([1, 2]).reshape((1, 1, 1, 2))
     cells = [
-        {'value': 2, 'cell': 1, 't': 0},
-        {'value': 1, 'cell': 2, 't': 0},
+        {'value': 2, 'cell': 1, 't': 0, 'c': 0},
+        {'value': 1, 'cell': 2, 't': 0, 'c': 0},
     ]
     expected_segmentation = np.array([2, 1]).reshape((1, 1, 1, 2))
     expected_cells = [
-        {'value': 1, 'cell': 1, 't': 0},
-        {'value': 2, 'cell': 2, 't': 0},
+        {'value': 1, 'cell': 1, 't': 0, 'c': 0},
+        {'value': 2, 'cell': 2, 't': 0, 'c': 0},
     ]
 
     new_segmentation, new_cells = rewrite_labeled(segmentation, cells)
@@ -49,17 +49,17 @@ def test_rewrite_labeled_with_low_value_overlap():
     case = unittest.TestCase()
     segmentation = np.array([1, 2, 3]).reshape((1, 1, 1, 3))
     cells = [
-        {'value': 2, 'cell': 1, 't': 0},
-        {'value': 3, 'cell': 2, 't': 0},
-        {'value': 1, 'cell': 1, 't': 0},
-        {'value': 1, 'cell': 2, 't': 0},
+        {'value': 2, 'cell': 1, 't': 0, 'c': 0},
+        {'value': 3, 'cell': 2, 't': 0, 'c': 0},
+        {'value': 1, 'cell': 1, 't': 0, 'c': 0},
+        {'value': 1, 'cell': 2, 't': 0, 'c': 0},
     ]
     expected_segmentation = np.array([3, 1, 2]).reshape((1, 1, 1, 3))
     expected_cells = [
-        {'value': 1, 'cell': 1, 't': 0},
-        {'value': 2, 'cell': 2, 't': 0},
-        {'value': 3, 'cell': 1, 't': 0},
-        {'value': 3, 'cell': 2, 't': 0},
+        {'value': 1, 'cell': 1, 't': 0, 'c': 0},
+        {'value': 2, 'cell': 2, 't': 0, 'c': 0},
+        {'value': 3, 'cell': 1, 't': 0, 'c': 0},
+        {'value': 3, 'cell': 2, 't': 0, 'c': 0},
     ]
 
     new_segmentation, new_cells = rewrite_labeled(segmentation, cells)
