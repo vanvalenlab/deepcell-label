@@ -21,10 +21,12 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         { src: fromEventBus('cells', () => eventBuses.arrays, 'EDITED_SEGMENT') },
         { src: fromEventBus('cells', () => eventBuses.load, 'LOADED') },
         { src: fromEventBus('cells', () => eventBuses.image, 'SET_T') },
+        { src: fromEventBus('cells', () => eventBuses.labeled, 'SET_FEATURE') },
       ],
       context: {
         cells: [],
         t: 0,
+        c: 0,
         colormap: [
           [0, 0, 0, 1],
           ...colormap({ colormap: 'viridis', format: 'rgba' }),
@@ -36,6 +38,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
       },
       on: {
         SET_T: { actions: 'setT' },
+        SET_FEATURE: { actions: 'setC' },
         EDITED_SEGMENT: { actions: 'updateCells' },
         RESTORE: { actions: ['setCells', 'setColormap', 'sendCells'] },
       },
@@ -121,7 +124,15 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           to: 'eventBus',
         }),
         setEditedCells: assign({
-          editedCells: (ctx, evt) => combine(ctx.cells, evt.cells, ctx.t, ctx.mode),
+          editedCells: (ctx, evt) => {
+            const { cells, t, mode, c } = ctx;
+            let newCells = combine(cells, evt.cells, t, mode);
+            newCells = [
+              ...cells.filter((cell) => cell.c !== c),
+              ...newCells.filter((cell) => cell.c === c),
+            ];
+            return newCells;
+          },
         }),
         finishEditing: pure((ctx, evt) => {
           const { edit, editedCells, cells, historyRef } = ctx;
@@ -139,6 +150,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
           ];
         }),
         setMode: assign({ mode: (_, evt) => evt.mode }),
+        setT: assign({ t: (_, evt) => evt.t }),
         setT: assign({ t: (_, evt) => evt.t }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
