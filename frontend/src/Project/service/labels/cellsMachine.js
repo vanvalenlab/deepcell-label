@@ -151,7 +151,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         }),
         setMode: assign({ mode: (_, evt) => evt.mode }),
         setT: assign({ t: (_, evt) => evt.t }),
-        setT: assign({ t: (_, evt) => evt.t }),
+        setC: assign({ c: (_, evt) => evt.feature }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = [
