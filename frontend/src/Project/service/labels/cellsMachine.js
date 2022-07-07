@@ -143,9 +143,8 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
         setCells: assign({ cells: (_, evt) => evt.cells }),
         updateCells: pure((ctx, evt) => {
           const cells = [
-            // TODO: filter by c as well
-            ...ctx.cells.filter((cell) => cell.t !== evt.t),
-            ...evt.cells.map((cell) => ({ ...cell, t: evt.t })),
+            ...ctx.cells.filter((cell) => cell.t !== evt.t || cell.c !== evt.c),
+            ...evt.cells.map((cell) => ({ ...cell, t: evt.t, c: evt.c })),
           ];
           const newColormap = [
             [0, 0, 0, 1],

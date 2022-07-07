@@ -18,6 +18,7 @@ const createHoveringMachine = ({ eventBuses }) =>
         x: 0,
         y: 0,
         t: 0,
+        c: 0,
         labeled: null,
         cells: null,
         hovering: [],
@@ -27,12 +28,14 @@ const createHoveringMachine = ({ eventBuses }) =>
         { id: 'canvas', src: fromEventBus('hovering', () => eventBuses.canvas, 'COORDINATES') },
         { src: fromEventBus('hovering', () => eventBuses.arrays, 'LABELED') },
         { src: fromEventBus('hovering', () => eventBuses.image, 'SET_T') },
+        { src: fromEventBus('hovering', () => eventBuses.labeled, 'SET_FEATURE') },
         { src: fromEventBus('hovering', () => eventBuses.cells, 'CELLS') },
       ],
       on: {
         COORDINATES: { actions: ['setCoordinates', 'updateHovering'] },
         LABELED: { actions: ['setLabeled', 'updateHovering'] },
         SET_T: { actions: ['setT', 'updateHovering'] },
+        SET_FEATURE: { actions: ['setC', 'updateHovering'] },
         CELLS: { actions: ['setCells', 'updateHovering'] },
       },
     },
@@ -41,12 +44,13 @@ const createHoveringMachine = ({ eventBuses }) =>
         setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
         setCells: assign({ cells: (_, evt) => new Cells(evt.cells) }),
         setT: assign({ t: (_, evt) => evt.t }),
+        setC: assign({ c: (_, evt) => evt.feature }),
         setCoordinates: assign({ x: (_, evt) => evt.x, y: (_, evt) => evt.y }),
         updateHovering: pure((ctx) => {
-          const { cells, t, labeled, x, y } = ctx;
+          const { cells, t, c, labeled, x, y } = ctx;
           if (cells && labeled && x !== null && y !== null) {
             const value = labeled[y][x];
-            const hovering = cells.getCellsForValue(value, t);
+            const hovering = cells.getCellsForValue(value, t, c);
             if (!equal(hovering, ctx.hovering)) {
               return [
                 assign({ hovering }),

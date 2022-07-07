@@ -81,7 +81,6 @@ const idbMachine = createMachine(
         states: {
           idle: {},
           putProject: {
-            entry: (c, e) => console.log(c, e),
             invoke: { src: 'putProject', onDone: 'idle' },
           },
         },
