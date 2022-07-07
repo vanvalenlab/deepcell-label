@@ -159,7 +159,9 @@ const createArraysMachine = (context) =>
         setEdit: assign({ edit: (_, evt) => evt.edit }),
         setEdited: assign({ edited: (_, evt) => evt }),
         sendEdited: send((ctx) => ({ ...ctx.edited, edit: ctx.edit })),
-        sendRestored: send((ctx, evt) => ({ type: 'RESTORED_SEGMENT', ...evt })),
+        sendRestored: send((ctx, evt) => ({ type: 'RESTORED_SEGMENT', ...evt }), {
+          to: 'eventBus',
+        }),
         sendSnapshot: send(
           (ctx) => {
             const { labeled, t, feature } = ctx.edited;
