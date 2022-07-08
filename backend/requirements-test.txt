@@ -1,0 +1,12 @@
+pytest~=6.2.5
+pytest-cov==2.5.1
+pytest-mock
+pytest-flask
+pytest-flask-sqlalchemy
+pytest-lazy-fixture
+fakeredis
+six>=1.12
+coveralls
+responses
+pre-commit
+coverage

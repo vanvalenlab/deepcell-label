@@ -1,0 +1,25 @@
+version: '2'
+services:
+  app:
+    build: .
+    links:
+      - db
+    ports:
+      - 5000:5000
+    depends_on:
+      - db
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      SQLALCHEMY_DATABASE_URI: mysql://root:password@db:3306/deepcell-label
+  db:
+    image: mysql:8.0
+    command: mysqld --default-authentication-plugin=mysql_native_password
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: deepcell-label
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/:rw

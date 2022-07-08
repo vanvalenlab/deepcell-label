@@ -1,0 +1,22 @@
+[dashboard]
+# VERSION=
+GIT=../.git/
+CUSTOM_LINK=dashboard
+MONITOR_LEVEL=3
+OUTLIER_DETECTION_CONSTANT=2.5
+SAMPLING_PERIOD=20
+ENABLE_LOGGING=True
+
+[authentication]
+# When empty, dashboard uses default admin/admin username & password
+# USERNAME=
+# PASSWORD=
+# SECURITY_TOKEN=
+
+[database]
+TABLE_PREFIX=fmd
+# When empty, dashboard uses default SQLite database flask_monitoring_dashboard.db in repo folder
+# DATABASE=
+
+[visualization]
+TIMEZONE=US/Pacific

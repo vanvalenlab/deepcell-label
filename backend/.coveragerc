@@ -1,0 +1,21 @@
+# .coveragerc to control coverage.py
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    except ImportError
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+
+ignore_errors = True
+# fail_under = 70
+show_missing = True
+
+omit =
+    **/*_test.py
+    env/**/*.py
+    venv/**/*.py
+    .venv/**/*.py
+    ENV/**/*.py
+    VENV/**/*.py

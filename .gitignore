@@ -124,9 +124,9 @@ venv.bak/
 node_modules
 
 # Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
+backend/.elasticbeanstalk/*
+!backend/.elasticbeanstalk/*.cfg.yml
+!backend/.elasticbeanstalk/*.global.yml
 
 # VS Code
 settings.json
@@ -162,5 +162,4 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 
-# Webpack builds javascript files into deepcell_label/static
-deepcell_label/static/js/*
+.nyc_output

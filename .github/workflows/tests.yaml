@@ -3,9 +3,67 @@
 
 name: tests
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          working-directory: backend
+          python-version: 3.8
+
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          working-directory: backend
+          # This path is specific to Ubuntu
+          path: ~/.cache/pip
+          # Look to see if there is a cache hit for the corresponding requirements file
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-test.txt
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v4
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        with:
+          working-directory: frontend
+          start: |
+            npm run cypress:frontend
+            npm run cypress:backend
+          wait-on: "http://localhost:3000, http://localhost:5000/health"
+          spec: |
+            cypress/e2e/label.cy.js
+            cypress/e2e/caliban.cy.js
+            cypress/e2e/spots.cy.js
+
+      - name: Cypress Coveralls
+        uses: coverallsapp/github-action@master
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        with:
+          base-path: frontend
+          path-to-lcov: frontend/coverage/lcov.info
+          github-token: ${{ secrets.github_token }}
+          flag-name: cypress
+          parallel: true
+
   frontend-tests:
     runs-on: ubuntu-latest
 
@@ -24,22 +82,22 @@ jobs:
       - name: Cache node_modules
         uses: actions/cache@v2
         with:
-          path: "visualizer/**/node_modules"
-          key: ${{ runner.os }}-modules-${{ hashFiles('visualizer/**/yarn.lock') }}
+          path: "frontend/**/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('frontend/**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
             ${{ runner.os }}-
 
       - name: Yarn Install
-        working-directory: visualizer
+        working-directory: frontend
         run: yarn
 
       - name: Lint
-        working-directory: visualizer
+        working-directory: frontend
         run: yarn lint
 
       - name: Unit Tests
-        working-directory: visualizer
+        working-directory: frontend
         run: yarn test --coverage
         env:
           CI: true
@@ -49,8 +107,8 @@ jobs:
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         with:
-          base-path: visualizer
-          path-to-lcov: visualizer/coverage/lcov.info
+          base-path: frontend
+          path-to-lcov: frontend/coverage/lcov.info
           github-token: ${{ secrets.github_token }}
           flag-name: node-${{ matrix.node-version }}
           parallel: true
@@ -60,7 +118,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8"]
 
     steps:
       - uses: actions/checkout@v2
@@ -68,11 +126,13 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
+          working-directory: backend
           python-version: ${{ matrix.python-version }}
 
       - name: Cache pip
         uses: actions/cache@v2
         with:
+          working-directory: backend
           # This path is specific to Ubuntu
           path: ~/.cache/pip
           # Look to see if there is a cache hit for the corresponding requirements file
@@ -82,14 +142,16 @@ jobs:
             ${{ runner.os }}-
 
       - name: Install Dependencies
+        working-directory: backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-test.txt
 
       - name: Run PyTest
+        working-directory: backend
         run: |
-          pytest deepcell_label --cov deepcell_label
+          PYTHONPATH=deepcell_label pytest deepcell_label --cov deepcell_label
 
       - name: Coveralls
         if: env.COVERALLS_REPO_TOKEN != null
@@ -97,12 +159,13 @@ jobs:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           COVERALLS_FLAG_NAME: python-${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
+        working-directory: backend
         run: |
           coveralls
 
   coveralls:
     name: Finish Coveralls
-    needs: [frontend-tests, backend-tests]
+    needs: [e2e-tests, frontend-tests, backend-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Coveralls Finished
