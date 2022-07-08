@@ -45,8 +45,8 @@ const idbMachine = createMachine(
           onDone: [
             {
               cond: 'projectInDb',
-              target: 'loading',
-              actions: 'sendLoaded',
+              target: 'idle',
+              actions: ['setProjectFromDb', 'sendLoaded'],
             },
             { target: 'loading', actions: 'sendProjectNotInDB' },
           ],
@@ -62,22 +62,26 @@ const idbMachine = createMachine(
           EDITED_SEGMENT: {
             target: '.putProject',
             actions: 'updateLabeled',
+            internal: false,
           },
           RESTORED_SEGMENT: {
             target: '.putProject',
             actions: 'updateLabeled',
+            internal: false,
           },
-          CELLS: { target: '.putProject', actions: 'updateCells' },
+          CELLS: { target: '.putProject', actions: 'updateCells', internal: false },
           DIVISIONS: {
             target: '.putProject',
             actions: 'updateDivisions',
+            internal: false,
           },
-          SPOTS: { target: '.putProject', actions: 'updateSpots' },
+          SPOTS: { target: '.putProject', actions: 'updateSpots', internal: false },
         },
         initial: 'idle',
         states: {
           idle: {},
           putProject: {
+            entry: (c, e) => console.log(c, e),
             invoke: { src: 'putProject', onDone: 'idle' },
           },
         },
@@ -96,7 +100,7 @@ const idbMachine = createMachine(
           },
         }),
       getProject: (ctx) => ctx.db.get('projects', ctx.projectId),
-      putProject: (ctx, evt) => ctx.db.put('projects', ctx.project, ctx.projectId),
+      putProject: (ctx) => ctx.db.put('projects', ctx.project, ctx.projectId),
     },
     actions: {
       setProjectId: assign({ projectId: (ctx, evt) => evt.projectId }),
@@ -107,9 +111,11 @@ const idbMachine = createMachine(
         ...evt.data,
         message: 'from idb web worker machine',
       })),
-      setProject: assign((ctx, evt) => ({
-        project: { ...evt },
-      })),
+      setProject: assign((ctx, evt) => {
+        const { type, ...project } = evt;
+        return { project };
+      }),
+      setProjectFromDb: assign({ project: (ctx, evt) => ({ ...evt.data }) }),
       updateLabeled: assign({
         project: (ctx, evt) => {
           const { t, feature } = evt;
