@@ -1,8 +1,8 @@
 # DeepCell Label: Cloud-Based Labeling for Single-Cell Analysis
 
 [![Build Status](https://github.com/vanvalenlab/deepcell-label/workflows/tests/badge.svg)](https://github.com/vanvalenlab/deepcell-label/actions)
-[![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-label/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-label?branch=master)
-[![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-label/blob/master/LICENSE)
+[![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-label/badge.svg?branch=main)](https://coveralls.io/github/vanvalenlab/deepcell-label?branch=main)
+[![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-label/blob/main/LICENSE)
 
 DeepCell Label is a web-based tool to visualize and label cells in biological images, and is tailored for cell segmentation. Label works with multiplexed images, 3D image stacks, and time-lapse movies. The tool can label images from scratch, or correct labels from model predictions or existing datasets.
 
