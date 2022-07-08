@@ -118,33 +118,41 @@ def rewrite_labeled(labeled, cells):
         (numpy array of shape (num_features, duration, height, width), cells with updated values)
     """
     new_labeled = np.zeros(labeled.shape, dtype=np.int32)
-    # TODO: add 'c' to cell labels to independently reassign cells between features & rewrite each feature separately
-    (f, duration, height, width) = labeled.shape
+    (num_features, duration, height, width) = labeled.shape
     new_cells = []
-    for t in range(duration):
-        cells_at_t = list(filter(lambda c, t=t: c['t'] == t, cells))
-        values = itertools.groupby(cells_at_t, lambda c: c['value'])
-        overlap_values = []
+    for c in range(num_features):
+        cells_in_feature = list(filter(lambda cell, c=c: cell['c'] == c, cells))
+        for t in range(duration):
+            cells_at_t = list(
+                filter(lambda cell, t=t: cell['t'] == t, cells_in_feature)
+            )
+            values = itertools.groupby(cells_at_t, lambda c: c['value'])
+            overlap_values = []
 
-        # Rewrite non-overlapping values with cells
-        for value, group in values:
-            group = list(group)
-            if len(group) == 1:
-                cell = group[0]['cell']
-                frame = labeled[:, t, :, :]
-                new_labeled[:, t, :, :][frame == value] = cell
-                new_cells.append({'cell': cell, 'value': cell, 't': t})
-            else:
-                overlap_values.append([value, group])
+            # Rewrite non-overlapping values with cells
+            for value, group in values:
+                group = list(group)
+                if len(group) == 1:
+                    cell = group[0]['cell']
+                    frame = labeled[:, t, :, :]
+                    new_labeled[:, t, :, :][frame == value] = cell
+                    new_cells.append({'cell': cell, 'value': cell, 't': t, 'c': c})
+                else:
+                    overlap_values.append([value, group])
 
-        # Rewrite overlapping values with values higher than all cells
-        new_overlap_value = max(cells_at_t, key=lambda c: c['cell'])['cell'] + 1
-        for overlap_value, overlap_cells in overlap_values:
-            for cell in overlap_cells:
-                frame = labeled[:, t, :, :]
-                new_labeled[:, t, :, :][frame == overlap_value] = new_overlap_value
-                new_cells.append(
-                    {'cell': cell['cell'], 'value': new_overlap_value, 't': t}
-                )
-            new_overlap_value += 1
+            # Rewrite overlapping values with values higher than all cells
+            new_overlap_value = max(cells_at_t, key=lambda c: c['cell'])['cell'] + 1
+            for overlap_value, overlap_cells in overlap_values:
+                for cell in overlap_cells:
+                    frame = labeled[:, t, :, :]
+                    new_labeled[:, t, :, :][frame == overlap_value] = new_overlap_value
+                    new_cells.append(
+                        {
+                            'cell': cell['cell'],
+                            'value': new_overlap_value,
+                            't': t,
+                            'c': c,
+                        }
+                    )
+                new_overlap_value += 1
     return new_labeled, new_cells

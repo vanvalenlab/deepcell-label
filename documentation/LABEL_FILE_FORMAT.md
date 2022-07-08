@@ -38,9 +38,12 @@ Each pixel in the image may encode multiple cells. The cells.json describes how 
 
 ### cells.json
 
-Contains a list of cell objects like `{ "value": 1, "cell": 1, "t": 1}`.
+Contains a list of cell objects like `{ "value": 1, "cell": 1, "t": 0, "c": 0}`.
+The value is the pixel value in the segmentation image for time `t` and channel `c` and cell is what that value represents in that image slice.
 
-With the "t" field, values can be reassigned across times to different cells without editing the label image in y.ome.tiff. A "c" field should be added so that cells can be reassigned across both channels and times, and a "z" field may be added once 3D timelapses are implemented.
+With the "t" field, values can be reassigned across times to different cells without editing the label image in y.ome.tiff.
+With the "c" field, we could reassign cells across both channels as well, but the controls are not yet implemented.
+A "z" field may be added once 3D timelapses are implemented.
 
 ### divisions.json
 

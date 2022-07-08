@@ -18,7 +18,7 @@ function splitRows(buffer, width, height) {
 
 /** Creates a zip file blob with images and labels to updated by the API. */
 async function makeEditZip(context, event) {
-  const { labeled, raw, cells, writeMode, t } = context;
+  const { labeled, raw, cells, writeMode, t, c } = context;
   const { action, args } = event;
   const edit = { width: labeled[0].length, height: labeled.length, action, args, writeMode };
 
@@ -27,9 +27,7 @@ async function makeEditZip(context, event) {
   await zipWriter.add('edit.json', new zip.TextReader(JSON.stringify(edit)));
   await zipWriter.add(
     'cells.json',
-    // TODO: filter out by segmentation channel (feature) as well
-    // cell.t === t && cell.c === c
-    new zip.TextReader(JSON.stringify(cells.filter((c) => c.t === t)))
+    new zip.TextReader(JSON.stringify(cells.filter((cell) => cell.t === t && cell.c === c)))
   );
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files
@@ -99,9 +97,9 @@ const createSegmentApiMachine = ({ eventBuses }) =>
       ],
       context: {
         t: 0,
-        feature: 0,
+        c: 0,
         editT: null,
-        editFeature: null,
+        editC: null,
         labeled: null, // currently displayed labeled frame (Int32Array[][])
         raw: null, // current displayed raw frame (Uint8Array[][])
         cells: null,
@@ -113,7 +111,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
         RAW: { actions: 'setRaw' },
         CELLS: { actions: 'setCells' },
         SET_T: { actions: 'setT' },
-        SET_FEATURE: { actions: 'setFeature' },
+        SET_FEATURE: { actions: 'setC' },
         SET_WRITE_MODE: { actions: 'setWriteMode' },
       },
       states: {
@@ -129,7 +127,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
           },
         },
         editing: {
-          entry: ['setEditT', 'setEditFeature'],
+          entry: ['setEditT', 'setEditC'],
           invoke: {
             id: 'labelAPI',
             src: edit,
@@ -146,20 +144,20 @@ const createSegmentApiMachine = ({ eventBuses }) =>
     {
       actions: {
         setEditT: assign({ editT: (ctx) => ctx.t }),
-        setEditFeature: assign({ editFeature: (ctx) => ctx.feature }),
+        setEditC: assign({ editC: (ctx) => ctx.c }),
         sendEdited: sendParent((ctx, evt) => ({
           type: 'EDITED_SEGMENT',
           labeled: evt.data.labeled,
           cells: evt.data.cells,
           t: ctx.editT,
-          feature: ctx.editFeature,
+          c: ctx.editC,
         })),
         sendApiError: sendParent('API_ERROR'),
         setRaw: assign({ raw: (_, evt) => evt.raw }),
         setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         setT: assign({ t: (_, evt) => evt.t }),
-        setFeature: assign({ feature: (_, evt) => evt.feature }),
+        setC: assign({ c: (_, evt) => evt.feature }),
         setWriteMode: assign({ writeMode: (_, evt) => evt.writeMode }),
       },
     }

@@ -126,9 +126,9 @@ const createArraysMachine = (context) =>
         setChannel: assign({ channel: (ctx, evt) => evt.channel }),
         setLabeledFrame: assign({
           labeled: (ctx, evt) => {
-            const { t, feature, labeled } = evt;
+            const { t, c, labeled } = evt;
             // TODO: update immutably
-            ctx.labeled[feature][t] = labeled;
+            ctx.labeled[c][t] = labeled;
             return ctx.labeled;
           },
         }),
@@ -164,14 +164,14 @@ const createArraysMachine = (context) =>
         }),
         sendSnapshot: send(
           (ctx) => {
-            const { labeled, t, feature } = ctx.edited;
+            const { labeled, t, c } = ctx.edited;
             const beforeRestore = {
               type: 'RESTORE',
-              labeled: ctx.labeled[feature][t],
+              labeled: ctx.labeled[c][t],
               t,
-              feature,
+              c,
             };
-            const afterRestore = { type: 'RESTORE', labeled, t, feature };
+            const afterRestore = { type: 'RESTORE', labeled, t, c };
             return {
               type: 'SNAPSHOT',
               before: beforeRestore,

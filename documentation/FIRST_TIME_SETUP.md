@@ -1,6 +1,6 @@
 # First Time Setup Guide
 
-This instructions install Python and Node on your machine. If you've worked with Python or Javascript projects on your machine, skip this instructions and proceed with the README. DeepCell Label has been developed for Unix based systems, but it should work on Windows as well.
+This instructions install Python and Node on your machine. If you've worked with Python or Javascript projects on your machine, skip this instructions and proceed with the README. DeepCell Label has been developed for Unix based systems, but it should work on Windows as well. You may need to install python-magic-bin in your Python environment if working on Windows.
 
 ## Set up Python
 
