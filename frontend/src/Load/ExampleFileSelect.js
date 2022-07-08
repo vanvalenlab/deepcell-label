@@ -7,22 +7,22 @@ import React from 'react';
 const exampleFiles = [
   {
     value: 0,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/vectra_breast_cancer_with_errors.npz',
+    path: 'https://deepcell-label-input.s3.us-east-2.amazonaws.com/examples/mesmer_with_errors.zip',
     name: '2D tissue segmentation',
   },
   {
     value: 1,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/test.npz',
+    path: 'https://deepcell-label-input.s3.us-east-2.amazonaws.com/examples/3D_organoid.zip',
     name: '3D organoid segmentation',
   },
   {
     value: 2,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_track_corrected.zip',
+    path: 'https://deepcell-label-input.s3.us-east-2.amazonaws.com/examples/corrected_timelapse.zip',
     name: 'corrected tracking timelapse',
   },
   {
     value: 3,
-    path: 'https://caliban-input.s3.us-east-2.amazonaws.com/test/example_track_uncorrected.zip',
+    path: 'https://deepcell-label-input.s3.us-east-2.amazonaws.com/examples/uncorrected_timelapse.zip',
     name: 'uncorrected tracking timelapse',
   },
 ];
