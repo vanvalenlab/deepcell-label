@@ -5,6 +5,8 @@ import io
 import tempfile
 import timeit
 import traceback
+import os
+import platform
 
 import boto3
 import requests
@@ -115,12 +117,16 @@ def create_project_from_dropped_file():
     """
     start = timeit.default_timer()
     input_file = request.files.get('images')
+    delete_temp = False if platform.system() == 'Windows' else True
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
-    with tempfile.NamedTemporaryFile() as f:
+    with tempfile.NamedTemporaryFile(delete=delete_temp) as f:
         f.write(input_file.read())
         f.seek(0)
         loader = Loader(f)
         project = Project.create(loader)
+    if not delete_temp:
+        f.close()
+        os.remove(f.name)   # Manually close and delete if using Windows
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,

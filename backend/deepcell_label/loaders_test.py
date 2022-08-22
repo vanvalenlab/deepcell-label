@@ -6,6 +6,8 @@ import io
 import json
 import tempfile
 import zipfile
+import platform
+import os
 
 import numpy as np
 from PIL import Image
@@ -89,12 +91,16 @@ def test_load_separate_npz():
 def test_load_image_tiff():
     """Load image from tiff file."""
     expected = np.zeros((1, 1, 1, 1))
-    with tempfile.NamedTemporaryFile() as images:
+    delete_temp = False if platform.system() == 'Windows' else True
+    with tempfile.NamedTemporaryFile(delete=delete_temp) as images:
         with TiffWriter(images) as writer:
             writer.write(expected)
             images.seek(0)
 
         loader = Loader(images)
+    if not delete_temp:
+        images.close()
+        os.remove(images.name)
 
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
@@ -124,11 +130,15 @@ def test_load_image_and_segmentation_tiff():
 def test_load_image_png():
     """Load image array from png file."""
     expected = np.zeros((1, 1, 1, 1))
-    with tempfile.NamedTemporaryFile() as images:
+    delete_temp = False if platform.system() == 'Windows' else True
+    with tempfile.NamedTemporaryFile(delete=delete_temp) as images:
         img = Image.fromarray(np.zeros((1, 1)), mode='L')
         img.save(images, format='png')
         images.seek(0)
         loader = Loader(images)
+    if not delete_temp:
+        images.close()
+        os.remove(images.name)
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
 

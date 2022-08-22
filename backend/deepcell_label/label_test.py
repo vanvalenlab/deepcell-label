@@ -267,3 +267,19 @@ class TestEdit:
                 write_mode='exclude',
             )
             np.testing.assert_array_equal(expected_labels, edit.labels)
+
+    def test_clean_labels(self, app):
+        """Tests that labels are properly removed for values with no corresponding cell. """
+        labels = np.array([[1, 1], [2, 2]], dtype=np.int32)
+        expected_labels = np.array([[0, 0], [2, 2]], dtype=np.int32)
+        cells = [{'cell': 1, 'value': 3}, {'cell': 2, 'value': 2}]
+
+        with app.app_context():
+            edit = DummyEdit(
+                labels=labels,
+                cells=cells,
+                action='draw',
+                args={'trace': '[]', 'brush_size': 0, 'cell': 2, 'erase': False},
+                write_mode='exclude'
+            )
+            np.testing.assert_array_equal(edit.labels, expected_labels)

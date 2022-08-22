@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+import platform
 
 import numpy as np
 import pytest
@@ -23,8 +24,12 @@ class DummyLoader(Loader):
         self._X = X if X is not None else np.zeros((1, 1, 1, 1))
         self._y = y if y is not None else np.zeros(self._X.shape)
         self._spots = spots
-        with tempfile.NamedTemporaryFile() as images, tempfile.NamedTemporaryFile() as labels:
+        delete_temp = False if platform.system() == 'Windows' else True
+        with tempfile.NamedTemporaryFile(delete=delete_temp) as images, tempfile.NamedTemporaryFile(delete=delete_temp) as labels:
             super().__init__(images, labels)
+        if not delete_temp:
+            images.close()
+            os.remove(images.name)
 
     # Prevent changing mocked data
     @property
