@@ -7,7 +7,6 @@ import platform
 import tempfile
 import timeit
 import traceback
-import os
 
 import boto3
 import requests

@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import platform
+
 from decouple import config
 
 DEBUG = config('DEBUG', cast=bool, default=True)
