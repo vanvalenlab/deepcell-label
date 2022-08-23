@@ -215,7 +215,7 @@ class Edit(object):
         values = [cell['value'] for cell in cells]  # get list of values
         cell_mask = np.in1d(labeled, values)
         deleted_mask = np.logical_not(cell_mask).reshape(labeled.shape)
-        labeled[deleted_mask] = 0   # delete any labels not in values
+        labeled[deleted_mask] = 0  # delete any labels not in values
         return labeled
 
     def dispatch_action(self):

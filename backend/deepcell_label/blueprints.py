@@ -2,11 +2,11 @@
 from __future__ import absolute_import, division, print_function
 
 import io
+import os
+import platform
 import tempfile
 import timeit
 import traceback
-import os
-import platform
 
 import boto3
 import requests
@@ -126,7 +126,7 @@ def create_project_from_dropped_file():
         project = Project.create(loader)
     if not delete_temp:
         f.close()
-        os.remove(f.name)   # Manually close and delete if using Windows
+        os.remove(f.name)  # Manually close and delete if using Windows
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,
