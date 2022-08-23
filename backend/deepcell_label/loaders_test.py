@@ -4,10 +4,10 @@ Tests for loading files in loaders.
 
 import io
 import json
+import os
+import platform
 import tempfile
 import zipfile
-import platform
-import os
 
 import numpy as np
 from PIL import Image

@@ -201,7 +201,6 @@ class Edit(object):
         return int(max(0, cell))
 
     def clean_labels(self, labeled, cells):
-        # TODO: does this work with time series right now?
         """Ensures that labels do not include any values that do not correspond
            to cells (eg. for deleted cells.)
 
