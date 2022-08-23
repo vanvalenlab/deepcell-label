@@ -6,14 +6,13 @@ import tempfile
 import timeit
 import traceback
 import os
-import platform
 
 import boto3
 import requests
 from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
-from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, DELETE_TEMP
 from deepcell_label.export import Export
 from deepcell_label.label import Edit
 from deepcell_label.loaders import Loader
@@ -117,14 +116,13 @@ def create_project_from_dropped_file():
     """
     start = timeit.default_timer()
     input_file = request.files.get('images')
-    delete_temp = False if platform.system() == 'Windows' else True
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
-    with tempfile.NamedTemporaryFile(delete=delete_temp) as f:
+    with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as f:
         f.write(input_file.read())
         f.seek(0)
         loader = Loader(f)
         project = Project.create(loader)
-    if not delete_temp:
+    if not DELETE_TEMP:
         f.close()
         os.remove(f.name)   # Manually close and delete if using Windows
     current_app.logger.info(
