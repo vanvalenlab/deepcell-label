@@ -8,8 +8,8 @@ import pytest
 from flask_sqlalchemy import SQLAlchemy
 
 from deepcell_label import create_app  # pylint: disable=C0413
-from deepcell_label.loaders import Loader
 from deepcell_label.config import DELETE_TEMP
+from deepcell_label.loaders import Loader
 
 # flask-sqlalchemy fixtures from http://alexmic.net/flask-sqlalchemy-pytest/
 
@@ -24,7 +24,9 @@ class DummyLoader(Loader):
         self._X = X if X is not None else np.zeros((1, 1, 1, 1))
         self._y = y if y is not None else np.zeros(self._X.shape)
         self._spots = spots
-        with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as images, tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as labels:
+        with tempfile.NamedTemporaryFile(
+            delete=DELETE_TEMP
+        ) as images, tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as labels:
             super().__init__(images, labels)
         if not DELETE_TEMP:
             images.close()
