@@ -28,7 +28,9 @@ class DummyLoader(Loader):
             super().__init__(images, labels)
         if not DELETE_TEMP:
             images.close()
+            labels.close()
             os.remove(images.name)
+            os.remove(labels.name)
 
     # Prevent changing mocked data
     @property

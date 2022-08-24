@@ -3,11 +3,9 @@ from __future__ import absolute_import, division, print_function
 
 import io
 import os
-import platform
 import tempfile
 import timeit
 import traceback
-import os
 
 import boto3
 import requests
@@ -77,7 +75,7 @@ def create_project():
         )
     labels_url = request.form['labels'] if 'labels' in request.form else None
     axes = request.form['axes'] if 'axes' in request.form else None
-    with tempfile.NamedTemporaryFile() as image_file, tempfile.NamedTemporaryFile() as label_file:
+    with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as image_file, tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as label_file:
         if images_url is not None:
             image_response = requests.get(images_url)
             if image_response.status_code != 200:
@@ -102,6 +100,10 @@ def create_project():
             label_file = image_file
         loader = Loader(image_file, label_file, axes)
         project = Project.create(loader)
+    if not DELETE_TEMP:
+        image_file.close()
+        label_file.close()
+        os.remove(image_file.name)  # Manually close and delete if using Windows
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,
