@@ -4,16 +4,16 @@ Tests for loading files in loaders.
 
 import io
 import json
+import os
 import tempfile
 import zipfile
-import os
 
 import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter, imwrite
 
-from deepcell_label.loaders import Loader
 from deepcell_label.config import DELETE_TEMP
+from deepcell_label.loaders import Loader
 
 
 def assert_image(archive, expected):

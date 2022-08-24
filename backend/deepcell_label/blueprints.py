@@ -75,7 +75,9 @@ def create_project():
         )
     labels_url = request.form['labels'] if 'labels' in request.form else None
     axes = request.form['axes'] if 'axes' in request.form else None
-    with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as image_file, tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as label_file:
+    with tempfile.NamedTemporaryFile(
+        delete=DELETE_TEMP
+    ) as image_file, tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as label_file:
         if images_url is not None:
             image_response = requests.get(images_url)
             if image_response.status_code != 200:
