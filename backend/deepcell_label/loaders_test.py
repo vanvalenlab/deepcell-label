@@ -4,6 +4,7 @@ Tests for loading files in loaders.
 
 import io
 import json
+import os
 import tempfile
 import zipfile
 
@@ -11,6 +12,7 @@ import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter, imwrite
 
+from deepcell_label.config import DELETE_TEMP
 from deepcell_label.loaders import Loader
 
 
@@ -89,12 +91,15 @@ def test_load_separate_npz():
 def test_load_image_tiff():
     """Load image from tiff file."""
     expected = np.zeros((1, 1, 1, 1))
-    with tempfile.NamedTemporaryFile() as images:
+    with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as images:
         with TiffWriter(images) as writer:
             writer.write(expected)
             images.seek(0)
 
         loader = Loader(images)
+    if not DELETE_TEMP:
+        images.close()
+        os.remove(images.name)
 
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
@@ -124,11 +129,14 @@ def test_load_image_and_segmentation_tiff():
 def test_load_image_png():
     """Load image array from png file."""
     expected = np.zeros((1, 1, 1, 1))
-    with tempfile.NamedTemporaryFile() as images:
+    with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as images:
         img = Image.fromarray(np.zeros((1, 1)), mode='L')
         img.save(images, format='png')
         images.seek(0)
         loader = Loader(images)
+    if not DELETE_TEMP:
+        images.close()
+        os.remove(images.name)
     loaded_zip = zipfile.ZipFile(io.BytesIO(loader.data))
     assert_image(loaded_zip, expected)
 

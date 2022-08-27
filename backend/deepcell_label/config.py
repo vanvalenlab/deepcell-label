@@ -1,6 +1,8 @@
 """Configuration options and environment variables."""
 from __future__ import absolute_import, division, print_function
 
+import platform
+
 from decouple import config
 
 DEBUG = config('DEBUG', cast=bool, default=True)
@@ -40,3 +42,5 @@ COMPRESS_MIMETYPES = [
 COMPRESS_LEVEL = 6
 COMPRESS_MIN_SIZE = 500
 COMPRESS_ALGORITHM = 'gzip'
+
+DELETE_TEMP = platform.system() != 'Windows'

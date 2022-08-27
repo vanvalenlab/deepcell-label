@@ -166,6 +166,7 @@ class Edit(object):
         return mask
 
     def add_mask(self, mask, cell):
+        self.labels = self.clean_labels(self.labels, self.cells)
         if self.write_mode == 'overwrite':
             self.labels[mask] = self.get_value([cell])
         elif self.write_mode == 'exclude':
@@ -198,6 +199,22 @@ class Edit(object):
     def clean_cell(self, cell):
         """Ensures that a cell is a positive integer"""
         return int(max(0, cell))
+
+    def clean_labels(self, labeled, cells):
+        """Ensures that labels do not include any values that do not correspond
+           to cells (eg. for deleted cells.)
+
+        Args:
+            labeled: numpy array of shape (height, width)
+            cells: list of cells labels like { "cell": 1, "value": 1, "t": 0}
+
+        Returns:
+            (numpy array of shape (height, width), cells with updated values)
+        """
+        values = [cell['value'] for cell in cells]  # get list of values
+        deleted_mask = np.isin(labeled, values, invert=True)
+        labeled[deleted_mask] = 0  # delete any labels not in values
+        return labeled
 
     def dispatch_action(self):
         """
