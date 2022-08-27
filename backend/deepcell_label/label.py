@@ -201,7 +201,8 @@ class Edit(object):
         return int(max(0, cell))
 
     def clean_labels(self, labeled, cells):
-        """Ensures that labels do not include any values that do not correspond
+        """
+        Ensures that labels do not include any values that do not correspond
            to cells (eg. for deleted cells.)
 
         Args:
