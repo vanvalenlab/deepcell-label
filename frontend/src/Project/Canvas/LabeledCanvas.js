@@ -31,37 +31,39 @@ export const LabeledCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (labelArray, cellMatrix, opacity, colormap, cell, numLabels, highlight, highlightColor) {
+      `function (labelArray, cellMatrix, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         let [r, g, b, a] = [0, 0, 0, 1];
-        for (let i = 0; i < numLabels; i++) {
-          if (cellMatrix[value][i] === 1) {
-            let [sr, sg, sb] = [0, 0, 0];
-            if (i === cell && highlight) {
-              sr = highlightColor[0];
-              sg = highlightColor[1];
-              sb = highlightColor[2];
-            } else {
-              sr = colormap[i][0];
-              sg = colormap[i][1];
-              sb = colormap[i][2];
+        if (value < numValues) {
+          for (let i = 0; i < numLabels; i++) {
+            if (cellMatrix[value][i] === 1) {
+              let [sr, sg, sb] = [0, 0, 0];
+              if (i === cell && highlight) {
+                sr = highlightColor[0];
+                sg = highlightColor[1];
+                sb = highlightColor[2];
+              } else {
+                sr = colormap[i][0];
+                sg = colormap[i][1];
+                sb = colormap[i][2];
+              }
+  
+              if (i !== cell) {
+                a = a * (1 - opacity[0]);
+                sr = opacity[0] * sr / 255;
+                sg = opacity[0] * sg / 255;
+                sb = opacity[0] * sb / 255;
+              } else {
+  
+                a = a * (1 - opacity[1]); 
+                sr = opacity[1] * sr / 255;
+                sg = opacity[1] * sg / 255;
+                sb = opacity[1] * sb / 255;
+              }
+              r = r + sr - r * sr;
+              g = g + sg - g * sg;
+              b = b + sb - b * sb;
             }
-
-            if (i !== cell) {
-              a = a * (1 - opacity[0]);
-              sr = opacity[0] * sr / 255;
-              sg = opacity[0] * sg / 255;
-              sb = opacity[0] * sb / 255;
-            } else {
-
-              a = a * (1 - opacity[1]);
-              sr = opacity[1] * sr / 255;
-              sg = opacity[1] * sg / 255;
-              sb = opacity[1] * sb / 255;
-            }
-            r = r + sr - r * sr;
-            g = g + sg - g * sg;
-            b = b + sb - b * sb;
           }
         }
         this.color(r, g, b, 1 - a);
@@ -71,6 +73,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
+
       }
     );
     kernelRef.current = kernel;
@@ -80,6 +83,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
     const kernel = kernelRef.current;
     if (labeledArray && cellMatrix) {
       const numLabels = cellMatrix[0].length;
+      const numValues = cellMatrix.length;
       // Compute the label image with the kernel
       kernel(
         labeledArray,
@@ -87,6 +91,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
         [opacity, opacity],
         colormap,
         cell,
+        numValues,
         numLabels,
         highlight,
         highlightColor

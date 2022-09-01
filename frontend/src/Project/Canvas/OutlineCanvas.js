@@ -45,7 +45,7 @@ const OutlineCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (data, cells, numLabels, opacity, cell, invert) {
+      `function (data, cells, numValues, numLabels, opacity, cell, invert) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -66,14 +66,16 @@ const OutlineCanvas = ({ setBitmaps }) => {
           east = data[y + 1][x];
         }
         let outlineOpacity = 1;
-        for (let i = 0; i < numLabels; i++) {
-          if (cells[value][i] === 1) {
-            if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0)
-           {
-              if (cell === i) {
-                outlineOpacity = outlineOpacity * (1 - opacity[1]);
-              } else {
-                outlineOpacity = outlineOpacity * (1 - opacity[0]);
+        if (value < numValues) {
+          for (let i = 0; i < numLabels; i++) {
+            if (cells[value][i] === 1) {
+              if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0)
+             {
+                if (cell === i) {
+                  outlineOpacity = outlineOpacity * (1 - opacity[1]);
+                } else {
+                  outlineOpacity = outlineOpacity * (1 - opacity[0]);
+                }
               }
             }
           }
@@ -91,6 +93,7 @@ const OutlineCanvas = ({ setBitmaps }) => {
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
+        loopMaxIterations: 5000,
       }
     );
     kernelRef.current = kernel;
@@ -100,8 +103,9 @@ const OutlineCanvas = ({ setBitmaps }) => {
     const kernel = kernelRef.current;
     if (labeledArray && cellMatrix) {
       const numLabels = cellMatrix[0].length;
+      const numValues = cellMatrix.length;
       // Compute the outline of the labels with the kernel
-      kernel(labeledArray, cellMatrix, numLabels, [opacity, opacity], cell, invert);
+      kernel(labeledArray, cellMatrix, numValues, numLabels, [opacity, opacity], cell, invert);
       // Rerender the parent canvas
       createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, outline: bitmap }));
