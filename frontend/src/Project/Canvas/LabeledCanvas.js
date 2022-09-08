@@ -47,15 +47,15 @@ export const LabeledCanvas = ({ setBitmaps }) => {
                 sg = colormap[i][1];
                 sb = colormap[i][2];
               }
-  
+
               if (i !== cell) {
                 a = a * (1 - opacity[0]);
                 sr = opacity[0] * sr / 255;
                 sg = opacity[0] * sg / 255;
                 sb = opacity[0] * sb / 255;
               } else {
-  
-                a = a * (1 - opacity[1]); 
+
+                a = a * (1 - opacity[1]);
                 sr = opacity[1] * sr / 255;
                 sg = opacity[1] * sg / 255;
                 sb = opacity[1] * sb / 255;
