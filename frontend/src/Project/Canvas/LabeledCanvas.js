@@ -73,7 +73,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
-
+        loopMaxIterations: 5000,
       }
     );
     kernelRef.current = kernel;
