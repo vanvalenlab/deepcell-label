@@ -69,7 +69,8 @@ const OutlineCanvas = ({ setBitmaps }) => {
         if (value < numValues) {
           for (let i = 0; i < numLabels; i++) {
             if (cells[value][i] === 1) {
-              if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0)
+              if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0
+                  || north >= numValues || south >= numValues || west >= numValues || east >= numValues)
              {
                 if (cell === i) {
                   outlineOpacity = outlineOpacity * (1 - opacity[1]);
