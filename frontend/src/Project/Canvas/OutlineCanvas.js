@@ -94,7 +94,7 @@ const OutlineCanvas = ({ setBitmaps }) => {
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
-        loopMaxIterations: 5000,
+        loopMaxIterations: 5000, // Maximum number of outlines to render
       }
     );
     kernelRef.current = kernel;
