@@ -69,15 +69,17 @@ const createEditSegmentMachine = (context) =>
           initial: 'pan',
           states: {
             pan: {
-              entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+              entry: 'setPanOnDragTrue',
               on: {
                 SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
               },
             },
             noPan: {
-              entry: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
+              entry: 'setPanOnDragFalse',
               on: {
                 SET_TOOL: { cond: 'isPanTool', target: 'pan' },
+                // Set POD=False when switching from other tab
+                ENTER_TAB: { actions: 'setPanOnDragFalse' },
               },
             },
           },
@@ -113,6 +115,8 @@ const createEditSegmentMachine = (context) =>
           send('EXIT', { to: ctx.tools[ctx.tool] }),
           assign({ tool: evt.tool }),
         ]),
+        setPanOnDragTrue: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+        setPanOnDragFalse: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
         save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
         restore: assign({ tool: (_, evt) => evt.tool }),
         spawnTools: assign({
