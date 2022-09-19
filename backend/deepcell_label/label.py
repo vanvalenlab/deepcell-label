@@ -14,6 +14,8 @@ from skimage.measure import regionprops
 from skimage.morphology import dilation, disk, erosion, flood, square
 from skimage.segmentation import morphological_chan_vese, watershed
 
+from deepcell_label.predict_utils import Predictor
+
 
 class Edit(object):
     """
@@ -36,10 +38,12 @@ class Edit(object):
         lineage.json - a json object describing the lineage of the cells
     """
 
-    def __init__(self, labels_zip):
+    def __init__(self, labels_zip, model):
 
         self.valid_modes = ['overlap', 'overwrite', 'exclude']
         self.raw_required = ['watershed', 'active_contour', 'threshold']
+
+        self.predictor = model
 
         self.load(labels_zip)
         self.dispatch_action()
@@ -325,6 +329,36 @@ class Edit(object):
         self.add_mask(cell_mask, cell)
         self.add_mask(new_cell_mask, new_cell)
 
+    # def action_threshold(self, y1, x1, y2, x2, cell):
+    #     """
+    #     Threshold the raw image for annotation prediction within the
+    #     user-determined bounding box.
+
+    #     Args:
+    #         y1 (int): first y coordinate to bound threshold area
+    #         x1 (int): first x coordinate to bound threshold area
+    #         y2 (int): second y coordinate to bound threshold area
+    #         x2 (int): second x coordinate to bound threshold area
+    #         cell (int): cell drawn in threshold area
+    #     """
+    #     cell = self.clean_cell(cell)
+    #     # Make bounding box from coordinates
+    #     top = min(y1, y2)
+    #     bottom = max(y1, y2) + 1
+    #     left = min(x1, x2)
+    #     right = max(x1, x2) + 1
+    #     image = self.raw[top:bottom, left:right].astype('float64')
+    #     # Hysteresis thresholding strategy needs two thresholds
+    #     # triangle threshold picked after trying a few on one dataset
+    #     # it may not be the best approach for other datasets!
+    #     low = filters.threshold_triangle(image=image)
+    #     high = 1.10 * low
+    #     # Limit stray pixelst
+    #     thresholded = filters.apply_hysteresis_threshold(image, low, high)
+    #     mask = np.zeros(self.labels.shape, dtype=bool)
+    #     mask[top:bottom, left:right] = thresholded
+    #     self.add_mask(mask, cell)
+
     def action_threshold(self, y1, x1, y2, x2, cell):
         """
         Threshold the raw image for annotation prediction within the
@@ -343,16 +377,9 @@ class Edit(object):
         bottom = max(y1, y2) + 1
         left = min(x1, x2)
         right = max(x1, x2) + 1
-        image = self.raw[top:bottom, left:right].astype('float64')
-        # Hysteresis thresholding strategy needs two thresholds
-        # triangle threshold picked after trying a few on one dataset
-        # it may not be the best approach for other datasets!
-        low = filters.threshold_triangle(image=image)
-        high = 1.10 * low
-        # Limit stray pixelst
-        thresholded = filters.apply_hysteresis_threshold(image, low, high)
-        mask = np.zeros(self.labels.shape, dtype=bool)
-        mask[top:bottom, left:right] = thresholded
+
+        mask = self.predictor.get_mask(self.raw, self.labels, (top, left, bottom, right))
+
         self.add_mask(mask, cell)
 
     def action_active_contour(self, cell, min_pixels=20, iterations=100, dilate=0):

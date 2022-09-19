@@ -17,9 +17,11 @@ from deepcell_label.export import Export
 from deepcell_label.label import Edit
 from deepcell_label.loaders import Loader
 from deepcell_label.models import Project
+from deepcell_label.predict_utils import Predictor
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
+model = Predictor()
 
 @bp.route('/health')
 def health():
@@ -147,7 +149,7 @@ def edit():
     if 'labels' not in request.files:
         return abort(400, description='Attach the labeled data to edit in labels.zip.')
     labels_zip = request.files['labels']
-    edit = Edit(labels_zip)
+    edit = Edit(labels_zip, model)
     current_app.logger.debug(
         'Finished action %s in %s s.',
         edit.action,
