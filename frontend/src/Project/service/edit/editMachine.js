@@ -58,7 +58,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         editSegment: {
           entry: [
             assign({ tool: 'editSegment' }),
-            send({ type: 'ENTER_TAB', tool: 'brush' }),
+            send({ type: 'ENTER_TAB' }),
           ],
           on: {
             mouseup: { actions: forwardTo('editSegment') },
