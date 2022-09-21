@@ -58,7 +58,7 @@ function EditTabs() {
       }
     };
     // Bind 'z' for edge case where Undo triggers DISPLAY
-    bind('z', () => labelMode.send('DISPLAY')); 
+    bind('z', () => labelMode.send('DISPLAY'));
     document.addEventListener('keydown', listener);
     return () => {
       document.removeEventListener('keydown', listener);

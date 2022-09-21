@@ -84,7 +84,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
                 panOnDrag: {
                   on: {
                     SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
-                    RESTORE_DRAG: { target: 'checkDrag' }
+                    RESTORE_DRAG: { target: 'checkDrag' },
                   },
                   initial: 'idle',
                   states: {
@@ -119,7 +119,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
                     mouseup: { actions: 'sendToEventBus' },
                     mousemove: { actions: 'computeCoordinates' },
                     SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
-                    RESTORE_DRAG: { target: 'checkDrag' }
+                    RESTORE_DRAG: { target: 'checkDrag' },
                   },
                 },
               },
