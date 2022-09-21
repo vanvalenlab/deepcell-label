@@ -62,7 +62,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
             panOnDrag: ctx.panOnDrag,
           })),
         },
-        RESTORE: { actions: ['restore', respond('RESTORED')] },
+        RESTORE: { actions: ['restore', respond('RESTORED'), send('RESTORE_DRAG')] },
         COORDINATES: {
           cond: 'newCoordinates',
           actions: ['setCoordinates', forwardTo('eventBus')],
@@ -84,6 +84,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
                 panOnDrag: {
                   on: {
                     SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
+                    RESTORE_DRAG: { target: 'checkDrag' }
                   },
                   initial: 'idle',
                   states: {
@@ -118,6 +119,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
                     mouseup: { actions: 'sendToEventBus' },
                     mousemove: { actions: 'computeCoordinates' },
                     SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
+                    RESTORE_DRAG: { target: 'checkDrag' }
                   },
                 },
               },
@@ -239,14 +241,13 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
           sx: (ctx, evt) => evt.sx,
           sy: (ctx, evt) => evt.sy,
           zoom: (ctx, evt) => evt.zoom,
-          panOnDrag: (ctx, evt) => evt.panOnDrag,
         }),
         pan: send((ctx, evt) => {
           const dx = (-1 * evt.movementX) / ctx.zoom / ctx.scale;
           const sx = Math.max(0, Math.min(ctx.sx + dx, ctx.width * (1 - 1 / ctx.zoom)));
           const dy = (-1 * evt.movementY) / ctx.zoom / ctx.scale;
           const sy = Math.max(0, Math.min(ctx.sy + dy, ctx.height * (1 - 1 / ctx.zoom)));
-          return { type: 'SET_POSITION', sx, sy, zoom: ctx.zoom, panOnDrag: ctx.panOnDrag };
+          return { type: 'SET_POSITION', sx, sy, zoom: ctx.zoom };
         }),
         zoom: send((ctx, evt) => {
           const zoomFactor = 1 + evt.deltaY / window.innerHeight;
@@ -262,7 +263,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
           newSy = Math.min(newSy, ctx.height * (1 - 1 / newZoom));
           newSy = Math.max(newSy, 0);
 
-          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy, panOnDrag: ctx.panOnDrag };
+          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
         zoomIn: send((ctx) => {
           const { zoom, width, height, sx, sy } = ctx;
@@ -271,7 +272,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
           const propY = height / 2;
           const newSx = sx + propX * (1 / zoom - 1 / newZoom);
           const newSy = sy + propY * (1 / zoom - 1 / newZoom);
-          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy, panOnDrag: ctx.panOnDrag };
+          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
         zoomOut: send((ctx) => {
           const { zoom, width, height, sx, sy } = ctx;
@@ -284,7 +285,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
           let newSy = sy + propY * (1 / zoom - 1 / newZoom);
           newSy = Math.min(newSy, height * (1 - 1 / newZoom));
           newSy = Math.max(newSy, 0);
-          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy, panOnDrag: ctx.panOnDrag };
+          return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
         setPanOnDrag: assign({ panOnDrag: (_, evt) => evt.panOnDrag }),
         sendToEventBus: forwardTo('eventBus'),

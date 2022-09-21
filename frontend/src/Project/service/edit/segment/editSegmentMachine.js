@@ -71,13 +71,14 @@ const createEditSegmentMachine = (context) =>
             pan: {
               entry: 'setPanOnDragTrue',
               on: {
-                SET_TOOL: { cond: 'isNoPanTool', target: 'noPan' },
+                // Undo edge case can cause POD=False in this state, so must reset in this case.
+                SET_TOOL: [{ cond: 'isNoPanTool', target: 'noPan' }, {actions: 'setPanOnDragTrue'}],
               },
             },
             noPan: {
               entry: 'setPanOnDragFalse',
               on: {
-                SET_TOOL: { cond: 'isPanTool', target: 'pan' },
+                SET_TOOL: [{ cond: 'isPanTool', target: 'pan' }, {actions: 'setPanOnDragFalse'}],
                 // Set POD=False when switching from other tab
                 ENTER_TAB: { actions: 'setPanOnDragFalse' },
               },
