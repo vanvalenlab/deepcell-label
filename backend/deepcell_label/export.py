@@ -18,7 +18,7 @@ class Export:
 
         self.load_dimensions()
         self.load_labeled()
-        self.load_raw()
+        self.load_raw_tiff()
         self.load_cells()
 
         self.labeled, self.cells = rewrite_labeled(self.labeled, self.cells)
@@ -56,6 +56,16 @@ class Export:
                     raw, (self.num_channels, self.duration, self.height, self.width)
                 )
 
+    def load_raw_tiff(self):
+        """Loads the raw array from the raw.dat file."""
+        with zipfile.ZipFile(self.labels_zip) as zf:
+            data = zf.read('X.ome.tiff')
+            bytes_io = io.BytesIO(data)
+            raw = tifffile.TiffFile(bytes_io).asarray(squeeze=False)
+            self.raw = np.reshape(
+                    raw, (self.num_channels, self.duration, self.height, self.width)
+                )
+
     def load_cells(self):
         """Loads cell labels from cells.json."""
         with zipfile.ZipFile(self.labels_zip) as zf:
@@ -73,7 +83,7 @@ class Export:
                 if item.filename not in [
                     'dimensions.json',
                     'labeled.dat',
-                    'raw.dat',
+                    'X.ome.tiff',
                     'cells.json',
                 ]:
                     buffer = input_zf.read(item.filename)

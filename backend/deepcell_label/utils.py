@@ -1,6 +1,103 @@
 """Utility functions for DeepCell Label"""
 
+import io
+import zipfile
+
 import numpy as np
+from tifffile import TiffFile, TiffWriter
+
+
+def combine_zips(DCL_zip, S3_zip):
+    """
+    Combines the edited zip from DCL with a zip from S3
+    containing the original raw image.
+
+    Args:
+        DCL_zip (data): data for the edited DCL zip
+        S3_zip (data): data for the S3 zip with original raw
+
+    Returns:
+        output (data): data for combined zip with everything
+            in the DCL zip but with raw.dat replaced with
+            the original raw X.ome.tiff
+
+    """
+    zf_dcl = zipfile.ZipFile(DCL_zip)
+    zf_s3 = zipfile.ZipFile(S3_zip)
+    output = io.BytesIO()
+    
+    with zipfile.ZipFile(output, 'w') as export_zf:
+        # Read X.ome.tiff from S3
+        X_data = zf_s3.read('X.ome.tiff')
+        export_zf.writestr('X.ome.tiff', X_data)
+
+        # Writes all other files to export zip
+        for item in zf_dcl.infolist():
+            if item.filename in [
+                'dimensions.json',
+                'labeled.dat',
+                'cells.json',
+                'spots.csv',
+                'divisions.json'
+            ]:
+                buffer = zf_dcl.read(item.filename)
+                export_zf.writestr(item, buffer)
+
+    zf_dcl.close()
+    zf_s3.close()
+    output.seek(0)
+
+    return output
+
+
+def rescale_raw_data(data):
+    """
+    Rescales the X.ome.tiff to 0-255 uint8 for rendering
+    on the frontend.
+
+    Args:
+        data: data for the project zip file with
+              (X.ome.tiff, y.ome.tiff, cells.json, 
+               divisions.json, (spots.csv))
+
+    Returns:
+        reshaped (data): data equivalent to input zip but with
+            X.ome.tiff rescaled and changed to uint8
+
+    """
+    zf = zipfile.ZipFile(data)
+    reshaped = io.BytesIO()
+
+    with zipfile.ZipFile(reshaped, 'w') as new_zf:
+        # Read, reshape, change to uint8 for X.ome.tiff
+        X_data = zf.read('X.ome.tiff')
+        X_bytes = io.BytesIO(X_data)
+        X = np.squeeze(TiffFile(X_bytes).asarray(squeeze=False), (0, 5))
+        max, min = np.max(X), np.min(X)
+        X = (X - min) / (max - min if max - min > 0 else 1) * 255
+        X = X.astype(np.uint8)
+
+        # Write reshaped X to new_zf
+        X_ome = io.BytesIO()
+        with TiffWriter(X_ome, ome=True) as tif:
+            tif.write(X, compression='zlib', metadata={'axes': 'ZCYX'})
+        X_ome.seek(0)
+        new_zf.writestr('X.ome.tiff', X_ome.read())
+
+        # Write all other files to export zip
+        for item in zf.infolist():
+            if item.filename in [
+                'y.ome.tiff',
+                'cells.json',
+                'divisions.json',
+                'spots.csv'
+            ]:
+                buffer = zf.read(item.filename)
+                new_zf.writestr(item, buffer)
+
+    zf.close()
+    reshaped.seek(0)
+    return reshaped
 
 
 def convert_lineage(lineage):

@@ -17,6 +17,7 @@ from deepcell_label.export import Export
 from deepcell_label.label import Edit
 from deepcell_label.loaders import Loader
 from deepcell_label.models import Project
+from deepcell_label.utils import rescale_raw_data, combine_zips
 
 bp = Blueprint('label', __name__)  # pylint: disable=C0103
 
@@ -54,10 +55,11 @@ def get_project(project):
     data = io.BytesIO()
     s3.download_fileobj(bucket, project.key, data)
     data.seek(0)
+    reshaped = rescale_raw_data(data)
     current_app.logger.info(
         f'Loaded project {project.key} from {bucket} in {timeit.default_timer() - start} s.',
     )
-    return send_file(data, mimetype='application/zip')
+    return send_file(reshaped, mimetype='application/zip')
 
 
 @bp.route('/api/project', methods=['POST'])
@@ -169,6 +171,15 @@ def download_project():
         return abort(400, description='Attach labels.zip to download.')
     labels_zip = request.files['labels']
     id = request.form['id']
+    
+    project = Project.get(id)
+    bucket = request.args.get('bucket', default=project.bucket)
+    s3 = boto3.client('s3')
+    data = io.BytesIO()
+    s3.download_fileobj(bucket, project.key, data)
+    data.seek(0)
+    labels_zip = combine_zips(labels_zip, data)
+
     export = Export(labels_zip)
     data = export.export_zip
     return send_file(data, as_attachment=True, attachment_filename=f'{id}.zip')
@@ -188,8 +199,7 @@ def submit_project():
     labels_zip = request.files['labels']
     id = request.form['id']
     bucket = request.form['bucket']
-    export = Export(labels_zip)
-    data = export.export_zip
+    project = Project.get(id)
 
     # store npz file object in bucket/path
     s3 = boto3.client(
@@ -197,7 +207,19 @@ def submit_project():
         aws_access_key_id=AWS_ACCESS_KEY_ID,
         aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     )
-    s3.upload_fileobj(data, bucket, f'{id}.zip')
+
+    # Download the original raw
+    data = io.BytesIO()
+    s3.download_fileobj(bucket, project.key, data)
+    data.seek(0)
+
+    # Get the new combined zip
+    labels_zip = combine_zips(labels_zip, data)
+    export = Export(labels_zip)
+    combined_data = export.export_zip
+
+    # Upload the combined zip
+    s3.upload_fileobj(combined_data, bucket, f'{id}.zip')
 
     current_app.logger.debug(
         'Uploaded %s to S3 bucket %s in %s s.',
