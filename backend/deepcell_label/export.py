@@ -40,20 +40,18 @@ class Export:
 
     def get_dtype(self, arr_type):
         """Matches raw array dtype with a numpy dtype"""
-        match arr_type:
-            case 'Uint8Array':
-                return np.uint8
-            case 'Uint16Array':
-                return np.uint16
-            case 'Uint32Array':
-                return np.uint32
-            case 'Int32Array':
-                return np.int32
-            case 'Float32Array':
-                return np.float32
-            case 'Float64Array':
-                return np.float64
-        raise ValueError('Could not match dtype of raw array.')
+        mapping = {
+            'Uint8Array': np.uint8,
+            'Uint16Array': np.uint16,
+            'Uint32Array': np.uint32,
+            'Int32Array': np.int32,
+            'Float32Array': np.float32,
+            'Float64Array': np.float64
+        }
+        try:
+            return mapping[arr_type]
+        except KeyError:
+            raise ValueError('Could not match dtype of raw array.')
 
     def load_labeled(self):
         """Loads the labeled array from the labeled.dat file."""
