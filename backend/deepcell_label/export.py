@@ -46,7 +46,7 @@ class Export:
             'Uint32Array': np.uint32,
             'Int32Array': np.int32,
             'Float32Array': np.float32,
-            'Float64Array': np.float64
+            'Float64Array': np.float64,
         }
         try:
             return mapping[arr_type]
