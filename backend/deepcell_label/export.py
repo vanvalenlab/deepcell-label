@@ -36,6 +36,24 @@ class Export:
                 self.duration = dimensions['duration']
                 self.num_channels = dimensions['numChannels']
                 self.num_features = dimensions['numFeatures']
+                self.dtype = self.get_dtype(dimensions['dtype'])
+
+    def get_dtype(self, arr_type):
+        """Matches raw array dtype with a numpy dtype"""
+        match arr_type:
+            case 'Uint8Array':
+                return np.uint8
+            case 'Uint16Array':
+                return np.uint16
+            case 'Uint32Array':
+                return np.uint32
+            case 'Int32Array':
+                return np.int32
+            case 'Float32Array':
+                return np.float32
+            case 'Float64Array':
+                return np.float64
+        raise ValueError('Could not match dtype of raw array.')
 
     def load_labeled(self):
         """Loads the labeled array from the labeled.dat file."""
@@ -51,7 +69,8 @@ class Export:
         """Loads the raw array from the raw.dat file."""
         with zipfile.ZipFile(self.labels_zip) as zf:
             with zf.open('raw.dat') as f:
-                raw = np.frombuffer(f.read())
+                raw = np.frombuffer(f.read(), self.dtype)
+                print(raw.dtype)
                 self.raw = np.reshape(
                     raw, (self.num_channels, self.duration, self.height, self.width)
                 )
