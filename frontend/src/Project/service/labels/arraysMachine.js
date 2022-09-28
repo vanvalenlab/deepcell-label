@@ -24,6 +24,7 @@ const createArraysMachine = (context) =>
       context: {
         raw: null,
         labeled: null,
+        rawOriginal: null,
         t: 0,
         feature: 0,
         channel: 0,
@@ -48,7 +49,7 @@ const createArraysMachine = (context) =>
               states: {
                 loading: {
                   on: {
-                    LOADED: { target: 'done', actions: ['setRaw', 'setLabeled'] },
+                    LOADED: { target: 'done', actions: ['setRaw', 'setLabeled', 'setRawOriginal'] },
                   },
                 },
                 done: { type: 'final' },
@@ -121,6 +122,7 @@ const createArraysMachine = (context) =>
       actions: {
         setRaw: assign({ raw: (ctx, evt) => evt.raw }),
         setLabeled: assign({ labeled: (ctx, evt) => evt.labeled }),
+        setRawOriginal: assign({ rawOriginal: (ctx, evt) => evt.rawOriginal }),
         setT: assign({ t: (ctx, evt) => evt.t }),
         setFeature: assign({ feature: (ctx, evt) => evt.feature }),
         setChannel: assign({ channel: (ctx, evt) => evt.channel }),
@@ -148,7 +150,7 @@ const createArraysMachine = (context) =>
         ),
         sendArrays: respond((ctx) => ({
           type: 'ARRAYS',
-          raw: ctx.raw,
+          raw: ctx.rawOriginal, // Send the original raw for export
           labeled: ctx.labeled,
         })),
         save: send('SAVE', { to: (ctx) => ctx.undoRef }),

@@ -78,10 +78,6 @@ class Loader:
         """
         X = self.X
         if X is not None:
-            # Rescale data
-            max, min = np.max(X), np.min(X)
-            X = (X - min) / (max - min if max - min > 0 else 1) * 255
-            X = X.astype(np.uint8)
             # Move channel axis
             X = np.moveaxis(X, -1, 1)
             images = io.BytesIO()

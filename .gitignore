@@ -150,6 +150,10 @@ fmd_config.cfg
 # production
 /build
 
+# models and other pickled files
+*.h5
+*.npy
+
 # misc
 .DS_Store
 .env.local

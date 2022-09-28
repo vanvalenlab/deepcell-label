@@ -51,7 +51,7 @@ class Export:
         """Loads the raw array from the raw.dat file."""
         with zipfile.ZipFile(self.labels_zip) as zf:
             with zf.open('raw.dat') as f:
-                raw = np.frombuffer(f.read(), np.uint8)
+                raw = np.frombuffer(f.read())
                 self.raw = np.reshape(
                     raw, (self.num_channels, self.duration, self.height, self.width)
                 )
