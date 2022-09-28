@@ -114,7 +114,7 @@ async function getRawRasters(source: TiffPixelSource) {
             max = frame[k][l];
           }
           if (frame[k][l] < min) {
-            min = frame[k][l]
+            min = frame[k][l];
           }
         }
       }
@@ -150,7 +150,7 @@ function reshapeRaw(channels: TypedArray[][][], min: number, max: number) {
     for (let z = 0; z < channels[c].length; z++) {
       for (let y = 0; y < channels[c][z].length; y++) {
         for (let x = 0; x < channels[c][z][y].length; x++) {
-          channels[c][z][y][x] = Math.round((channels[c][z][y][x] - min) / (max - min) * 255);
+          channels[c][z][y][x] = Math.round(((channels[c][z][y][x] - min) / (max - min)) * 255);
         }
       }
     }
@@ -166,7 +166,7 @@ type TypedArray =
   | Uint32Array
   | Int32Array
   | Float32Array
-  | Float64Array
+  | Float64Array;
 
 type Raster = { data: TypedArray; width: number; height: number };
 
@@ -175,17 +175,17 @@ function splitRows(raster: Raster) {
   const frame = [];
   for (let i = 0; i < height; i++) {
     const row =
-      data instanceof Uint8Array || data instanceof Int8Array ? (
-        new Uint8Array(data.buffer, width * i, width)
-      ) : data instanceof Uint16Array || data instanceof Int16Array ? (
-        new Uint16Array(data.buffer, width * i * 2, width)
-      ) : data instanceof Uint32Array ? (
-        new Uint32Array(data.buffer, width * i * 4, width)
-      ) : data instanceof Float32Array ? (
-        new Float32Array(data.buffer, width * i * 4, width)
-      ) : data instanceof Float64Array ? (
-        new Float64Array(data.buffer, width * i * 8, width)
-      ) : new Int32Array(data.buffer, width * i * 4, width);
+      data instanceof Uint8Array || data instanceof Int8Array
+        ? new Uint8Array(data.buffer, width * i, width)
+        : data instanceof Uint16Array || data instanceof Int16Array
+        ? new Uint16Array(data.buffer, width * i * 2, width)
+        : data instanceof Uint32Array
+        ? new Uint32Array(data.buffer, width * i * 4, width)
+        : data instanceof Float32Array
+        ? new Float32Array(data.buffer, width * i * 4, width)
+        : data instanceof Float64Array
+        ? new Float64Array(data.buffer, width * i * 8, width)
+        : new Int32Array(data.buffer, width * i * 4, width);
     frame.push(row);
   }
   return frame;
