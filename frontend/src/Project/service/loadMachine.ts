@@ -122,7 +122,7 @@ async function getRawRasters(source: TiffPixelSource) {
     }
     channels.push(frames);
   }
-  const reshaped = reshapeRaw(channels, min, max) as Uint8Array[][][];
+  const reshaped = reshapeRaw(channels, min, max);
   return reshaped;
 }
 
@@ -145,17 +145,28 @@ async function getLabelRasters(source: TiffPixelSource) {
 }
 
 function reshapeRaw(channels: TypedArray[][][], min: number, max: number) {
+  const size_c = channels.length;
+  const size_z = channels[0].length;
+  const size_y = channels[0][0].length;
+  const size_x = channels[0][0][0].length;
+  const reshaped = [];
   // Normalize each pixel to 0-255 for rendering
-  for (let c = 0; c < channels.length; c++) {
-    for (let z = 0; z < channels[c].length; z++) {
-      for (let y = 0; y < channels[c][z].length; y++) {
-        for (let x = 0; x < channels[c][z][y].length; x++) {
-          channels[c][z][y][x] = Math.round(((channels[c][z][y][x] - min) / (max - min)) * 255);
+  for (let c = 0; c < size_c; c++) {
+    const frames = [];
+    for (let z = 0; z < size_z; z++) {
+      const frame = [];
+      for (let y = 0; y < size_y; y++) {
+        const row = new Uint8Array(size_x);
+        for (let x = 0; x < size_x; x++) {
+          row[x] = Math.round(((channels[c][z][y][x] - min) / (max - min)) * 255);
         }
+        frame.push(row);
       }
+      frames.push(frame);
     }
+    reshaped.push(frames);
   }
-  return channels;
+  return reshaped;
 }
 
 type TypedArray =

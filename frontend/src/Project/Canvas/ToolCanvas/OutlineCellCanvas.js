@@ -54,7 +54,8 @@ function OutlineCellCanvas({ setBitmaps, cell, color }) {
           east = data[y + 1][x];
         }
         if (cells[value][cell] === 1 && value < numValues) {
-          if (cells[north][cell] === 0 || cells[south][cell] === 0 || cells[west][cell] === 0 || cells[east][cell] === 0) {
+          if (cells[north][cell] === 0 || cells[south][cell] === 0 || cells[west][cell] === 0 || cells[east][cell] === 0
+              || north >= numValues || south >= numValues || west >= numValues || east >= numValues) {
             const [r, g, b, a] = color;
             this.color(r, g, b, a);
           }

@@ -55,8 +55,10 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
         }
         if (cells[value][cell] === 0 && value < numValues) {
           if (cells[north][cell] === 1 || cells[south][cell] === 1 || cells[west][cell] === 1 || cells[east][cell] === 1) {
-            const [r, g, b, a] = color;
-            this.color(r, g, b, a);
+            if (north < numValues && south < numValues && west < numValues && east < numValues) {
+              const [r, g, b, a] = color;
+              this.color(r, g, b, a);
+            }
           }
         }
       }`,

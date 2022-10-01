@@ -90,7 +90,7 @@ const createEditSegmentMachine = (context) =>
         },
       },
       on: {
-        EXIT: { actions: 'forwardToTool' },
+        EXIT: { actions: ['forwardToTool', send({ type: 'SET_TOOL', tool: 'select' })] },
         // from canvas event bus (forwarded from parent)
         mousedown: { actions: 'forwardToTool' },
         mouseup: { actions: 'forwardToTool' },
