@@ -68,7 +68,6 @@ class Export:
         with zipfile.ZipFile(self.labels_zip) as zf:
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), self.dtype)
-                print(raw.dtype)
                 self.raw = np.reshape(
                     raw, (self.num_channels, self.duration, self.height, self.width)
                 )
