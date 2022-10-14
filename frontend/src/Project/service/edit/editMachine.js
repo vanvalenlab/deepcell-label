@@ -6,6 +6,7 @@ import { assign, forwardTo, Machine, send, spawn } from 'xstate';
 import { respond } from 'xstate/lib/actions';
 import { fromEventBus } from '../eventBus';
 import createEditCellsMachine from './editCells';
+import createEditCellTypesMachine from './editCellTypesMachine';
 import createEditDivisionsMachine from './editDivisionsMachine';
 import createEditSegmentMachine from './segment';
 
@@ -20,6 +21,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         editSegmentRef: null,
         editDivisionsRef: null,
         editCellsRef: null,
+        editCellTypesRef: null,
       },
       invoke: [
         {
@@ -45,6 +47,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
             { cond: ({ tool }) => tool === 'editSegment', target: 'editSegment' },
             { cond: ({ tool }) => tool === 'editCells', target: 'editCells' },
             { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
+            { cond: ({ tool }) => tool === 'editCellTypes', target: 'editCellTypes' },
             { cond: ({ tool }) => tool === 'editSpots', target: 'editSpots' },
             { target: 'display' },
           ],
@@ -82,6 +85,16 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
             mousedown: { actions: forwardTo('editCells') },
           },
         },
+        editCellTypes: {
+          entry: [
+            assign({ tool: 'editCellTypes' }),
+            send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
+          ],
+          on: {
+            mouseup: { actions: forwardTo('editCellTypes') },
+            mousedown: { actions: forwardTo('editCellTypes') },
+          },
+        },
         editSpots: {
           entry: [
             assign({ tool: 'editCells' }),
@@ -100,6 +113,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         EDIT_SEGMENT: 'editSegment',
         EDIT_DIVISIONS: 'editDivisions',
         EDIT_CELLS: 'editCells',
+        EDIT_CELLTYPES: 'editCellTypes',
         EDIT_SPOTS: 'editSpots',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
@@ -114,6 +128,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
           editSegmentRef: spawn(createEditSegmentMachine(context), 'editSegment'),
           editDivisionsRef: spawn(createEditDivisionsMachine(context), 'editDivisions'),
           editCellsRef: spawn(createEditCellsMachine(context), 'editCells'),
+          editCellTypesRef: spawn(createEditCellTypesMachine(context), 'editCellTypes'),
         })),
       },
     }

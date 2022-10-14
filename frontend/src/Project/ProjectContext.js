@@ -85,6 +85,18 @@ export function useSpots() {
   return spots;
 }
 
+export function useCellTypes() {
+  const project = useProject();
+  const cellTypes = useSelector(project, (state) => state.context.cellTypesRef);
+  return cellTypes;
+}
+
+export function useCellTypeList() {
+  const cellTypesMachine = useCellTypes();
+  const cellTypes = useSelector(cellTypesMachine, (state) => state.context.cellTypes);
+  return cellTypes;
+}
+
 export function useDivisions() {
   const project = useProject();
   const divisions = useSelector(project, (state) => state.context.divisionsRef);
@@ -130,6 +142,15 @@ export function useEditDivisions() {
     return labelMode.state.context.editDivisionsRef;
   });
   return editDivisions;
+}
+
+export function useEditCellTypes() {
+  const project = useProject();
+  const editCellTypes = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    return labelMode.state.context.editCellTypesRef;
+  });
+  return editCellTypes;
 }
 
 export function useEditCells() {

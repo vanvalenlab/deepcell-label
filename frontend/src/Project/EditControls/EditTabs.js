@@ -21,8 +21,10 @@ function EditTabs() {
       ? 2
       : state.matches('editDivisions')
       ? 3
-      : state.matches('editSpots')
+      : state.matches('editCellTypes')
       ? 4
+      : state.matches('editSpots')
+      ? 5
       : false;
   });
   const handleChange = (event, newValue) => {
@@ -40,6 +42,9 @@ function EditTabs() {
         labelMode.send('EDIT_DIVISIONS');
         break;
       case 4:
+        labelMode.send('EDIT_CELLTYPES');
+        break;
+      case 5:
         labelMode.send('EDIT_SPOTS');
         break;
       default:
@@ -81,6 +86,7 @@ function EditTabs() {
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cells' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Divisions' />
+        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cell Types' />
         {spots && <Tab sx={{ p: 0.5, minHeight: 0 }} label='Spots' />}
       </Tabs>
     </Paper>

@@ -49,6 +49,7 @@
     "quickselect": "^2.0.0",
     "react": "^17.0.1",
     "react-archer": "^3.3.0",
+    "react-color": "^2.19.3",
     "react-dom": "^17.0.1",
     "react-dropzone": "^11.4.0",
     "react-error-boundary": "^3.1.3",

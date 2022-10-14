@@ -11,6 +11,7 @@ import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createArraysMachine from './labels/arraysMachine';
 import createCellsMachine from './labels/cellsMachine';
+import createCellTypesMachine from './labels/cellTypesMachine';
 import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
@@ -94,6 +95,7 @@ const createProjectMachine = (projectId) =>
           actors.hoveringRef = spawn(createHoveringMachine(ctx), 'hovering');
           actors.imageRef = spawn(createImageMachine(ctx), 'image');
           actors.arraysRef = spawn(createArraysMachine(ctx), 'arrays');
+          actors.cellTypesRef = spawn(createCellTypesMachine(ctx), 'cellTypes');
           actors.exportRef = spawn(createExportMachine(ctx), 'export');
           actors.selectRef = spawn(createSelectMachine(ctx), 'select');
           actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');
