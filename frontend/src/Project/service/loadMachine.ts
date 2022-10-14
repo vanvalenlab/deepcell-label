@@ -12,8 +12,9 @@ type TiffPixelSource = PropType<OmeTiff, 'data'>[number];
 type Spots = [number, number][];
 type Divisions = { parent: number; daughters: number[]; t: number }[];
 type Cells = { value: number; cell: number; t: number }[];
+type CellTypes = { id: number; name: string; color: string; cells: number[] };
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells | Divisions;
+  [filename: string]: OmeTiff | Spots | Cells | CellTypes | Divisions;
 };
 
 async function parseZip(response: Response) {
@@ -51,6 +52,12 @@ async function parseZip(response: Response) {
       const json = await entry.getData(new zip.TextWriter());
       const cells = JSON.parse(json);
       files[entry.filename] = cells;
+    }
+    if (entry.filename === 'cellTypes.json') {
+      // @ts-ignore
+      const json = await entry.getData(new zip.TextWriter());
+      const cellTypes: CellTypes = JSON.parse(json);
+      files[entry.filename] = cellTypes;
     }
   }
   return { files };
@@ -218,6 +225,7 @@ interface Context {
   spots: Spots | null;
   divisions: Divisions | null;
   cells: Cells | null;
+  cellTypes: CellTypes | null;
 }
 
 const createLoadMachine = (projectId: string) =>
@@ -239,6 +247,7 @@ const createLoadMachine = (projectId: string) =>
         spots: null,
         divisions: null,
         cells: null,
+        cellTypes: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
       schema: {
@@ -266,7 +275,7 @@ const createLoadMachine = (projectId: string) =>
             src: 'fetch project zip',
             onDone: {
               target: 'splitArrays',
-              actions: ['set spots', 'set divisions', 'set cells', 'set metadata'],
+              actions: ['set spots', 'set divisions', 'set cells', 'set cellTypes', 'set metadata'],
             },
             onError: {
               actions: 'send project not in output bucket',
@@ -304,6 +313,10 @@ const createLoadMachine = (projectId: string) =>
           // @ts-ignore
           cells: (context, event) => event.data.files['cells.json'] as Cells,
         }),
+        'set cellTypes': assign({
+          // @ts-ignore
+          cellTypes: (context, event) => event.data.files['cellTypes.json'] as CellTypes,
+        }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
           const { metadata } = evt.data.files['X.ome.tiff'];
@@ -333,6 +346,7 @@ const createLoadMachine = (projectId: string) =>
           spots: ctx.spots,
           divisions: ctx.divisions,
           cells: ctx.cells,
+          cellTypes: ctx.cellTypes,
         })),
       },
     }
