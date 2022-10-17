@@ -8,11 +8,22 @@
  import { assign, Machine, send } from 'xstate';
  import { pure } from 'xstate/lib/actions';
  import { fromEventBus } from '../eventBus';
+ import Cells from '../../cells';
  import { combine } from './utils';
  
+// Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+const hexToRgb = (hex) => {
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return result ? [
+	  parseInt(result[1], 16) / 255,
+	  parseInt(result[2], 16) / 255,
+	  parseInt(result[3], 16) / 255,
+	  1
+	 ] : null;
+  }  
+
  const createCellTypesMachine = ({ eventBuses, undoRef }) =>
-   Machine(
-     {
+   Machine({
        id: 'cellTypes',
        entry: send('REGISTER_LABELS', { to: undoRef }), 
        invoke: [
@@ -22,192 +33,215 @@
       ],
        context: {
          cellTypes: [],
+		 cells: null,
+		 colorMap: null,
          undoRef: undoRef,
          historyRef: null,
          edit: null,
        },
        initial: 'loading',
        states: {
-         loading: {
-           type: 'parallel',
-           states: {
-             getCellTypes: {
-               initial: 'waiting',
-               states: {
-                 waiting: {
-                   on: {
-                     LOADED: { actions: 'setCellTypes', target: 'done' },
-                   },
-                 },
-                 done: { type: 'final' },
-               },
-             },
-             getHistoryRef: {
-               initial: 'waiting',
-               states: {
-                 waiting: {
-                   on: {
-                     LABEL_HISTORY: { target: 'done', actions: 'setHistoryRef' },
-                   },
-                 },
-                 done: { type: 'final' },
-               },
-             },
-           },
-           onDone: { target: 'loaded' },
-         },
-         loaded: {
-						type: 'parallel',
+			loading: {
+			type: 'parallel',
+			states: {
+				getCellTypes: {
+				initial: 'waiting',
+				states: {
+					waiting: {
+						on: {
+							LOADED: { actions: ['setCellTypes', 'setCells', 'setColorMap', 'updateColorMap'], target: 'done' },
+						},
+					},
+					done: { type: 'final' },
+				},
+				},
+				getHistoryRef: {
+				initial: 'waiting',
+				states: {
+					waiting: {
+					on: {
+						LABEL_HISTORY: { target: 'done', actions: 'setHistoryRef' },
+					},
+					},
+					done: { type: 'final' },
+				},
+				},
+			},
+			onDone: { target: 'loaded' },
+			},
+			loaded: {
+				type: 'parallel',
+				states: {
+					edit: {
+						initial: 'idle',
 						states: {
-							edit: {
-								initial: 'idle',
+							idle: {
+								entry: 'sendCellTypes',
+								on: {
+									// From editCellTypesMachine
+									ADD_CELL: { actions: 'addCell', target: 'editing' },
+									ADD_CELLTYPE: { actions: ['addCellType', 'setMaxId'], target: 'editing' },
+									REMOVE_CELLTYPE: { actions: 'removeCellType', target: 'editing' },
+									REMOVE_CELL: { actions: 'removeCell', target: 'editing' },
+									EDIT_COLOR: { actions: 'editColor', target: 'editing' },
+									EDIT_NAME: { actions: 'editName', target: 'editing' },
+								},
+							},
+							editing: {
+								entry: 'setEditEvent',
+								type: 'parallel',
 								states: {
-									idle: {
-										entry: 'sendCellTypes',
-										on: {
-											// From editCellTypesMachine
-											ADD_CELL: { actions: 'addCell', target: 'editing' },
-											ADD_CELLTYPE: { actions: ['addCellType', 'setMaxId'], target: 'editing' },
-											REMOVE_CELLTYPE: { actions: 'removeCellType', target: 'editing' },
-											REMOVE_CELL: { actions: 'removeCell', target: 'editing' },
-											EDIT_COLOR: { actions: 'editColor', target: 'editing' },
-											EDIT_NAME: { actions: 'editName', target: 'editing' },
+									getEdit: {
+										entry: 'startEdit',
+										initial: 'idle',
+										states: {
+											idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
+											done: { type: 'final' },
 										},
 									},
-									editing: {
-										entry: 'setEditEvent',
-										type: 'parallel',
+									getEdits: {
+										initial: 'editing',
 										states: {
-											getEdit: {
-												entry: 'startEdit',
-												initial: 'idle',
-												states: {
-													idle: { on: { SAVE: { target: 'done', actions: 'setEdit' } } },
-													done: { type: 'final' },
+											editing: {
+												on: {
+													EDITED_CELLTYPES: { target: 'done', actions: ['setEditedCellTypes', 'setColorMap', 'updateColorMap'] },
 												},
 											},
-											getEdits: {
-												initial: 'editing',
-												states: {
-													editing: {
-														on: {
-															EDITED_CELLTYPES: { target: 'done', actions: 'setEditedCellTypes' },
-														},
-													},
-													done: { type: 'final' },
-												},
-											},
-										},
-										onDone: {
-											target: 'idle',
-											actions: 'finishEditing',
+											done: { type: 'final' },
 										},
 									},
 								},
-							},
-							update: {
-								on: {
-									// from CELLS event bus
-									// REPLACE: { actions: ['replace', 'sendCellTypes'] },
-									// DELETE: { actions: ['delete', 'sendCellTypes'] },
-									// SWAP: { actions: ['swap', 'sendCellTypes'] },
-									// EDITED_CELLS: { actions: 'updateFromCells' },
-									RESTORE: { actions: 'restore' },
+								onDone: {
+									target: 'idle',
+									actions: 'finishEditing',
 								},
 							},
 						},
-         },
-       },
-     },
-     {
-			actions: {
-        setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
-				setCellTypes: assign({ cellTypes: (ctx, evt) => evt.cellTypes }),
-        setEditEvent: assign({ editEvent: (ctx, evt) => evt }),
-        startEdit: send('SAVE', { to: (ctx) => ctx.undoRef }),
-        setEdit: assign({ edit: (ctx, evt) => evt.edit }),
-        setEditedCellTypes: assign({ editedCellTypes: (ctx, evt) => evt.cellTypes }),
-				setMaxId: assign({ maxId: (ctx) => {
-						const ids = ctx.cellTypes.map(cellType => cellType.id);
-						if (ids.length === 0) {
-							return 0
-						}
-						return Math.max.apply(null, ids);
+					},
+					update: {
+						on: {
+							// from CELLS event bus
+							// REPLACE: { actions: ['replace', 'sendCellTypes'] },
+							// DELETE: { actions: ['delete', 'sendCellTypes'] },
+							// SWAP: { actions: ['swap', 'sendCellTypes'] },
+							// EDITED_CELLS: { actions: 'updateFromCells' },
+							CELLS: { actions: 'setCells' },
+							RESTORE: { actions: ['setColorMap', 'updateColorMap', 'restore'] },
+						},
+					},
+				},
+			},
+		},
+    },
+    {
+		actions: {
+			setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
+			setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
+			setCells: assign({ cells: (_, evt) => evt.cells }),
+			setColorMap: assign({
+				colorMap: (ctx) => {
+				  let numCells = new Cells(ctx.cells).getNewCell();
+				  let colorMap = Array(numCells).fill([1, 1, 1, 0]);
+				  return colorMap;
+				}
+			}),
+			setEditEvent: assign({ editEvent: (ctx, evt) => evt }),
+			startEdit: send('SAVE', { to: (ctx) => ctx.undoRef }),
+			setEdit: assign({ edit: (ctx, evt) => evt.edit }),
+			setEditedCellTypes: assign({ editedCellTypes: (ctx, evt) => evt.cellTypes }),
+			setMaxId: assign({ maxId: (ctx) => {
+					const ids = ctx.cellTypes.map(cellType => cellType.id);
+					if (ids.length === 0) {
+						return 0
 					}
-				}),
-        sendCellTypes: send((ctx) => ({ type: 'CELLTYPES', cellTypes: ctx.cellTypes }), {
-          to: 'eventBus',
-        }),
-        finishEditing: pure((ctx) => {
-          return [
-            assign({ cellTypes: (ctx) => ctx.editedCellTypes }),
-            send(
-              {
-                type: 'SNAPSHOT',
-                before: { type: 'RESTORE', cellTypes: ctx.cellTypes },
-                after: { type: 'RESTORE', cellTypes: ctx.editedCellTypes },
-                edit: ctx.edit,
-              },
-              { to: ctx.historyRef }
-            ),
-          ];
-        }),
-				addCell: send((ctx, evt) => {
-          let cellTypes;
-					cellTypes = ctx.cellTypes.map(
-						cellType => cellType.id === evt.cellType
-							? {...cellType, cells: [...cellType.cells, evt.cell]}
-							: cellType
-					)
-          return { type: 'EDITED_CELLTYPES', cellTypes };
-				}),
-				removeCell: send((ctx, evt) => {
-          let cellTypes;
-					cellTypes = ctx.cellTypes.map(
-						cellType => cellType.id === evt.cellType
-							? {...cellType, cells: cellType.cells.filter(
-									cell => !(cell === evt.cell)
-							)}
-							: cellType
-					)
-          return { type: 'EDITED_CELLTYPES', cellTypes };
-				}),
-        addCellType: send((ctx, evt) => {
-          let cellTypes;
-					cellTypes = [...ctx.cellTypes, {id: ctx.maxId + 1, name: 'Untitled', color: evt.color, cells: []}];
-          return { type: 'EDITED_CELLTYPES', cellTypes };
-        }),
-				removeCellType: send((ctx, evt) => {
-          let cellTypes;
-					cellTypes = ctx.cellTypes.filter(item => !(item.id === evt.cellType));
-          return { type: 'EDITED_CELLTYPES', cellTypes };
-        }),
-				editColor: send((ctx, evt) => {
-          let cellTypes;
-					cellTypes = ctx.cellTypes.map(
-						cellType => cellType.id === evt.cellType
-							? {...cellType, color: evt.color}
-							: cellType
-					)
-          return { type: 'EDITED_CELLTYPES', cellTypes };
-        }),
-				editName: send((ctx, evt) => {
-          let cellTypes;
-					cellTypes = ctx.cellTypes.map(
-						cellType => cellType.id === evt.cellType
-							? {...cellType, name: evt.name}
-							: cellType
-					)
-          return { type: 'EDITED_CELLTYPES', cellTypes };
-        }),
-        restore: pure((ctx, evt) => {
-          return [
-            assign({ cellTypes: evt.cellTypes }),
-            send({ type: 'CELLTYPES', cellTypes: evt.cellTypes }, { to: 'eventBus' }),
-          ];
-        }),
-      },
-    }
+					return Math.max.apply(null, ids);
+				}
+			}),
+			sendCellTypes: send((ctx) => ({ type: 'CELLTYPES', cellTypes: ctx.cellTypes }), {
+				to: 'eventBus',
+			}),
+			updateColorMap: assign({colorMap: (ctx, evt) => {
+					let numTypes = evt.cellTypes.length;
+					let newColorMap = ctx.colorMap;
+					for (let i = 0; i < numTypes; i++) {
+						let numCells = evt.cellTypes[i].cells.length;
+						for (let j = 0; j < numCells; j++) {
+							newColorMap[evt.cellTypes[i].cells[j]] = hexToRgb(evt.cellTypes[i].color);
+						}
+					}
+					return newColorMap;
+				}
+			}),
+			finishEditing: pure((ctx) => {
+				return [
+					assign({ cellTypes: (ctx) => ctx.editedCellTypes }),
+					send(
+					{ 
+						type: 'SNAPSHOT',
+						before: { type: 'RESTORE', cellTypes: ctx.cellTypes },
+						after: { type: 'RESTORE', cellTypes: ctx.editedCellTypes },
+						edit: ctx.edit,
+					},
+					{ to: ctx.historyRef }
+					),
+				];
+			}),
+			addCell: send((ctx, evt) => {
+				let cellTypes;
+				cellTypes = ctx.cellTypes.map(
+					cellType => cellType.id === evt.cellType
+						? {...cellType, cells: [...cellType.cells, evt.cell]}
+						: cellType
+				)
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+			removeCell: send((ctx, evt) => {
+				let cellTypes;
+				cellTypes = ctx.cellTypes.map(
+					cellType => cellType.id === evt.cellType
+						? {...cellType, cells: cellType.cells.filter(
+								cell => !(cell === evt.cell)
+						)}
+						: cellType
+				)
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+			addCellType: send((ctx, evt) => {
+				let cellTypes;
+				cellTypes = [...ctx.cellTypes, {id: ctx.maxId + 1, name: 'Untitled', color: evt.color, cells: []}];
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+			removeCellType: send((ctx, evt) => {
+				let cellTypes;
+				cellTypes = ctx.cellTypes.filter(item => !(item.id === evt.cellType));
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+			editColor: send((ctx, evt) => {
+				let cellTypes;
+				cellTypes = ctx.cellTypes.map(
+					cellType => cellType.id === evt.cellType
+						? {...cellType, color: evt.color}
+						: cellType
+				)
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+			editName: send((ctx, evt) => {
+				let cellTypes;
+				cellTypes = ctx.cellTypes.map(
+					cellType => cellType.id === evt.cellType
+						? {...cellType, name: evt.name}
+						: cellType
+				)
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+			restore: pure((ctx, evt) => {
+				return [
+					assign({ cellTypes: evt.cellTypes }),
+					send({ type: 'CELLTYPES', cellTypes: evt.cellTypes }, { to: 'eventBus' }),
+				];
+			}),
+		},
+	}
    );
  
  export default createCellTypesMachine;

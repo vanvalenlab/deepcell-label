@@ -1,6 +1,6 @@
 /**
  * Manages the controls to edit the cell types.
- * Sends ADD_CELL, ADD_CELLTYPE, EDIT_COLOR, and EDIT_NAME to the divisions event bus
+ * Sends ADD_CELL, ADD_CELLTYPE, REMOVE_CELL, REMOVE_CELLTYPE, EDIT_COLOR, and EDIT_NAME to the divisions event bus
  * when interacting with the UI.
  */
  import { assign, Machine, send } from 'xstate';
@@ -12,7 +12,7 @@
        id: 'editCellTypes',
        invoke: [
          { id: 'select', src: fromEventBus('editCellTypes', () => eventBuses.select, 'SELECTED') },
-         { src: fromEventBus('editDivisions', () => eventBuses.hovering, 'HOVERING') },
+         { src: fromEventBus('editCellTypes', () => eventBuses.hovering, 'HOVERING') },
          { id: 'cellTypes', src: fromEventBus('editCellTypes', () => eventBuses.cellTypes) },
        ],
        context: {
@@ -37,7 +37,7 @@
              ADD: { target: 'addingCell', actions: ['setCellType', 'setName'] },
              ADD_TYPE: { actions: ['setColor', 'addCellType'] },
              COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
-             NAME: { actions: ['setCellType', 'setName', 'editName'] }
+             NAME: { actions: ['setCellType', 'setName', 'editName'] },
            },
          },
          addingCell: {

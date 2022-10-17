@@ -3,7 +3,7 @@
 
 import { Box, FormLabel, Button } from '@mui/material';
 import AddCellTypeLabel from './CellTypeUI/AddCellTypeLabel';
-import CellTypeLabelList from './CellTypeUI/CellTypeLabelList';
+import CellTypeAccordionList from './CellTypeUI/CellTypeAccordionList';
 import EditingPrompt from './CellTypeUI/EditingPrompt';
 
 function CellTypeControls() {
@@ -26,7 +26,7 @@ function CellTypeControls() {
                 </Button>
             </FormLabel>
             <AddCellTypeLabel />
-            <CellTypeLabelList />
+            <CellTypeAccordionList />
 			<EditingPrompt/>
         </Box>
   );
