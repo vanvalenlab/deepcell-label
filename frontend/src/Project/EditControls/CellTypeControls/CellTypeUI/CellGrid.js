@@ -6,13 +6,13 @@ import { useEditCellTypes } from '../../../ProjectContext';
 import Cell from './Cell';
 
 
-function EditNameField(props) {
-    const { id, name, cells } = props;
+function CellGrid(props) {
+    const { id, color, name, cells } = props;
     const editCellTypesRef = useEditCellTypes();
     const [remove, setRemove] = useState(-1);
 
     const handleAdd = () => {
-        editCellTypesRef.send({ type: 'ADD', cellType: id, name: name });
+        editCellTypesRef.send({ type: 'ADD', cellType: id, color: color, name: name });
     };
 
     const handleRemoveCell = (cell) => () => {
@@ -36,7 +36,7 @@ function EditNameField(props) {
                         >
                         { remove === cell
                             ? <ClearIcon/>
-                            : <ClearIcon sx={{opacity: 0}}/>
+                            : <ClearIcon sx={{opacity: 0, '&:hover': {opacity: 100}}}/>
                         }
                         </IconButton>
                 </Box>)
@@ -50,4 +50,4 @@ function EditNameField(props) {
     );
 };
 
-export default EditNameField;
+export default CellGrid;

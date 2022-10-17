@@ -42,7 +42,7 @@ function CellTypeAccordion(props) {
             </AccordionSummary>
             <AccordionDetails>
                 {/* Grid of cells to add and remove from cell type */}
-                <CellGrid id={cellType.id} name={cellType.name} cells={cellType.cells}/>
+                <CellGrid id={cellType.id} color={cellType.color} name={cellType.name} cells={cellType.cells}/>
             </AccordionDetails>
         </Accordion>
     )

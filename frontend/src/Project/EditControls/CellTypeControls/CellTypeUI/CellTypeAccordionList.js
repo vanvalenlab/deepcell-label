@@ -14,7 +14,7 @@ const accordionStyle = {
     overflowY: 'auto'
 };
 
-function CellTypeLabelList() {
+function CellTypeAccordionList() {
 
 	const cellTypes = useCellTypeList();
     const [expanded, setExpanded] = useState(-1);
@@ -38,10 +38,11 @@ function CellTypeLabelList() {
                         expanded={expanded}
                         setExpanded={setExpanded}
                     />
-                </div>)
-            }
+                </div>
+                )
+            } 
         </Box>
     );
 }
 
-export default CellTypeLabelList;
+export default CellTypeAccordionList;

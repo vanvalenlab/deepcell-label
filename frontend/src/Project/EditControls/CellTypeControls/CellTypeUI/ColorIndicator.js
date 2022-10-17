@@ -44,6 +44,15 @@ function EditNameField(props) {
                 color: color,
                 }}
             />
+            <EditIcon 
+                sx = {{
+                    position: 'absolute',
+                    color: 'white',
+                    fontSize: 18,
+                    opacity: editIcon,
+                }}   
+            />
+            </IconButton> 
             <Popper open={openColor} anchorEl={anchorRef.current} placement='bottom-start'>
                 <ClickAwayListener onClickAway={toggleColor}>
                     <TwitterPicker
@@ -52,16 +61,6 @@ function EditNameField(props) {
                     />
                 </ClickAwayListener>
             </Popper>
-            <EditIcon 
-                sx = {{
-                    position: 'absolute',
-                    zIndex: 1,
-                    color: 'white',
-                    fontSize: 18,
-                    opacity: editIcon,
-                }}   
-            />
-            </IconButton>  
         </Box>
     );
 };

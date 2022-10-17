@@ -4,6 +4,7 @@ import { useEditCells, useEditCellTypes, useEditDivisions, useEditSegment, useLa
 import AddDaughterCanvas from './AddDaughterCanvas';
 import AddCellTypeCanvas from './AddCellTypeCanvas';
 import BrushCanvas from './BrushCanvas';
+import CellTypeCanvas from './CellTypeCanvas';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
@@ -67,8 +68,14 @@ function ToolCanvas({ setBitmaps }) {
       return null;
     case 'cellTypes':
       if (addingCell) {
-        return <AddCellTypeCanvas setBitmaps={setBitmaps} />;
+        return (
+                <>
+                  <AddCellTypeCanvas setBitmaps={setBitmaps} />
+                  <CellTypeCanvas setBitmaps={setBitmaps} />
+                </>
+               );
       }
+      return <CellTypeCanvas setBitmaps={setBitmaps} />;
     default:
       return null;
   }
