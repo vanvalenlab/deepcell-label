@@ -1,6 +1,8 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { Box, IconButton } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ClearIcon from '@mui/icons-material/Clear';
+import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useEditCellTypes } from '../../../ProjectContext';
 import Cell from './Cell';
@@ -10,9 +12,15 @@ function CellGrid(props) {
     const { id, color, name, cells } = props;
     const editCellTypesRef = useEditCellTypes();
     const [remove, setRemove] = useState(-1);
+    const addingCell = useSelector(editCellTypesRef, (state) => state.matches('addingCell'));
 
     const handleAdd = () => {
-        editCellTypesRef.send({ type: 'ADD', cellType: id, color: color, name: name });
+        if (addingCell) {
+            editCellTypesRef.send({ type: 'RESET' });
+        }
+        else {
+            editCellTypesRef.send({ type: 'ADD', cellType: id, color: color, name: name });
+        }
     };
 
     const handleRemoveCell = (cell) => () => {
@@ -43,7 +51,10 @@ function CellGrid(props) {
             }
             <Box gridColumn="span 1">
                 <IconButton onClick={handleAdd}>
-                    <AddCircleOutlineIcon />
+                    { addingCell
+                        ? <CheckCircleOutlineIcon />
+                        : <AddCircleOutlineIcon />
+                    }
                 </IconButton>
             </Box>
         </Box>

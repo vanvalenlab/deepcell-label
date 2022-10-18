@@ -70,8 +70,8 @@ function ToolCanvas({ setBitmaps }) {
       if (addingCell) {
         return (
                 <>
-                  <AddCellTypeCanvas setBitmaps={setBitmaps} />
                   <CellTypeCanvas setBitmaps={setBitmaps} />
+                  <AddCellTypeCanvas setBitmaps={setBitmaps} />
                 </>
                );
       }
