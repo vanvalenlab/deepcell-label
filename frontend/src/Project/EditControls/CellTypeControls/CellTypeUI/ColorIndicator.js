@@ -7,7 +7,7 @@ import { TwitterPicker } from 'react-color';
 import { useReducer, useRef, useState } from 'react';
 import { useEditCellTypes } from '../../../ProjectContext';
 
-function EditNameField(props) {
+function ColorIndicator(props) {
     const { id, color } = props;
     const editCellTypesRef = useEditCellTypes();
     const anchorRef = useRef(null)
@@ -72,4 +72,4 @@ function EditNameField(props) {
     );
 };
 
-export default EditNameField;
+export default ColorIndicator;

@@ -1,6 +1,5 @@
 import { useSelector } from '@xstate/react';
-import React from 'react';
-import { useCanvas, useEditCells, useEditCellTypes, useEditDivisions, useEditSegment, useLabelMode } from '../../ProjectContext';
+import { useEditCells, useEditCellTypes, useEditDivisions, useEditSegment, useLabelMode } from '../../ProjectContext';
 import AddDaughterCanvas from './AddDaughterCanvas';
 import AddCellTypeCanvas from './AddCellTypeCanvas';
 import BrushCanvas from './BrushCanvas';
@@ -24,10 +23,6 @@ function ToolCanvas({ setBitmaps }) {
 
   const editCellTypes = useEditCellTypes();
   const addingCell = useSelector(editCellTypes, (state) => state.matches('addingCell'));
-
-  const canvas = useCanvas();
-  const x = useSelector(canvas, (state) => state.context.x);
-  const y = useSelector(canvas, (state) => state.context.y);
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
@@ -82,9 +77,7 @@ function ToolCanvas({ setBitmaps }) {
       return (
         <>
           <CellTypeCanvas setBitmaps={setBitmaps} />
-          <div style={{ position: 'absolute', top: y, left: x, width: 50, pointerEvents: 'none' }} >
-            <CellTypeHovering/>
-          </div>
+          <CellTypeHovering/>
         </>
       )
     default:

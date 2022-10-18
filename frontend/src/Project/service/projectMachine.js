@@ -33,7 +33,7 @@ const createProjectMachine = (projectId) =>
           image: new EventBus('image'), // SET_T
           labeled: new EventBus('labeled'), // SET_FEATURE
           raw: new EventBus('raw'), // SET_CHANNEL
-          cellTypes: new EventBus('cellTypes'), // CELL_TYPES
+          cellTypes: new EventBus('cellTypes'), // CELLTYPES
           select: new EventBus('select'), // SELECTED, receives GET_SELECTED and responds with SELECTED
           // EDIT events and label changes
           // TODO: rename to segment and separate raw arrays

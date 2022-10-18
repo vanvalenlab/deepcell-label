@@ -197,7 +197,8 @@ const hexToRgb = (hex) => {
 				let cellTypes;
 				cellTypes = ctx.cellTypes.map(
 					cellType => (cellType.id === evt.cellType && !cellType.cells.includes(evt.cell))
-						? {...cellType, cells: [...cellType.cells, evt.cell].sort()}
+						? {...cellType, cells: [...cellType.cells, evt.cell].sort(function(a, b) {
+							return a - b;})}
 						: cellType
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
