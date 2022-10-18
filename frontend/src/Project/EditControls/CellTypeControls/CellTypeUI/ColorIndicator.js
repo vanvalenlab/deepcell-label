@@ -27,7 +27,7 @@ function EditNameField(props) {
         toggleColor();
     }
 
-    // Handler to ensure hotkeys don't get used + Enter to finish typing
+    // Handler to ensure click away and hotkeys don't get used
     const handlePopper = (event) => {
         event.stopPropagation();
     };

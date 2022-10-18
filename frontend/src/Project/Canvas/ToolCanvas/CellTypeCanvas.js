@@ -62,8 +62,10 @@ function CellTypeCanvas({ setBitmaps }) {
           east = data[y + 1][x];
         }
         let outlineOpacity = 1;
+        let [r, g, b, a] = [0, 0, 0, 1];
         if (value < numValues) {
           for (let i = 0; i < numLabels; i++) {
+            let [sr, sg, sb, sa] = [0, 0, 0, 0];
             if (cells[value][i] === 1) {
               if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0
                   || north >= numValues || south >= numValues || west >= numValues || east >= numValues)
@@ -72,14 +74,28 @@ function CellTypeCanvas({ setBitmaps }) {
                   this.color(1, 1, 1, 1);
                 }
                 else {
-                  const [r, g, b, a] = colorMap[i];
-                  this.color(r, g, b, a);
+                  sr = colorMap[i][0];
+                  sg = colorMap[i][1];
+                  sb = colorMap[i][2];
+                  sa = colorMap[i][3];
+                  this.color(sr, sg, sb, sa);
                 }
               }
               else {
                 if (colorMap[i][3] !== 0) {
-                  const [r, g, b, a] = colorMap[i];
-                  this.color(r, g, b, 0.3);
+                  let opacity = 1;
+                  // Use mixing if overlap exists
+                  if (a < 1) {
+                    opacity = 0.3;
+                  }
+                  sr = opacity * colorMap[i][0];
+                  sg = opacity * colorMap[i][1];
+                  sb = opacity * colorMap[i][2];
+                  r = r + sr - r * sr;
+                  g = g + sg - g * sg;
+                  b = b + sb - b * sb;
+                  a = a * 0.7;
+                  this.color(r, g, b, 1 - a);
                 }
               }
             }

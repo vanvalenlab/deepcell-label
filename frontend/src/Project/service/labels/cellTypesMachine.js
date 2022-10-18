@@ -20,7 +20,7 @@ const hexToRgb = (hex) => {
 		parseInt(result[3], 16) / 255,
 		1
 	];
-  }  
+}
 
  const createCellTypesMachine = ({ eventBuses, undoRef }) =>
    Machine({
@@ -141,7 +141,7 @@ const hexToRgb = (hex) => {
 			setColorMap: assign({
 				colorMap: (ctx) => {
 					let numCells = new Cells(ctx.cells).getNewCell();
-					let colorMap = Array(numCells).fill([1, 1, 1, 0]);
+					let colorMap = Array(numCells).fill([0, 0, 0, 0]);
 					return colorMap;
 				}
 			}),
@@ -166,7 +166,15 @@ const hexToRgb = (hex) => {
 				for (let i = 0; i < numTypes; i++) {
 					let numCells = evt.cellTypes[i].cells.length;
 					for (let j = 0; j < numCells; j++) {
-						newColorMap[evt.cellTypes[i].cells[j]] = hexToRgb(evt.cellTypes[i].color);
+						let oldColor = newColorMap[evt.cellTypes[i].cells[j]];
+						let newColor = hexToRgb(evt.cellTypes[i].color);
+						const sr = newColor[0];
+						const sg = newColor[1];
+						const sb = newColor[2];
+						const r = oldColor[0] + sr - oldColor[0] * sr;
+						const g = oldColor[1] + sg - oldColor[1] * sg;
+						const b = oldColor[2] + sb - oldColor[2] * sb;
+						newColorMap[evt.cellTypes[i].cells[j]] = [r, g, b, 1];
 					}
 				}
 				return newColorMap;
