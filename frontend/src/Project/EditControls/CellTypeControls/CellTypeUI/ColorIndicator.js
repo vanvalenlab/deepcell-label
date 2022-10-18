@@ -27,6 +27,11 @@ function EditNameField(props) {
         toggleColor();
     }
 
+    // Handler to ensure hotkeys don't get used + Enter to finish typing
+    const handlePopper = (event) => {
+        event.stopPropagation();
+    };
+
     return (
         <Box sx={{position: 'relative', right: 15, bottom: 9}}>
             <IconButton 
@@ -55,10 +60,12 @@ function EditNameField(props) {
             </IconButton> 
             <Popper open={openColor} anchorEl={anchorRef.current} placement='bottom-start'>
                 <ClickAwayListener onClickAway={toggleColor}>
-                    <TwitterPicker
-                        color={ color }
-                        onChange={ handleColor }
-                    />
+                    <div onKeyDown={handlePopper} onClick={handlePopper}>
+                        <TwitterPicker
+                            color={ color }
+                            onChange={ handleColor }
+                        />
+                    </div>
                 </ClickAwayListener>
             </Popper>
         </Box>

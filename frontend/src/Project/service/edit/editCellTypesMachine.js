@@ -4,6 +4,7 @@
  * when interacting with the UI.
  */
  import { assign, Machine, send } from 'xstate';
+ import { pure } from 'xstate/lib/actions';
  import { fromEventBus } from '../eventBus';
  
  const createEditCellTypesMachine = ({ eventBuses }) =>
@@ -46,7 +47,7 @@
              mouseup: [
                { cond: 'onNoCell' },
                { cond: 'shift', actions: 'setCell' },
-               { cond: 'onCell', actions: 'addCell', target: 'idle' },
+               { cond: 'onCell', actions: 'addCell' },
                { actions: 'setCell' },
              ],
              RESET: { target: 'idle' },
@@ -91,14 +92,16 @@
            },
          }),
          resetCell: assign({ cell: null }),
-         addCell: send(
-           (ctx) => ({
+         addCell: pure(
+           (ctx) => [
+            send({
              type: 'ADD_CELL',
              cellType: ctx.cellType,
              cell: ctx.cell,
-           }),
-           { to: 'cellTypes' }
-         ),
+            },
+            { to: 'cellTypes' }),
+            assign({ cell: null })
+          ]),
          addCellType: send(
             (ctx) => ({
                 type: 'ADD_CELLTYPE',

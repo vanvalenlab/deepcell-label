@@ -79,7 +79,7 @@ function CellTypeCanvas({ setBitmaps }) {
               else {
                 if (colorMap[i][3] !== 0) {
                   const [r, g, b, a] = colorMap[i];
-                  this.color(r, g, b, 0.5);
+                  this.color(r, g, b, 0.3);
                 }
               }
             }

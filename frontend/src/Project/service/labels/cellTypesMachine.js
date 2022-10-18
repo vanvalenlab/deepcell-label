@@ -14,60 +14,60 @@
 // Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 const hexToRgb = (hex) => {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	return result ? [
-	  parseInt(result[1], 16) / 255,
-	  parseInt(result[2], 16) / 255,
-	  parseInt(result[3], 16) / 255,
-	  1
-	 ] : null;
+	return [
+		parseInt(result[1], 16) / 255,
+		parseInt(result[2], 16) / 255,
+		parseInt(result[3], 16) / 255,
+		1
+	];
   }  
 
  const createCellTypesMachine = ({ eventBuses, undoRef }) =>
    Machine({
-       id: 'cellTypes',
-       entry: send('REGISTER_LABELS', { to: undoRef }), 
-       invoke: [
-        { id: 'eventBus', src: fromEventBus('cellTypes', () => eventBuses.cellTypes) },
-        { src: fromEventBus('cellTypes', () => eventBuses.load, 'LOADED') },
-        { src: fromEventBus('cellTypes', () => eventBuses.cells) }, // listen for edit events (REPLACE, SWAP, REMOVE) and CELLS (generic updates)
-      ],
-       context: {
-         cellTypes: [],
-		 cells: null,
-		 colorMap: null,
-         undoRef: undoRef,
-         historyRef: null,
-         edit: null,
-       },
-       initial: 'loading',
-       states: {
+		id: 'cellTypes',
+		entry: send('REGISTER_LABELS', { to: undoRef }), 
+		invoke: [
+			{ id: 'eventBus', src: fromEventBus('cellTypes', () => eventBuses.cellTypes) },
+			{ src: fromEventBus('cellTypes', () => eventBuses.load, 'LOADED') },
+			{ src: fromEventBus('cellTypes', () => eventBuses.cells) }, // listen for edit events (REPLACE, SWAP, REMOVE) and CELLS (generic updates)
+		],
+		context: {
+			cellTypes: [],
+			cells: null,
+			colorMap: null,
+			undoRef: undoRef,
+			historyRef: null,
+			edit: null,
+		},
+		initial: 'loading',
+		states: {
 			loading: {
-			type: 'parallel',
-			states: {
-				getCellTypes: {
-				initial: 'waiting',
+				type: 'parallel',
 				states: {
-					waiting: {
-						on: {
-							LOADED: { actions: ['setCellTypes', 'setCells', 'setColorMap', 'updateColorMap'], target: 'done' },
+					getCellTypes: {
+						initial: 'waiting',
+						states: {
+							waiting: {
+								on: {
+									LOADED: { actions: ['setCellTypes', 'setCells', 'setColorMap', 'updateColorMap'], target: 'done' },
+								},
+							},
+							done: { type: 'final' },
 						},
 					},
-					done: { type: 'final' },
-				},
-				},
-				getHistoryRef: {
-				initial: 'waiting',
-				states: {
-					waiting: {
-					on: {
-						LABEL_HISTORY: { target: 'done', actions: 'setHistoryRef' },
+					getHistoryRef: {
+						initial: 'waiting',
+						states: {
+							waiting: {
+								on: {
+									LABEL_HISTORY: { target: 'done', actions: 'setHistoryRef' },
+								},
+							},
+							done: { type: 'final' },
+						},
 					},
-					},
-					done: { type: 'final' },
 				},
-				},
-			},
-			onDone: { target: 'loaded' },
+				onDone: { target: 'loaded' },
 			},
 			loaded: {
 				type: 'parallel',
@@ -132,17 +132,17 @@ const hexToRgb = (hex) => {
 				},
 			},
 		},
-    },
-    {
+	},
+	{
 		actions: {
 			setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
 			setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
 			setCells: assign({ cells: (_, evt) => evt.cells }),
 			setColorMap: assign({
 				colorMap: (ctx) => {
-				  let numCells = new Cells(ctx.cells).getNewCell();
-				  let colorMap = Array(numCells).fill([1, 1, 1, 0]);
-				  return colorMap;
+					let numCells = new Cells(ctx.cells).getNewCell();
+					let colorMap = Array(numCells).fill([1, 1, 1, 0]);
+					return colorMap;
 				}
 			}),
 			setEditEvent: assign({ editEvent: (ctx, evt) => evt }),
@@ -161,17 +161,16 @@ const hexToRgb = (hex) => {
 				to: 'eventBus',
 			}),
 			updateColorMap: assign({colorMap: (ctx, evt) => {
-					let numTypes = evt.cellTypes.length;
-					let newColorMap = ctx.colorMap;
-					for (let i = 0; i < numTypes; i++) {
-						let numCells = evt.cellTypes[i].cells.length;
-						for (let j = 0; j < numCells; j++) {
-							newColorMap[evt.cellTypes[i].cells[j]] = hexToRgb(evt.cellTypes[i].color);
-						}
+				let numTypes = evt.cellTypes.length;
+				let newColorMap = ctx.colorMap;
+				for (let i = 0; i < numTypes; i++) {
+					let numCells = evt.cellTypes[i].cells.length;
+					for (let j = 0; j < numCells; j++) {
+						newColorMap[evt.cellTypes[i].cells[j]] = hexToRgb(evt.cellTypes[i].color);
 					}
-					return newColorMap;
 				}
-			}),
+				return newColorMap;
+			}}),
 			finishEditing: pure((ctx) => {
 				return [
 					assign({ cellTypes: (ctx) => ctx.editedCellTypes }),
@@ -189,8 +188,8 @@ const hexToRgb = (hex) => {
 			addCell: send((ctx, evt) => {
 				let cellTypes;
 				cellTypes = ctx.cellTypes.map(
-					cellType => cellType.id === evt.cellType
-						? {...cellType, cells: [...cellType.cells, evt.cell]}
+					cellType => (cellType.id === evt.cellType && !cellType.cells.includes(evt.cell))
+						? {...cellType, cells: [...cellType.cells, evt.cell].sort()}
 						: cellType
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
@@ -208,7 +207,7 @@ const hexToRgb = (hex) => {
 			}),
 			addCellType: send((ctx, evt) => {
 				let cellTypes;
-				cellTypes = [...ctx.cellTypes, {id: ctx.maxId + 1, name: 'Untitled', color: evt.color, cells: []}];
+				cellTypes = [...ctx.cellTypes, {id: ctx.maxId + 1, name: `Untitled ${ctx.maxId + 1}`, color: evt.color, cells: []}];
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
 			removeCellType: send((ctx, evt) => {
