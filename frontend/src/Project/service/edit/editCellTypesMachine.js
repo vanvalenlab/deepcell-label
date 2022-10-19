@@ -27,32 +27,49 @@
        on: {
          SELECTED: { actions: 'setSelected' },
          HOVERING: { actions: 'setHovering' },
-         REMOVE_ONE: { actions: 'removeCell' },
+         REMOVE_ONE: { actions: ['setCell', 'setCellType', 'removeCell'] },
          REMOVE_TYPE: { actions: 'removeCellType' },
        },
        initial: 'idle',
        states: {
-         idle: {
-           on: {
-             mouseup: { actions: 'select' },
-             ADD: { target: 'addingCell', actions: ['setCellType', 'setName'] },
-             ADD_TYPE: { actions: ['setColor', 'addCellType'] },
-             COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
-             NAME: { actions: ['setCellType', 'setName', 'editName'] },
-           },
-         },
-         addingCell: {
-           entry: 'resetCell',
-           on: {
-             mouseup: [
-               { cond: 'onNoCell' },
-               { cond: 'shift', actions: 'setCell' },
-               { cond: 'onCell', actions: 'addCell' },
-               { actions: 'setCell' },
-             ],
-             RESET: { target: 'idle' },
-           },
-         },
+          idle: {
+            on: {
+              mouseup: { actions: 'select' },
+              ADD: { target: 'addingCell', actions: ['setCellType', 'setName'] },
+              REMOVE_MODE: { target: 'removingCell', actions: ['setCellType', 'setName'] },
+              ADD_TYPE: { actions: ['setColor', 'addCellType'] },
+              COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
+              NAME: { actions: ['setCellType', 'setName', 'editName'] },
+            },
+          },
+          addingCell: {
+            entry: 'resetCell',
+            on: {
+              mouseup: [
+                { cond: 'onNoCell' },
+                { cond: 'shift', actions: 'setCell' },
+                { cond: 'onCell', actions: 'addCell' },
+                { actions: 'setCell' },
+              ],
+              COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
+              NAME: { actions: ['setCellType', 'setName', 'editName'] },
+              RESET: { target: 'idle' },
+            },
+          },
+          removingCell: {
+            entry: 'resetCell',
+            on: {
+              mouseup: [
+                { cond: 'onNoCell' },
+                { cond: 'shift', actions: 'setCell' },
+                { cond: 'onCell', actions: 'removeCell' },
+                { actions: 'setCell' },
+              ],
+              COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
+              NAME: { actions: ['setCellType', 'setName', 'editName'] },
+              RESET: { target: 'idle' },
+            },
+          },
        },
      },
      {
@@ -67,10 +84,10 @@
          setSelected: assign({ selected: (_, evt) => evt.selected }),
          setHovering: assign({ hovering: (_, evt) => evt.hovering }),
          removeCell: send(
-           (_, evt) => ({
+           (ctx, _) => ({
              type: 'REMOVE_CELL',
-             cell: evt.cell,
-             cellType: evt.cellType,
+             cell: ctx.cell,
+             cellType: ctx.cellType,
            }),
            { to: 'cellTypes' }
          ),

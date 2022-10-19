@@ -8,7 +8,7 @@ import EditDeleteMenu from './EditDeleteMenu';
 import EditNameField from './EditNameField';
 
 const rowStyle = {
-    boxShadow: 1,
+    boxShadow: 2,
     marginTop: 1,
     marginBottom: 1,
 };

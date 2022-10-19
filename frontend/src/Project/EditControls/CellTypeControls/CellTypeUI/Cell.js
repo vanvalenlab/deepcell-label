@@ -19,14 +19,15 @@ const Cell = React.forwardRef(({ cell }, ref) => {
       ref={ref}
       onClick={onClick}
       sx={{
-        height: '2.5rem',
-        width: '2.5rem',
+        height: '2rem',
+        width: '2rem',
         margin: 'auto',
         right: 3,
         color: textColor,
         backgroundColor: color,
         border: color === '#ffffff' ? '0.1px solid black' : 'none',
         boxSizing: 'border-box',
+        fontSize: 14,
       }}
     >
       {cell}

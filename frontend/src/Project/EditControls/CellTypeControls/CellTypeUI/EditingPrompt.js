@@ -11,6 +11,7 @@ const paperStyle = {
 function EditingPrompt() {
   const editCellTypes = useEditCellTypes();
   const addingCell = useSelector(editCellTypes, (state) => state.matches('addingCell'));
+  const removingCell = useSelector(editCellTypes, (state) => state.matches('removingCell'));
   const cell = useSelector(editCellTypes, (state) => state.context.cell);
   const cellType = useSelector(editCellTypes, (state) => state.context.name);
 
@@ -22,7 +23,7 @@ function EditingPrompt() {
   );
   const toolTipWidth = scale * sw / 2 + 370;
 
-  if (!addingCell) {
+  if (!(addingCell || removingCell)) {
     return null;
   }
 
@@ -31,10 +32,10 @@ function EditingPrompt() {
     <Paper style={paperStyle}>
       {cell ? (
         <Typography sx={{color: 'white'}}>
-          Click again to add cell {cell} to cell type {cellType}.
+          Click again to {addingCell ? 'add' : 'remove'} cell {cell} {addingCell ? 'to' : 'from'} cell type {cellType}.
         </Typography>
       ) : (
-        <Typography sx={{color: 'white'}}>Click a cell to add to cell type {cellType}.</Typography>
+        <Typography sx={{color: 'white'}}>Click a cell to {addingCell ? 'add to' : 'remove from'} cell type {cellType}.</Typography>
       )}
     </Paper>
     </Box>

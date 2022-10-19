@@ -28,7 +28,7 @@ function CellTypeHovering() {
   
   return (
     <div style={{
-      width: 100,
+      width: 130,
       position: 'relative',
       top: (y - sy) * zoom * scale,
       left: (x - sx) * zoom * scale,
@@ -40,9 +40,9 @@ function CellTypeHovering() {
         <Paper sx={{wordWrap: 'break-word'}}>
             {cells.map((cell) => (
                 getCellTypeList(cell, cellTypes).map((type) => (
-                  <Box>
+                  <Box key={type.id}>
                     <CircleIcon sx={{ fontSize: 10, color: type.color, display: 'inline-block', marginBottom: 0.11, marginLeft: 0.5, marginRight: 0.75 }}/>
-                    <Typography key={type.id} sx={{ fontSize: 11, display: 'inline', position: 'relative', top: -2 }}>
+                    <Typography sx={{ fontSize: 11, display: 'inline', position: 'relative', top: -2 }}>
                       {type.name} ({cell})
                     </Typography>
                     <br/>

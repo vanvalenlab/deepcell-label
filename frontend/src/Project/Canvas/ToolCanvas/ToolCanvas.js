@@ -23,6 +23,7 @@ function ToolCanvas({ setBitmaps }) {
 
   const editCellTypes = useEditCellTypes();
   const addingCell = useSelector(editCellTypes, (state) => state.matches('addingCell'));
+  const removingCell = useSelector(editCellTypes, (state) => state.matches('removingCell'));
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
@@ -66,7 +67,7 @@ function ToolCanvas({ setBitmaps }) {
       }
       return null;
     case 'cellTypes':
-      if (addingCell) {
+      if (addingCell || removingCell) {
         return (
                 <>
                   <CellTypeCanvas setBitmaps={setBitmaps} />
