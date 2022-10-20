@@ -3,7 +3,7 @@ import equal from 'fast-deep-equal';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import CellTypeAccordion from './CellTypeAccordion';
-import { useCellTypeList, useCanvas } from '../../../ProjectContext';
+import { useCellTypes, useCanvas } from '../../../ProjectContext';
 
 const accordionStyle = {
     position: 'relative',
@@ -16,7 +16,7 @@ const accordionStyle = {
 
 function CellTypeAccordionList() {
 
-	const cellTypes = useCellTypeList();
+    const cellTypesRef = useCellTypes();
     const [expanded, setExpanded] = useState(-1);
     const canvasMachine = useCanvas();
     const [sh, scale] = useSelector(
@@ -24,14 +24,18 @@ function CellTypeAccordionList() {
         (state) => [state.context.height, state.context.scale],
         equal
     );
+    const cellTypes = useSelector(cellTypesRef, (state) => state.context.cellTypes);
+    const feature = useSelector(cellTypesRef, (state) => state.context.feature);
+   
     const menuHeight = scale * sh - 100;
+    const currentCellTypes = cellTypes.filter((cellType) => cellType.feature === feature);
 
     return (
         <Box 
             height={menuHeight}
             style={accordionStyle}
         >
-            {cellTypes.map((cellType) => 
+            {currentCellTypes.map((cellType) => 
                 <div key={cellType.id}>
                     <CellTypeAccordion
                         cellType={cellType}

@@ -83,13 +83,16 @@
          select: send('SELECT', { to: 'select' }),
          setSelected: assign({ selected: (_, evt) => evt.selected }),
          setHovering: assign({ hovering: (_, evt) => evt.hovering }),
-         removeCell: send(
-           (ctx, _) => ({
+         removeCell: pure(
+           (ctx, _) => [
+            send({
              type: 'REMOVE_CELL',
              cell: ctx.cell,
              cellType: ctx.cellType,
-           }),
-           { to: 'cellTypes' }
+            },
+            { to: 'cellTypes' }),
+            assign({ cell: null })
+          ]
          ),
          removeCellType: send(
             (_, evt) => ({

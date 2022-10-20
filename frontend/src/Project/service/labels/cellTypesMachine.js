@@ -22,6 +22,32 @@ const hexToRgb = (hex) => {
 	];
 }
 
+/** Removes cell from all cellTypes. */
+function remove(cellTypes, cell) {
+	return (
+		cellTypes
+			.map((cellType) => {
+				let cells = cellType.cells;
+				cells = cells.filter((oldCell) =>
+					oldCell !== cell);
+				return { ...cellType, cells };
+			})
+	  );
+  }
+
+function updateFromCells(cellTypes, cells) {
+	return (
+	  cellTypes
+		// remove cells that no longer exist
+		.map((cellType) => {
+			let cellList = cellType.cells;
+			cellList = cellList.filter((cell) =>
+				cells.some((newCell) => newCell.cell === cell));
+			return { ...cellType, cells: cellList };
+		})
+	);
+}
+
  const createCellTypesMachine = ({ eventBuses, undoRef }) =>
    Machine({
 		id: 'cellTypes',
@@ -29,11 +55,13 @@ const hexToRgb = (hex) => {
 		invoke: [
 			{ id: 'eventBus', src: fromEventBus('cellTypes', () => eventBuses.cellTypes) },
 			{ src: fromEventBus('cellTypes', () => eventBuses.load, 'LOADED') },
+			{ src: fromEventBus('cellTypes', () => eventBuses.labeled, 'SET_FEATURE') },
 			{ src: fromEventBus('cellTypes', () => eventBuses.cells) }, // listen for edit events (REPLACE, SWAP, REMOVE) and CELLS (generic updates)
 		],
 		context: {
 			cellTypes: [],
-			cells: null,
+			feature: 0,
+			numCells: null,
 			colorMap: null,
 			undoRef: undoRef,
 			historyRef: null,
@@ -49,7 +77,7 @@ const hexToRgb = (hex) => {
 						states: {
 							waiting: {
 								on: {
-									LOADED: { actions: ['setCellTypes', 'setCells', 'setColorMap', 'updateColorMap'], target: 'done' },
+									LOADED: { actions: ['setCellTypes', 'setCells', 'updateColorMap'], target: 'done' },
 								},
 							},
 							done: { type: 'final' },
@@ -76,7 +104,7 @@ const hexToRgb = (hex) => {
 						initial: 'idle',
 						states: {
 							idle: {
-								entry: 'sendCellTypes',
+								entry: ['sendCellTypes', 'updateColorMap'],
 								on: {
 									// From editCellTypesMachine
 									ADD_CELL: { actions: 'addCell', target: 'editing' },
@@ -104,7 +132,7 @@ const hexToRgb = (hex) => {
 										states: {
 											editing: {
 												on: {
-													EDITED_CELLTYPES: { target: 'done', actions: ['setEditedCellTypes', 'setColorMap', 'updateColorMap'] },
+													EDITED_CELLTYPES: { target: 'done', actions: 'setEditedCellTypes' },
 												},
 											},
 											done: { type: 'final' },
@@ -113,7 +141,7 @@ const hexToRgb = (hex) => {
 								},
 								onDone: {
 									target: 'idle',
-									actions: 'finishEditing',
+									actions: 'finishEditing'
 								},
 							},
 						},
@@ -122,11 +150,12 @@ const hexToRgb = (hex) => {
 						on: {
 							// from CELLS event bus
 							// REPLACE: { actions: ['replace', 'sendCellTypes'] },
-							// DELETE: { actions: ['delete', 'sendCellTypes'] },
+							DELETE: { actions: ['delete', 'sendCellTypes'] },
 							// SWAP: { actions: ['swap', 'sendCellTypes'] },
-							// EDITED_CELLS: { actions: 'updateFromCells' },
+							EDITED_CELLS: { actions: ['setCells', 'updateFromCells', 'updateColorMap'] },
 							CELLS: { actions: 'setCells' },
-							RESTORE: { actions: ['setColorMap', 'updateColorMap', 'restore'] },
+							RESTORE: { actions: ['restore', 'updateColorMap'] },
+							SET_FEATURE: { actions: ['setFeature', 'updateColorMap'] },
 						},
 					},
 				},
@@ -137,18 +166,12 @@ const hexToRgb = (hex) => {
 		actions: {
 			setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
 			setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
-			setCells: assign({ cells: (_, evt) => evt.cells }),
-			setColorMap: assign({
-				colorMap: (ctx) => {
-					let numCells = new Cells(ctx.cells).getNewCell();
-					let colorMap = Array(numCells).fill([0, 0, 0, 0]);
-					return colorMap;
-				}
-			}),
-			setEditEvent: assign({ editEvent: (ctx, evt) => evt }),
+			setCells: assign({ numCells: (_, evt) => new Cells(evt.cells).getNewCell() }),
+			setEditEvent: assign({ editEvent: (_, evt) => evt }),
+			setFeature: assign({ feature: (_, evt) => evt.feature }),
 			startEdit: send('SAVE', { to: (ctx) => ctx.undoRef }),
-			setEdit: assign({ edit: (ctx, evt) => evt.edit }),
-			setEditedCellTypes: assign({ editedCellTypes: (ctx, evt) => evt.cellTypes }),
+			setEdit: assign({ edit: (_, evt) => evt.edit }),
+			setEditedCellTypes: assign({ editedCellTypes: (_, evt) => evt.cellTypes }),
 			setMaxId: assign({ maxId: (ctx) => {
 					const ids = ctx.cellTypes.map(cellType => cellType.id);
 					if (ids.length === 0) {
@@ -160,25 +183,48 @@ const hexToRgb = (hex) => {
 			sendCellTypes: send((ctx) => ({ type: 'CELLTYPES', cellTypes: ctx.cellTypes }), {
 				to: 'eventBus',
 			}),
-			updateColorMap: assign({colorMap: (ctx, evt) => {
-				let numTypes = evt.cellTypes.length;
-				let newColorMap = ctx.colorMap;
+			updateColorMap: pure(() => assign({ colorMap: (ctx) => { 
+				let cellTypes = ctx.cellTypes.filter((cellType) => cellType.feature === ctx.feature);
+				let numTypes = cellTypes.length;
+				let newColorMap = Array(ctx.numCells).fill([0, 0, 0, 0]);
 				for (let i = 0; i < numTypes; i++) {
-					let numCells = evt.cellTypes[i].cells.length;
+					let numCells = cellTypes[i].cells.length;
 					for (let j = 0; j < numCells; j++) {
-						let oldColor = newColorMap[evt.cellTypes[i].cells[j]];
-						let newColor = hexToRgb(evt.cellTypes[i].color);
+						let oldColor = newColorMap[cellTypes[i].cells[j]];
+						let newColor = hexToRgb(cellTypes[i].color);
 						const sr = newColor[0];
 						const sg = newColor[1];
 						const sb = newColor[2];
 						const r = oldColor[0] + sr - oldColor[0] * sr;
 						const g = oldColor[1] + sg - oldColor[1] * sg;
 						const b = oldColor[2] + sb - oldColor[2] * sb;
-						newColorMap[evt.cellTypes[i].cells[j]] = [r, g, b, 1];
+						newColorMap[cellTypes[i].cells[j]] = [r, g, b, 1];
 					}
 				}
 				return newColorMap;
-			}}),
+			}})),
+			delete: pure((ctx, evt) => {
+				let cellTypes = remove(ctx.cellTypes, evt.cell);
+				const before = { type: 'RESTORE', cellTypes: ctx.cellTypes };
+				const after = { type: 'RESTORE', cellTypes: cellTypes };
+				return [
+				  assign({ cellTypes }),
+				  send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),
+				];
+			}),
+			updateFromCells: pure((ctx, evt) => {
+				let cellTypes = updateFromCells(ctx.cellTypes, evt.cells);
+				if (!equal(cellTypes, ctx.cellTypes)) {
+				  const before = { type: 'RESTORE', cellTypes: ctx.cellTypes };
+				  const after = { type: 'RESTORE', cellTypes: cellTypes };
+				  return [
+					assign({ cellTypes }),
+					send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),
+					send({ type: 'CELLTYPES', cellTypes }, { to: 'eventBus' }),
+				  ];
+				}
+				return [];
+			}),
 			finishEditing: pure((ctx) => {
 				return [
 					assign({ cellTypes: (ctx) => ctx.editedCellTypes }),
@@ -216,7 +262,12 @@ const hexToRgb = (hex) => {
 			}),
 			addCellType: send((ctx, evt) => {
 				let cellTypes;
-				cellTypes = [...ctx.cellTypes, {id: ctx.maxId + 1, name: `Untitled ${ctx.maxId + 1}`, color: evt.color, cells: []}];
+				cellTypes = [...ctx.cellTypes, {
+					id: ctx.maxId + 1,
+					feature: ctx.feature,
+					name: `Untitled ${ctx.maxId + 1}`,
+					color: evt.color,
+					cells: []}];
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
 			removeCellType: send((ctx, evt) => {
@@ -242,7 +293,7 @@ const hexToRgb = (hex) => {
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
-			restore: pure((ctx, evt) => {
+			restore: pure((_, evt) => {
 				return [
 					assign({ cellTypes: evt.cellTypes }),
 					send({ type: 'CELLTYPES', cellTypes: evt.cellTypes }, { to: 'eventBus' }),

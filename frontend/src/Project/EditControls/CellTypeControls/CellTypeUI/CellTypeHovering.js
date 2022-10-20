@@ -1,7 +1,7 @@
 import { Box, Typography, Paper } from '@mui/material';
 import CircleIcon from '@mui/icons-material/Circle';
 import { useSelector } from '@xstate/react';
-import { useCanvas, useCellTypeList, useHovering } from '../../../ProjectContext';
+import { useCanvas, useCellTypes, useHovering } from '../../../ProjectContext';
 
 const getCellTypeList = (cell, cellTypes) => {
 	const numCellTypes = cellTypes.length;
@@ -16,8 +16,9 @@ const getCellTypeList = (cell, cellTypes) => {
 
 function CellTypeHovering() {
   const cells = useHovering();
-  const cellTypes = useCellTypeList();
+  const cellTypesRef = useCellTypes();
   const canvas = useCanvas();
+  const cellTypes = useSelector(cellTypesRef, (state) => state.context.cellTypes);
   const sx = useSelector(canvas, (state) => state.context.sx);
   const sy = useSelector(canvas, (state) => state.context.sy);
   const x = useSelector(canvas, (state) => state.context.x);

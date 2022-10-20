@@ -91,12 +91,6 @@ export function useCellTypes() {
   return cellTypes;
 }
 
-export function useCellTypeList() {
-  const cellTypesMachine = useCellTypes();
-  const cellTypes = useSelector(cellTypesMachine, (state) => state.context.cellTypes);
-  return cellTypes;
-}
-
 export function useDivisions() {
   const project = useProject();
   const divisions = useSelector(project, (state) => state.context.divisionsRef);
