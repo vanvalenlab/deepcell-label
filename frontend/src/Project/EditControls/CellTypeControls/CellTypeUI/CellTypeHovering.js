@@ -19,6 +19,8 @@ function CellTypeHovering() {
   const cellTypesRef = useCellTypes();
   const canvas = useCanvas();
   const cellTypes = useSelector(cellTypesRef, (state) => state.context.cellTypes);
+  const feature = useSelector(cellTypesRef, (state) => state.context.feature);
+  const currentCellTypes = cellTypes.filter((cellType) => cellType.feature === feature);
   const sx = useSelector(canvas, (state) => state.context.sx);
   const sy = useSelector(canvas, (state) => state.context.sy);
   const x = useSelector(canvas, (state) => state.context.x);
@@ -40,7 +42,7 @@ function CellTypeHovering() {
       ) : (
         <Paper sx={{wordWrap: 'break-word'}}>
             {cells.map((cell) => (
-                getCellTypeList(cell, cellTypes).map((type) => (
+                getCellTypeList(cell, currentCellTypes).map((type) => (
                   <Box key={type.id}>
                     <CircleIcon sx={{ fontSize: 10, color: type.color, display: 'inline-block', marginBottom: 0.11, marginLeft: 0.5, marginRight: 0.75 }}/>
                     <Typography sx={{ fontSize: 11, display: 'inline', position: 'relative', top: -2 }}>

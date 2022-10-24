@@ -21,7 +21,7 @@ const addButtonStyle = {
     boxShadow: 1,
     marginTop: -2,
     marginBottom: 2,
-    width: '95%'
+    width: '95%',
 };
 
 const buttonBoxStyle = {
@@ -32,7 +32,7 @@ const buttonBoxStyle = {
 };
 
 function CellGrid(props) {
-    const { id, color, name, cells } = props;
+    const { id, name, cells } = props;
     const editCellTypesRef = useEditCellTypes();
     const [remove, setRemove] = useState(-1);
     const addingCell = useSelector(editCellTypesRef, (state) => state.matches('addingCell'));
@@ -41,16 +41,16 @@ function CellGrid(props) {
     // Handle logic for resetting add/remove or starting add mode
     const handleAdd = () => {
         if (addingCell || removingCell) {
-            editCellTypesRef.send({ type: 'RESET' });
+            setTimeout(() => editCellTypesRef.send({ type: 'RESET' }), 100);
         }
         else {
-            editCellTypesRef.send({ type: 'ADD', cellType: id, name: name });
+            setTimeout(() => editCellTypesRef.send({ type: 'ADD', cellType: id, name: name }), 100);
         }
     };
 
     // Handle starting the remove mode
     const handleRemove = () => {
-        editCellTypesRef.send({ type: 'REMOVE_MODE', cellType: id, name: name });
+        setTimeout(() => editCellTypesRef.send({ type: 'REMOVE_MODE', cellType: id, name: name }), 100);
     };
 
     // const handleRemoveCell = (cell) => () => {

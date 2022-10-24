@@ -71,6 +71,7 @@ function ToolCanvas({ setBitmaps }) {
         return (
                 <>
                   <CellTypeCanvas setBitmaps={setBitmaps} />
+                  <CellTypeHovering/>
                   <AddCellTypeCanvas setBitmaps={setBitmaps} />
                 </>
                );
