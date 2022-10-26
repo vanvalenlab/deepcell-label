@@ -8,6 +8,14 @@ import Popper from '@mui/material/Popper';
 import { useEditCellTypes } from '../../../ProjectContext';
 import { useReducer, useRef } from 'react';
 
+const editStyle = {
+    position: 'absolute',
+    marginLeft: 30,
+    marginTop: -0.5,
+    color: 'gray',
+    height: '42%',
+}
+
 function EditDeleteMenu(props) {
     const { toggleType, id } = props;
     const editCellTypesRef = useEditCellTypes();
@@ -30,13 +38,7 @@ function EditDeleteMenu(props) {
             onClick={handleClickMenu}
             ref={anchorRef}
             style={{borderRadius: 20}}
-            sx = {{
-                position: 'absolute',
-                left: 255,
-                bottom: 30,
-                color: 'gray',
-                height: '50%',
-            }}
+            sx = {editStyle}
         > 
         <MoreVertIcon/>
         <Popper open={openMenu} anchorEl={anchorRef.current} placement='bottom-start'>

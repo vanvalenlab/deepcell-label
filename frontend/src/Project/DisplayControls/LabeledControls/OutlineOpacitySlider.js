@@ -53,10 +53,11 @@ function OutlineOpacitySlider() {
         max={1}
         // track={false}
         step={0.01}
+        size='small'
         onChange={handleChange}
         onDoubleClick={handleDoubleClick}
         componentsProps={{ input: { ref: inputRef } }}
-        sx={{ py: 0 }}
+        sx={{ py: 0, '& .MuiSlider-thumb': { height: 15, width: 15 } }}
       />
     </Tooltip>
     // </Tooltip>

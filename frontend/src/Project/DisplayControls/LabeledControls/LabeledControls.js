@@ -8,7 +8,7 @@ import OutlineOpacitySlider from './OutlineOpacitySlider';
 const LabeledControls = () => {
   return (
     <>
-      <Grid container direction='column'>
+      <Grid container direction='column' spacing={1}>
         <Grid item>
           <FeatureSelect />
         </Grid>

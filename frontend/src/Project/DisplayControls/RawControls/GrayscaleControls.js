@@ -88,7 +88,7 @@ const BrightnessSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary' }}
+      sx={{ color: 'primary', '& .MuiSlider-thumb': { height: 15, width: 15 } }}
       value={brightness}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -96,6 +96,7 @@ const BrightnessSlider = ({ channel }) => {
       min={-1}
       max={1}
       step={0.01}
+      size='small'
       orientation='horizontal'
       componentsProps={{ input: { ref: inputRef } }}
     />
@@ -113,7 +114,7 @@ const ContrastSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary' }}
+      sx={{ color: 'primary', '& .MuiSlider-thumb': { height: 15, width: 15 } }}
       value={contrast}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -121,6 +122,7 @@ const ContrastSlider = ({ channel }) => {
       min={-1}
       max={1}
       step={0.01}
+      size='small'
       orientation='horizontal'
       componentsProps={{ input: { ref: inputRef } }}
     />
@@ -136,7 +138,7 @@ const RangeSlider = ({ channel }) => {
 
   return (
     <Slider
-      sx={{ color: 'primary' }}
+      sx={{ color: 'primary', '& .MuiSlider-thumb': { height: 15, width: 15 } }}
       value={range}
       onChange={onChange}
       onDoubleClick={onDoubleClick}
@@ -144,6 +146,7 @@ const RangeSlider = ({ channel }) => {
       min={0}
       max={255}
       step={1}
+      size='small'
       orientation='horizontal'
       componentsProps={{ input: { ref: inputRef } }}
     />

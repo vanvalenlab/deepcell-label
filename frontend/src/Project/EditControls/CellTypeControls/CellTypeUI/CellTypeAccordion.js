@@ -3,6 +3,8 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import { useReducer } from 'react';
 import CellGrid from './CellGrid';
+import CellTypeCheckbox from './CellTypeCheckbox';
+import CellTypeOpacitySlider from './CellTypeOpacitySlider';
 import ColorIndicator from './ColorIndicator';
 import EditDeleteMenu from './EditDeleteMenu';
 import EditNameField from './EditNameField';
@@ -20,6 +22,8 @@ const accordionSummaryStyle = {
 function CellTypeAccordion(props) {
     const { cellType, expanded, setExpanded } = props;
 
+    const [openColor, toggleColor] = useReducer((v) => !v, false);
+
     // Event handler for expanding accordion
     const handleChange = (panel) => (event, isExpanded) => {
         setExpanded(isExpanded ? panel : false);
@@ -31,18 +35,24 @@ function CellTypeAccordion(props) {
     return (
         <Accordion sx={rowStyle} expanded={expanded === cellType.id} onChange={handleChange(cellType.id)}>
             <AccordionSummary style={accordionSummaryStyle}>
-                {/* Editable color symbol for cell type */}
-                <ColorIndicator id={cellType.id} color={cellType.color}/>
+                {/* Toggle view of Cell Type with checkbox*/}
+                <CellTypeCheckbox id={cellType.id} color={cellType.color} openColor={openColor} />
+
+                {/* Slider for cell type opacity on canvas */}
+                <CellTypeOpacitySlider id={cellType.id} color={cellType.color} />
 
                 {/* Editable cell type name */}
                 <EditNameField id={cellType.id} cellName={cellType.name} typing={typing} toggleType={toggleType} />
+
+                {/* Editable color symbol for cell type */}
+                <ColorIndicator id={cellType.id} color={cellType.color} openColor={openColor} toggleColor={toggleColor} />
 
                 {/* Options button to open menu for name edit and delete */}
                 <EditDeleteMenu id={cellType.id} toggleType={toggleType} />
             </AccordionSummary>
             <AccordionDetails>
                 {/* Grid of cells to add and remove from cell type */}
-                <CellGrid id={cellType.id} name={cellType.name} cells={cellType.cells}/>
+                <CellGrid id={cellType.id} name={cellType.name} cells={cellType.cells} />
             </AccordionDetails>
         </Accordion>
     )

@@ -63,6 +63,8 @@ function updateFromCells(cellTypes, cells) {
 			feature: 0,
 			numCells: null,
 			colorMap: null,
+			isOn: [],
+			opacities: [],
 			undoRef: undoRef,
 			historyRef: null,
 			edit: null,
@@ -77,7 +79,9 @@ function updateFromCells(cellTypes, cells) {
 						states: {
 							waiting: {
 								on: {
-									LOADED: { actions: ['setCellTypes', 'setCells', 'updateColorMap'], target: 'done' },
+									LOADED: { actions: ['setCellTypes', 'setCells', 'setMaxId', 
+														'setOpacities', 'setIsOn', 'updateColorMap'],
+											  target: 'done' },
 								},
 							},
 							done: { type: 'final' },
@@ -153,6 +157,8 @@ function updateFromCells(cellTypes, cells) {
 							DELETE: { actions: ['delete', 'sendCellTypes'] },
 							// SWAP: { actions: ['swap', 'sendCellTypes'] },
 							EDITED_CELLS: { actions: ['setCells', 'updateFromCells', 'updateColorMap'] },
+							EDIT_IS_ON: { actions: ['editIsOn', 'updateColorMap'] },
+							EDIT_OPACITY: { actions: ['editOpacities', 'updateColorMap'] },
 							CELLS: { actions: 'setCells' },
 							RESTORE: { actions: ['restore', 'updateColorMap'] },
 							SET_FEATURE: { actions: ['setFeature', 'updateColorMap'] },
@@ -167,6 +173,8 @@ function updateFromCells(cellTypes, cells) {
 			setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
 			setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
 			setCells: assign({ numCells: (_, evt) => new Cells(evt.cells).getNewCell() }),
+			setIsOn: assign({ isOn: (ctx) => Array(ctx.maxId + 1).fill(true) }),
+			setOpacities: assign({ opacities: (ctx) => Array(ctx.maxId + 1).fill(0.3) }),
 			setEditEvent: assign({ editEvent: (_, evt) => evt }),
 			setFeature: assign({ feature: (_, evt) => evt.feature }),
 			startEdit: send('SAVE', { to: (ctx) => ctx.undoRef }),
@@ -188,17 +196,22 @@ function updateFromCells(cellTypes, cells) {
 				let numTypes = cellTypes.length;
 				let newColorMap = Array(ctx.numCells).fill([0, 0, 0, 0]);
 				for (let i = 0; i < numTypes; i++) {
-					let numCells = cellTypes[i].cells.length;
-					for (let j = 0; j < numCells; j++) {
-						let oldColor = newColorMap[cellTypes[i].cells[j]];
-						let newColor = hexToRgb(cellTypes[i].color);
-						const sr = newColor[0];
-						const sg = newColor[1];
-						const sb = newColor[2];
-						const r = oldColor[0] + sr - oldColor[0] * sr;
-						const g = oldColor[1] + sg - oldColor[1] * sg;
-						const b = oldColor[2] + sb - oldColor[2] * sb;
-						newColorMap[cellTypes[i].cells[j]] = [r, g, b, 1];
+					const cellType = cellTypes[i];
+					let numCells = cellType.cells.length;
+					if (ctx.isOn[cellType.id]) {
+						for (let j = 0; j < numCells; j++) {
+							let oldColor = newColorMap[cellType.cells[j]];
+							let newColor = hexToRgb(cellType.color);
+							const sr = newColor[0];
+							const sg = newColor[1];
+							const sb = newColor[2];
+							const sa = ctx.opacities[cellType.id];
+							const r = oldColor[0] + sr - oldColor[0] * sr;
+							const g = oldColor[1] + sg - oldColor[1] * sg;
+							const b = oldColor[2] + sb - oldColor[2] * sb;
+							const a = oldColor[3]
+							newColorMap[cellType.cells[j]] = [r, g, b, Math.max(sa, a)];
+						}
 					}
 				}
 				return newColorMap;
@@ -293,6 +306,16 @@ function updateFromCells(cellTypes, cells) {
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+			editIsOn: assign({isOn: (ctx, evt) => {
+				let isOn = ctx.isOn;
+				isOn[evt.cellType] = !(isOn[evt.cellType]);
+				return isOn;
+			}}),
+			editOpacities: assign({opacities: (ctx, evt) => {
+				let opacities = ctx.opacities;
+				opacities[evt.cellType] = evt.opacity;
+				return opacities;
+			}}),
 			restore: pure((_, evt) => {
 				return [
 					assign({ cellTypes: evt.cellTypes }),

@@ -78,15 +78,19 @@ function CellTypeCanvas({ setBitmaps }) {
                   sg = colorMap[i][1];
                   sb = colorMap[i][2];
                   sa = colorMap[i][3];
+                  if (sa > 0) {
+                    sa = 1;
+                  }
                   this.color(sr, sg, sb, sa);
                 }
               }
               else {
                 if (colorMap[i][3] !== 0) {
                   let opacity = 1;
+                  sa = colorMap[i][3];
                   // Use mixing if overlap exists
                   if (a < 1) {
-                    opacity = 0.3;
+                    opacity = sa;
                   }
                   sr = opacity * colorMap[i][0];
                   sg = opacity * colorMap[i][1];
@@ -94,7 +98,7 @@ function CellTypeCanvas({ setBitmaps }) {
                   r = r + sr - r * sr;
                   g = g + sg - g * sg;
                   b = b + sb - b * sb;
-                  a = a * 0.7;
+                  a = a * (1 - sa);
                   this.color(r, g, b, 1 - a);
                 }
               }

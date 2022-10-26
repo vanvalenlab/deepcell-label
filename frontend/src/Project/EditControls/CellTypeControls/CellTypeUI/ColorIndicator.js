@@ -1,18 +1,25 @@
 import { Box, IconButton } from '@mui/material';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
-import EditIcon from '@mui/icons-material/Edit';
 import Popper from '@mui/material/Popper';
 import SquareRoundedIcon from '@mui/icons-material/SquareRounded';
+import ColorizeIcon from '@mui/icons-material/Colorize';
 import { TwitterPicker } from 'react-color';
-import { useReducer, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useEditCellTypes } from '../../../ProjectContext';
 
+const colorStyle = {
+    position: 'absolute',
+    marginTop: -6.2,
+    marginLeft: -9.7,
+    marginBottom: 10,
+}
+
 function ColorIndicator(props) {
-    const { id, color } = props;
+    const { id, color, openColor, toggleColor } = props;
+    
     const editCellTypesRef = useEditCellTypes();
-    const anchorRef = useRef(null)
+    const anchorRef = useRef(null);
     const [editIcon, setEditIcon] = useState(0);
-    const [openColor, toggleColor] = useReducer((v) => !v, false);
 
     // Handler for when the color box is clicked
     const handleClickColor = (e) => {
@@ -33,27 +40,25 @@ function ColorIndicator(props) {
     };
 
     return (
-        <Box sx={{position: 'relative', right: 15, bottom: 9}}>
+        <Box style={colorStyle}>
             <IconButton 
                 onClick={handleClickColor}
                 ref={anchorRef}
-                sx = {{
-                position: 'relative',
-                }}
                 onMouseEnter={() => setEditIcon(100)}
                 onMouseLeave={() => setEditIcon(0)}
+                size='large'
             > 
             <SquareRoundedIcon sx = {{
-                left: 0,
+                position: 'absolute',
                 fontSize: 35,
                 color: color,
                 }}
             />
-            <EditIcon 
+            <ColorizeIcon 
                 sx = {{
-                    position: 'absolute',
+                    position: 'relative',
                     color: 'white',
-                    fontSize: 18,
+                    fontSize: 20,
                     opacity: editIcon,
                 }}   
             />

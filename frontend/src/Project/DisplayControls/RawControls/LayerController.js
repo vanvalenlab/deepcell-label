@@ -108,8 +108,9 @@ function LayerSlider({ layer }) {
       min={0}
       max={255}
       step={1}
+      size='small'
       orientation='horizontal'
-      sx={{ color: color, p: 0 }}
+      sx={{ color: color, p: 0, '& .MuiSlider-thumb': { height: 15, width: 15 } }}
       componentsProps={{ input: { ref: inputRef } }}
     />
   );

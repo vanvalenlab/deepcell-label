@@ -12,7 +12,7 @@ export const RawControls = () => {
 
   return (
     <Box display='flex' flexDirection='column' alignItems='flex-start'>
-      <ColorModeToggle />
+      <div style={{marginBottom: 10}}><ColorModeToggle /></div>
       {isGrayscale ? <GrayscaleControls /> : <RGBControls />}
     </Box>
   );

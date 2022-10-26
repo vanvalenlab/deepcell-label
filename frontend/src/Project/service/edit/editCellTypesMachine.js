@@ -40,6 +40,8 @@
               ADD_TYPE: { actions: ['setColor', 'addCellType'] },
               COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
               NAME: { actions: ['setCellType', 'setName', 'editName'] },
+              TOGGLE: { actions: ['setCellType', 'toggleOn'] },
+              OPACITY: { actions: ['setCellType', 'changeOpacity'] },
             },
           },
           addingCell: {
@@ -144,6 +146,21 @@
                 name: ctx.name,
               }),
               { to: 'cellTypes' }
+         ),
+         toggleOn: send(
+          (ctx) => ({
+              type: 'EDIT_IS_ON',
+              cellType: ctx.cellType,
+            }),
+            { to: 'cellTypes' }
+         ),
+         changeOpacity: send(
+          (ctx, evt) => ({
+              type: 'EDIT_OPACITY',
+              cellType: ctx.cellType,
+              opacity: evt.opacity,
+            }),
+            { to: 'cellTypes' }
          ),
        },
      }

@@ -11,12 +11,13 @@ function RGBControls() {
   const numChannels = useSelector(raw, (state) => state.context.numChannels);
 
   return (
-    <>
+    <Grid container direction='column' spacing={2}>
       {layers.map((layer, index) => (
         <Grid key={layer.sessionId} sx={{ width: '100%' }} item>
           <LayerController layer={layer} />
         </Grid>
       ))}
+      <Grid item>
       {numChannels > 1 && (
         <Button
           onClick={() => raw.send('ADD_LAYER')}
@@ -29,7 +30,8 @@ function RGBControls() {
           Add Channel
         </Button>
       )}
-    </>
+      </Grid>
+    </Grid>
   );
 }
 

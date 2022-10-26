@@ -3,8 +3,9 @@ import { useRef, useState } from 'react';
 import { useEditCellTypes } from '../../../ProjectContext';
 
 const textStyle = {
-    marginTop: 5,
-    marginLeft: -10,
+    marginTop: 3,
+    marginLeft: 15,
+    marginBottom: 10,
 };
 
 function EditNameField(props) {
@@ -38,7 +39,6 @@ function EditNameField(props) {
         <div style={textStyle}> 
             {typing ? <TextField 
                         error={name.length === 0}
-                        helperText={name.length === 0 ? 'Min 1 character' : ''}
                         inputProps={{ maxLength: 20 }}
                         id="standard-basic"
                         defaultValue={name}
@@ -47,7 +47,9 @@ function EditNameField(props) {
                         inputRef={focusRef}
                         onChange={handleType}
                         onKeyDown={handleKeyDown}
+                        onClick={handleKeyDown}
                         onBlur={handleBlur}
+                        size='small'
                     />
                     : name} 
         </div>
