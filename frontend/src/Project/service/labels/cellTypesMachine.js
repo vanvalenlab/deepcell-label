@@ -112,7 +112,7 @@ function updateFromCells(cellTypes, cells) {
 								on: {
 									// From editCellTypesMachine
 									ADD_CELL: { actions: 'addCell', target: 'editing' },
-									ADD_CELLTYPE: { actions: ['addCellType', 'setMaxId'], target: 'editing' },
+									ADD_CELLTYPE: { actions: ['addCellType', 'addIsOn', 'addOpacity', 'setMaxId'], target: 'editing' },
 									REMOVE_CELLTYPE: { actions: 'removeCellType', target: 'editing' },
 									REMOVE_CELL: { actions: 'removeCell', target: 'editing' },
 									EDIT_COLOR: { actions: 'editColor', target: 'editing' },
@@ -314,6 +314,16 @@ function updateFromCells(cellTypes, cells) {
 			editOpacities: assign({opacities: (ctx, evt) => {
 				let opacities = ctx.opacities;
 				opacities[evt.cellType] = evt.opacity;
+				return opacities;
+			}}),
+			addIsOn: assign({ isOn: (ctx) => {
+				let isOn = ctx.isOn;
+				isOn.push(1);
+				return isOn
+			}}),
+			addOpacity: assign({ opacities: (ctx) => {
+				let opacities = ctx.opacities;
+				opacities.push(0.3);
 				return opacities;
 			}}),
 			restore: pure((_, evt) => {

@@ -11,7 +11,16 @@ const accordionStyle = {
     width: 300,
     margin: 'auto',
     overflow: 'hidden',
-    overflowY: 'auto'
+    overflowY: 'auto',
+    '&::-webkit-scrollbar': {
+        width: 5,
+        borderRadius: 10,
+        backgroundColor: 'rgba(0,0,0,0.1)'
+    },
+    '&::-webkit-scrollbar-thumb': {
+        borderRadius: 10,
+        backgroundColor: 'rgba(100,100,100,0.5)',
+    },
 };
 
 function CellTypeAccordionList() {
@@ -33,7 +42,7 @@ function CellTypeAccordionList() {
     return (
         <Box 
             height={menuHeight}
-            style={accordionStyle}
+            sx={accordionStyle}
         >
             {currentCellTypes.map((cellType) => 
                 <div key={cellType.id}>

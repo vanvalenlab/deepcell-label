@@ -24,7 +24,7 @@ function CellTypeOpacitySlider({ color, id }) {
         <Slider 
             value={opacity}
             min={0.1}
-            max={0.9}
+            max={0.8}
             step={0.01}
             onClick={(e) => e.stopPropagation()}
             onChange={handleChange}

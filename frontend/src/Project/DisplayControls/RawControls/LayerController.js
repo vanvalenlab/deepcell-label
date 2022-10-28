@@ -52,11 +52,13 @@ function LayerSelector({ layer, typing, toggleType }) {
         label="Channel Name"
         autoFocus={true}
         inputRef={focusRef}
+        size='small'
         onChange={handleType}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
       />
-    : <TextField select size='small' value={channel} onChange={onChange}>
+    : <TextField select size='small' value={channel} onChange={onChange}
+        sx={{width: 130}}>
         {names.map((opt, index) => (
           <MenuItem key={index} value={index}>
             {opt}

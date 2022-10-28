@@ -55,6 +55,8 @@
               ],
               COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
               NAME: { actions: ['setCellType', 'setName', 'editName'] },
+              TOGGLE: { actions: ['setCellType', 'toggleOn'] },
+              OPACITY: { actions: ['setCellType', 'changeOpacity'] },
               RESET: { target: 'idle' },
             },
           },
