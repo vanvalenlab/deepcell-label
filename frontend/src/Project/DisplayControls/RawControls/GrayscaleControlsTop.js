@@ -164,17 +164,17 @@ const GrayscaleControlsTop = () => {
 
   return (
     <Box display='flex'>
-      <Grid xs={12} sx={{marginRight: 3, marginLeft: 1, marginTop: 1}} container direction='column'>
+      <Grid sx={{marginRight: -16, marginLeft: 1, marginTop: 1}} container direction='column'>
         {numChannels > 1 && (
           <ChannelSelector />
         )}
         <InvertToggle channel={channel} />
       </Grid>
-      <Grid xs={12} sx={{width: 130, marginRight: 3, marginTop: 3.2}} container direction='column'>
+      <Grid sx={{width: 200, marginRight: 5, marginTop: 3.2}} container direction='column'>
         <FormLabel>Range</FormLabel>
         <RangeSlider channel={channel} />
       </Grid>
-      <Grid xs={12} sx={{width: 130}} container direction='column'>
+      <Grid sx={{width: 200, marginBottom: -1}} container direction='column'>
         <FormLabel>Brightness</FormLabel>
         <BrightnessSlider channel={channel} />
         <FormLabel>Contrast</FormLabel>

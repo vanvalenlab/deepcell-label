@@ -216,6 +216,7 @@ interface Context {
   width: number | null;
   height: number | null;
   t: number | null;
+  channels: string[] | null;
   numChannels: number | null;
   numFeatures: number | null;
   raw: Uint8Array[][][] | null;
@@ -238,6 +239,7 @@ const createLoadMachine = (projectId: string) =>
         width: null,
         height: null,
         t: null,
+        channels: null,
         numChannels: null,
         numFeatures: null,
         raw: null,
@@ -320,10 +322,11 @@ const createLoadMachine = (projectId: string) =>
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
           const { metadata } = evt.data.files['X.ome.tiff'];
-          const { SizeX, SizeY, SizeZ, SizeT, SizeC } = metadata.Pixels;
+          const { SizeX, SizeY, SizeZ, SizeT, SizeC, Channels } = metadata.Pixels;
           // @ts-ignore
           const { metadata: labelMetadata } = evt.data.files['y.ome.tiff'];
           const { SizeC: labelSizeC } = labelMetadata;
+          const channelNames = Channels.map((i: any) => i.Name);
           return {
             width: SizeX,
             height: SizeY,
@@ -331,6 +334,7 @@ const createLoadMachine = (projectId: string) =>
             // SizeT,
             numChannels: SizeC,
             numFeatures: labelSizeC,
+            channels: channelNames,
           };
         }),
         'set arrays': assign({
@@ -347,6 +351,7 @@ const createLoadMachine = (projectId: string) =>
           divisions: ctx.divisions,
           cells: ctx.cells,
           cellTypes: ctx.cellTypes,
+          channels: ctx.channels,
         })),
       },
     }

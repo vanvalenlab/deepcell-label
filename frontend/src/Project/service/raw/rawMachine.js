@@ -16,6 +16,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
     {
       invoke: [
         { id: 'eventBus', src: fromEventBus('raw', () => eventBuses.raw) },
+        { src: fromEventBus('raw', () => eventBuses.load, 'LOADED') },
         { src: fromEventBus('raw', () => eventBuses.load, 'DIMENSIONS') },
       ],
       context: {
@@ -28,38 +29,70 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
         isGrayscale: true,
       },
       entry: [send('REGISTER_UI', { to: undoRef }), 'spawnLayers', 'spawnChannels'],
-      initial: 'checkDisplay',
+      initial: 'loading',
       states: {
-        checkDisplay: {
-          always: [{ cond: 'isGrayscale', target: 'grayscale' }, { target: 'color' }],
+        loading: {
+          type: 'parallel',
+          states: {
+            getChannelNames: {
+              initial: 'waiting',
+              states: {
+                waiting: {
+                  on: {
+                    LOADED: { actions: ['setChannelNames'], target: 'done' },
+                  },
+                },
+                done: { type: 'final' },
+              },
+            },
+            getDimensions: {
+              initial: 'waiting',
+              states: {
+                waiting: {
+                  on: {
+                    DIMENSIONS: {
+                      actions: ['setNumChannels', 'spawnLayers', 'spawnChannels'],
+                      target: 'done',
+                    },
+                  },
+                },
+                done: { type: 'final' },
+              },
+            },
+          },
+          onDone: { actions: 'checkChannels', target: 'loaded' },
         },
-        color: {
-          entry: [send('COLOR', { to: 'eventBus' }), assign({ isGrayscale: false })],
+        loaded: {
+          initial: 'checkDisplay',
+          states: {
+            checkDisplay: {
+              always: [{ cond: 'isGrayscale', target: 'grayscale' }, { target: 'color' }],
+            },
+            color: {
+              entry: [send('COLOR', { to: 'eventBus' }), assign({ isGrayscale: false })],
+              on: {
+                TOGGLE_COLOR_MODE: 'grayscale',
+                // Need propagate event to root actor to rerender canvas
+                ADD_LAYER: { actions: ['addLayer', sendParent((c, e) => e)] },
+                REMOVE_LAYER: { actions: ['removeLayer', sendParent((c, e) => e), 'setLayers'] },
+                EDIT_NAME: { actions: 'editChannelName' }
+              },
+            },
+            grayscale: {
+              entry: [send('GRAYSCALE', { to: 'eventBus' }), assign({ isGrayscale: true })],
+              on: {
+                TOGGLE_COLOR_MODE: 'color',
+                RESET: { actions: 'forwardToChannel' },
+                SET_CHANNEL: { actions: ['setChannel', 'sendToEventBus'] },
+              },
+            },
+          },
           on: {
-            TOGGLE_COLOR_MODE: 'grayscale',
-            // Need propagate event to root actor to rerender canvas
-            ADD_LAYER: { actions: ['addLayer', sendParent((c, e) => e)] },
-            REMOVE_LAYER: { actions: ['removeLayer', sendParent((c, e) => e), 'setLayers'] },
-            EDIT_NAME: { actions: 'editChannelName' }
+            TOGGLE_INVERT: { actions: 'forwardToChannel' },
+            SAVE: { actions: 'save' },
+            RESTORE: { actions: ['restore', respond('RESTORED')] },
           },
         },
-        grayscale: {
-          entry: [send('GRAYSCALE', { to: 'eventBus' }), assign({ isGrayscale: true })],
-          on: {
-            TOGGLE_COLOR_MODE: 'color',
-            RESET: { actions: 'forwardToChannel' },
-            SET_CHANNEL: { actions: ['setChannel', 'sendToEventBus'] },
-          },
-        },
-      },
-      on: {
-        DIMENSIONS: {
-          target: '.checkDisplay',
-          actions: ['setNumChannels', 'spawnLayers', 'spawnChannels'],
-        },
-        TOGGLE_INVERT: { actions: 'forwardToChannel' },
-        SAVE: { actions: 'save' },
-        RESTORE: { actions: ['restore', respond('RESTORED')] },
       },
     },
     {
@@ -71,10 +104,21 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
           numChannels: (context, event) => event.numChannels,
           isGrayscale: (context, event) => event.numChannels === 1,
         }),
+        setChannelNames: assign({
+          channelNames: (ctx, evt) => evt.channels,
+        }),
         editChannelName: assign({
           channelNames: (ctx, evt) => {
             let channelNames = ctx.channelNames;
             channelNames[evt.channel] = evt.name;
+            return channelNames;
+          }
+        }),
+        checkChannels: assign({
+          channelNames: (ctx) => {
+            let channelNames = ctx.channelNames;
+            channelNames = channelNames.map((name, i) =>
+              name ? name : `channel ${i}`);
             return channelNames;
           }
         }),
@@ -89,13 +133,6 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
               channels.push(channel);
             }
             return channels;
-          },
-          channelNames: ({ numChannels }) => {
-            const names = [];
-            for (let i = 0; i < numChannels; i++) {
-              names.push(`channel ${i}`);
-            }
-            return names;
           },
         }),
         forwardToChannel: forwardTo((ctx) => `channel${ctx.channel}`),
