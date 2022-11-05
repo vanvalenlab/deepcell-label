@@ -1,12 +1,10 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { Box, IconButton } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ClearIcon from '@mui/icons-material/Clear';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useEditCellTypes } from '../../../ProjectContext';
-import Cell from './Cell';
 
 const buttonStyle = {
     borderRadius: 5,
@@ -87,27 +85,6 @@ function CellGrid(props) {
                     </Box>
                 </IconButton>
               </Box>
-            }
-            {cells.map((cell) => 
-                <Box 
-                    gridColumn="span 1"
-                    key={cell}
-                    onMouseEnter={() => setRemove(cell)}
-                    onMouseLeave={() => setRemove(-1)}
-                    sx={{width:'100%'}}
-                >
-                    <Cell cell={cell}/>
-                        {/* <IconButton
-                            sx={{ position: 'relative', top: -55, left: 34,  p: 0 }}
-                            size='small'
-                            onClick={handleRemoveCell(cell)}
-                        >
-                        { remove === cell
-                            ? <ClearIcon/>
-                            : <ClearIcon sx={{opacity: 0, '&:hover': {opacity: 100}}}/>
-                        }
-                        </IconButton> */}
-                </Box>)
             }
         </Box>
     );

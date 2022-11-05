@@ -9,7 +9,6 @@
  import { pure } from 'xstate/lib/actions';
  import { fromEventBus } from '../eventBus';
  import Cells from '../../cells';
- import { combine } from './utils';
  
 // Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 const hexToRgb = (hex) => {
@@ -112,6 +111,7 @@ function updateFromCells(cellTypes, cells) {
 								on: {
 									// From editCellTypesMachine
 									ADD_CELL: { actions: 'addCell', target: 'editing' },
+									MULTI_ADD_CELLS: { actions: 'addCells', target: 'editing' },
 									ADD_CELLTYPE: { actions: ['addCellType', 'addIsOn', 'addOpacity', 'setMaxId'], target: 'editing' },
 									REMOVE_CELLTYPE: { actions: 'removeCellType', target: 'editing' },
 									REMOVE_CELL: { actions: 'removeCell', target: 'editing' },
@@ -257,6 +257,16 @@ function updateFromCells(cellTypes, cells) {
 				cellTypes = ctx.cellTypes.map(
 					cellType => (cellType.id === evt.cellType && !cellType.cells.includes(evt.cell))
 						? {...cellType, cells: [...cellType.cells, evt.cell].sort(function(a, b) {
+							return a - b;})}
+						: cellType
+				)
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+			addCells: send((ctx, evt) => {
+				let cellTypes;
+				cellTypes = ctx.cellTypes.map(
+					cellType => (cellType.id === evt.cellType && !cellType.cells.includes(evt.cell))
+						? {...cellType, cells: [...cellType.cells, ...evt.cells].sort(function(a, b) {
 							return a - b;})}
 						: cellType
 				)

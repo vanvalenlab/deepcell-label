@@ -20,7 +20,7 @@ const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
         numFeatures: 1,
         feature: 0,
         featureNames: ['feature 0'],
-        cellsOpacity: 0.3, // [0, 0.3],
+        cellsOpacity: 0.2, // [0, 0.3],
         outlineOpacity: 0.3, // [0.5, 1],
         highlight: true,
       },

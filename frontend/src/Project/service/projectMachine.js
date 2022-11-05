@@ -12,6 +12,7 @@ import createImageMachine from './imageMachine';
 import createArraysMachine from './labels/arraysMachine';
 import createCellsMachine from './labels/cellsMachine';
 import createCellTypesMachine from './labels/cellTypesMachine';
+import createChannelExpressionMachine from './labels/channelExpressionMachine';
 import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
@@ -39,6 +40,7 @@ const createProjectMachine = (projectId) =>
           // TODO: rename to segment and separate raw arrays
           arrays: new EventBus('arrays'), // also receives GET_ARRAYS and responds with ARRAYS
           cells: new EventBus('cells'),
+          channelExpression: new EventBus('channelExpression'),
           divisions: new EventBus('divisions'),
           spots: new EventBus('spots'),
         },
@@ -100,6 +102,7 @@ const createProjectMachine = (projectId) =>
           actors.selectRef = spawn(createSelectMachine(ctx), 'select');
           actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');
           actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
+          actors.channelExpressionRef = spawn(createChannelExpressionMachine(ctx), 'channelExpression');
           actors.toolRef = spawn(createToolMachine(ctx), 'tool');
           actors.spotsRef = spawn(createSpotsMachine(ctx), 'spots');
           return actors;

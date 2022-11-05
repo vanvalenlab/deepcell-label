@@ -18,6 +18,7 @@
        ],
        context: {
          selected: null,
+         multiSelected: [],
          hovering: null,
          cell: null,
          cellType: null,
@@ -26,6 +27,7 @@
        },
        on: {
          SELECTED: { actions: 'setSelected' },
+         MULTISELECTION: { actions: 'setMultiSelected' },
          HOVERING: { actions: 'setHovering' },
          REMOVE_ONE: { actions: ['setCell', 'setCellType', 'removeCell'] },
          REMOVE_TYPE: { actions: 'removeCellType' },
@@ -36,6 +38,7 @@
             on: {
               mouseup: { actions: 'select' },
               ADD: { target: 'addingCell', actions: ['setCellType', 'setName'] },
+              MULTIADD: { actions: ['setCellType', 'multiAddCells' ] },
               REMOVE_MODE: { target: 'removingCell', actions: ['setCellType', 'setName'] },
               ADD_TYPE: { actions: ['setColor', 'addCellType'] },
               COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
@@ -86,6 +89,7 @@
        actions: {
          select: send('SELECT', { to: 'select' }),
          setSelected: assign({ selected: (_, evt) => evt.selected }),
+         setMultiSelected: assign({ multiSelected: (ctx, evt) => evt.selected}),
          setHovering: assign({ hovering: (_, evt) => evt.hovering }),
          removeCell: pure(
            (ctx, _) => [
@@ -126,6 +130,16 @@
             { to: 'cellTypes' }),
             assign({ cell: null })
           ]),
+         multiAddCells: pure(
+           (ctx) => [
+             send({
+              type: 'MULTI_ADD_CELLS',
+              cellType: ctx.cellType,
+              cells: ctx.multiSelected,
+             },
+             { to: 'cellTypes' }),
+             assign({ multiSelected: [] })
+           ]),
          addCellType: send(
             (ctx) => ({
                 type: 'ADD_CELLTYPE',

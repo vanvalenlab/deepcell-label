@@ -250,7 +250,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
           return { type: 'SET_POSITION', sx, sy, zoom: ctx.zoom };
         }),
         zoom: send((ctx, evt) => {
-          const zoomFactor = 1 + evt.deltaY / window.innerHeight;
+          const zoomFactor = 1 - evt.deltaY / window.innerHeight;
           const newZoom = Math.max(ctx.zoom * zoomFactor, 1);
           const propX = evt.nativeEvent.offsetX / ctx.scale;
           const propY = evt.nativeEvent.offsetY / ctx.scale;

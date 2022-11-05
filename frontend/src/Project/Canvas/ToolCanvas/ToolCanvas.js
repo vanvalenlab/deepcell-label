@@ -10,6 +10,7 @@ import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
+import CellSelectionCanvas from './CellSelectionCanvas';
 
 function ToolCanvas({ setBitmaps }) {
   const editSegment = useEditSegment();
@@ -80,6 +81,7 @@ function ToolCanvas({ setBitmaps }) {
         <>
           <CellTypeCanvas setBitmaps={setBitmaps} />
           <CellTypeHovering/>
+          <CellSelectionCanvas setBitmaps={setBitmaps}/>
         </>
       )
     default:

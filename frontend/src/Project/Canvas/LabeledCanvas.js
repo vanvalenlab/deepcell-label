@@ -48,18 +48,16 @@ export const LabeledCanvas = ({ setBitmaps }) => {
                 sb = colormap[i][2];
               }
 
-              if (i !== cell) {
-                a = a * (1 - opacity[0]);
-                sr = opacity[0] * sr / 255;
-                sg = opacity[0] * sg / 255;
-                sb = opacity[0] * sb / 255;
-              } else {
-
-                a = a * (1 - opacity[1]);
-                sr = opacity[1] * sr / 255;
-                sg = opacity[1] * sg / 255;
-                sb = opacity[1] * sb / 255;
+              let sa = 1;
+              // Only use mixing if overlap
+              if (a < 1) {
+                sa = opacity;
               }
+              a = a * (1 - opacity);
+              sr = sa * sr / 255;
+              sg = sa * sg / 255;
+              sb = sa * sb / 255;
+              
               r = r + sr - r * sr;
               g = g + sg - g * sg;
               b = b + sb - b * sb;
@@ -88,7 +86,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
       kernel(
         labeledArray,
         cellMatrix,
-        [opacity, opacity],
+        opacity,
         colormap,
         cell,
         numValues,

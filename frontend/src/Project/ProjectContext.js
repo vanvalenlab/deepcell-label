@@ -91,6 +91,12 @@ export function useCellTypes() {
   return cellTypes;
 }
 
+export function useChannelExpression() {
+  const project = useProject();
+  const channelExpression = useSelector(project, (state) => state.context.channelExpressionRef);
+  return channelExpression;
+}
+
 export function useDivisions() {
   const project = useProject();
   const divisions = useSelector(project, (state) => state.context.divisionsRef);
