@@ -13,13 +13,13 @@ function CellTypeCheckbox({ color, id, openColor }) {
     const editCellTypes = useEditCellTypes();
     const cellTypes = useCellTypes();
     const isOnArray = useSelector(cellTypes, (state) => state.context.isOn);
-    const [isOn, setIsOn] = useState(isOnArray[id]);
+    const [isOn, setIsOn] = useState(true);
 
     const handleCheck = () => {
       // Handle MUI bug where checkbox is invisible above color popper
       if (!openColor) {
         editCellTypes.send({type: 'TOGGLE', cellType: id});
-        setIsOn(!isOn);
+        setIsOn(isOnArray[id]);
       }
     };
 

@@ -44,7 +44,7 @@ const createLabeledMachine = ({ projectId, eventBuses, undoRef }) =>
           cellsOpacity: (ctx) => {
             switch (ctx.cellsOpacity) {
               case 0:
-                return 0.3;
+                return 0.2;
               case 1:
                 return 0;
               default:

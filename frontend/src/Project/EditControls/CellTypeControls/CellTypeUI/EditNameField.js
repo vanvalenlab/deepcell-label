@@ -38,6 +38,7 @@ function EditNameField(props) {
     return (
         <div style={textStyle}> 
             {typing ? <TextField 
+                        sx={{width: '80%'}}
                         error={name.length === 0}
                         inputProps={{ maxLength: 20 }}
                         id="standard-basic"

@@ -170,6 +170,7 @@ function updateFromCells(cellTypes, cells) {
 	},
 	{
 		actions: {
+			// Set specified context or parameters
 			setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
 			setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
 			setCells: assign({ numCells: (_, evt) => new Cells(evt.cells).getNewCell() }),
@@ -180,6 +181,8 @@ function updateFromCells(cellTypes, cells) {
 			startEdit: send('SAVE', { to: (ctx) => ctx.undoRef }),
 			setEdit: assign({ edit: (_, evt) => evt.edit }),
 			setEditedCellTypes: assign({ editedCellTypes: (_, evt) => evt.cellTypes }),
+
+			// Get the next highest id for the next cell type to add
 			setMaxId: assign({ maxId: (ctx) => {
 					const ids = ctx.cellTypes.map(cellType => cellType.id);
 					if (ids.length === 0) {
@@ -188,9 +191,13 @@ function updateFromCells(cellTypes, cells) {
 					return Math.max.apply(null, ids);
 				}
 			}),
+
+			// Send an event to event bus that cell types have been edited
 			sendCellTypes: send((ctx) => ({ type: 'CELLTYPES', cellTypes: ctx.cellTypes }), {
 				to: 'eventBus',
 			}),
+
+			// Re-calculate the color map for rendering cell types
 			updateColorMap: pure(() => assign({ colorMap: (ctx) => { 
 				let cellTypes = ctx.cellTypes.filter((cellType) => cellType.feature === ctx.feature);
 				let numTypes = cellTypes.length;
@@ -216,6 +223,7 @@ function updateFromCells(cellTypes, cells) {
 				}
 				return newColorMap;
 			}})),
+
 			delete: pure((ctx, evt) => {
 				let cellTypes = remove(ctx.cellTypes, evt.cell);
 				const before = { type: 'RESTORE', cellTypes: ctx.cellTypes };
@@ -225,6 +233,7 @@ function updateFromCells(cellTypes, cells) {
 				  send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),
 				];
 			}),
+
 			updateFromCells: pure((ctx, evt) => {
 				let cellTypes = updateFromCells(ctx.cellTypes, evt.cells);
 				if (!equal(cellTypes, ctx.cellTypes)) {
@@ -238,6 +247,7 @@ function updateFromCells(cellTypes, cells) {
 				}
 				return [];
 			}),
+
 			finishEditing: pure((ctx) => {
 				return [
 					assign({ cellTypes: (ctx) => ctx.editedCellTypes }),
@@ -252,6 +262,8 @@ function updateFromCells(cellTypes, cells) {
 					),
 				];
 			}),
+
+			// Add one cell to a specified cell type
 			addCell: send((ctx, evt) => {
 				let cellTypes;
 				cellTypes = ctx.cellTypes.map(
@@ -262,16 +274,22 @@ function updateFromCells(cellTypes, cells) {
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+
+			// Add a list of cells to a specified cell type
 			addCells: send((ctx, evt) => {
 				let cellTypes;
+				const oldCells = ctx.cellTypes.filter(cellType => (cellType.id === evt.cellType))[0].cells;
+				const newCells = evt.cells.filter(cell => !oldCells.includes(cell));
 				cellTypes = ctx.cellTypes.map(
-					cellType => (cellType.id === evt.cellType && !cellType.cells.includes(evt.cell))
-						? {...cellType, cells: [...cellType.cells, ...evt.cells].sort(function(a, b) {
+					cellType => (cellType.id === evt.cellType)
+						? {...cellType, cells: [...cellType.cells, ...newCells].sort(function(a, b) {
 							return a - b;})}
 						: cellType
-				)
+				);
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+
+			// Remove a single cell from a specified cell type
 			removeCell: send((ctx, evt) => {
 				let cellTypes;
 				cellTypes = ctx.cellTypes.map(
@@ -283,6 +301,8 @@ function updateFromCells(cellTypes, cells) {
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+
+			// Add a new empty cell type with a specified color
 			addCellType: send((ctx, evt) => {
 				let cellTypes;
 				cellTypes = [...ctx.cellTypes, {
@@ -293,11 +313,15 @@ function updateFromCells(cellTypes, cells) {
 					cells: []}];
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+
+			// Remove a specified cell type
 			removeCellType: send((ctx, evt) => {
 				let cellTypes;
 				cellTypes = ctx.cellTypes.filter(item => !(item.id === evt.cellType));
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+
+			// Edit the color of a specified cell type
 			editColor: send((ctx, evt) => {
 				let cellTypes;
 				cellTypes = ctx.cellTypes.map(
@@ -307,6 +331,8 @@ function updateFromCells(cellTypes, cells) {
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+
+			// Edit the name of a specified cell type
 			editName: send((ctx, evt) => {
 				let cellTypes;
 				cellTypes = ctx.cellTypes.map(
@@ -316,26 +342,35 @@ function updateFromCells(cellTypes, cells) {
 				)
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
+
+			// Toggle a specified cell type on/off for the color map
 			editIsOn: assign({isOn: (ctx, evt) => {
 				let isOn = ctx.isOn;
 				isOn[evt.cellType] = !(isOn[evt.cellType]);
 				return isOn;
 			}}),
+
+			// Edit the opacity of a specified cell type
 			editOpacities: assign({opacities: (ctx, evt) => {
 				let opacities = ctx.opacities;
 				opacities[evt.cellType] = evt.opacity;
 				return opacities;
 			}}),
+
+			// Add a new cell type to track for color map toggling
 			addIsOn: assign({ isOn: (ctx) => {
 				let isOn = ctx.isOn;
 				isOn.push(1);
 				return isOn
 			}}),
+
+			// Add a new opacity to track for color map
 			addOpacity: assign({ opacities: (ctx) => {
 				let opacities = ctx.opacities;
 				opacities.push(0.3);
 				return opacities;
 			}}),
+
 			restore: pure((_, evt) => {
 				return [
 					assign({ cellTypes: evt.cellTypes }),

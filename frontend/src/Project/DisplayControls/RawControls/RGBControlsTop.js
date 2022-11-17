@@ -60,11 +60,11 @@ function RGBControlsTop() {
             },
         }}>
       {layers.map((layer, index) => (
-        <Box key={layer.sessionId} sx={{ minWidth: 140, marginRight: 5 }} item>
+        <Box key={layer.sessionId} sx={{ minWidth: 140, marginRight: 5 }}>
           <LayerController layer={layer} />
         </Box>
       ))}
-      <Box sx={{ minWidth: 140, marginTop: 0.4 }} item>
+      <Box sx={{ minWidth: 140, marginTop: 0.4 }}>
         {numChannels > 1 && (
             <Button
             onClick={() => raw.send('ADD_LAYER')}

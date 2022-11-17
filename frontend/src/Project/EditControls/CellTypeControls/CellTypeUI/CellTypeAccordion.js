@@ -2,6 +2,7 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import { useReducer } from 'react';
+import CellCountIndicator from './CellCountIndicator';
 import CellGrid from './CellGrid';
 import CellTypeCheckbox from './CellTypeCheckbox';
 import CellTypeOpacitySlider from './CellTypeOpacitySlider';
@@ -40,6 +41,9 @@ function CellTypeAccordion(props) {
 
                 {/* Slider for cell type opacity on canvas */}
                 <CellTypeOpacitySlider id={cellType.id} color={cellType.color} />
+
+                {/* Indicator for how many cells are in a given cell type label */}
+                <CellCountIndicator id={cellType.id} />
 
                 {/* Editable cell type name */}
                 <EditNameField id={cellType.id} cellName={cellType.name} typing={typing} toggleType={toggleType} />

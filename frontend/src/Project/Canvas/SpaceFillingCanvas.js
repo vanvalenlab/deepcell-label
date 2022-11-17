@@ -23,7 +23,7 @@ function SpaceFillingCanvas() {
   }, [canvasBoxRef]);
 
   useEffect(() => {
-    const padding = 5;
+    const padding = 23;
     canvas.send({
       type: 'AVAILABLE_SPACE',
       width: canvasBoxWidth,

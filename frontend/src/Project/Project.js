@@ -47,7 +47,7 @@ function Project({ review }) {
         <Canvas />
         <ChannelExpressionPlot />
       </Box>
-      <Instructions />
+      {/* <Instructions /> */}
     </>
   );
 }

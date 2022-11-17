@@ -22,7 +22,7 @@ function CellTypeControls() {
                       height: 20,
                       top: -1,
                       marginLeft: 1,}}
-                > Beta
+                > Alpha
                 </Button>
             </FormLabel>
             <AddCellTypeLabel />
