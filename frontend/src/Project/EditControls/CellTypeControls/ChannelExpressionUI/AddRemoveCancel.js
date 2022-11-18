@@ -32,14 +32,17 @@ function ChannelPlot() {
 
     const addCellTypes = () => {
         editCellTypes.send({ type: 'MULTIADD', cellType: cellTypeIds[cellType] });
-        editCellTypes.send({type: 'MULTISELECTION', selected: []});
+    };
+
+    const removeCellTypes = () => {
+        editCellTypes.send({ type: 'MULTIREMOVE', cellType: cellTypeIds[cellType] });
     };
 
     return (
         <>
             <Grid item>
                 <TextField select size='small' value={cellType} onChange={handleCellType}
-                    sx={{width: '90%'}}>
+                    sx={{width: '94%'}}>
                     {cellTypeIds.map((opt, index) => (
                         <MenuItem key={index} value={index}>
                             {getName(cellTypesList, opt)}
@@ -49,7 +52,7 @@ function ChannelPlot() {
             </Grid>
             <Grid item>
                 <Button
-                    sx={{marginLeft: 2, width: 5}}
+                    sx={{marginLeft: 2, width: '25%'}}
                     disabled={!selecting}
                     variant='contained'
                     onClick={addCellTypes}
@@ -57,16 +60,21 @@ function ChannelPlot() {
                     Add
                 </Button>
                 <Button
-                    sx={{marginLeft: 2, backgroundColor: 'rgba(244,67,54,1)',
+                    sx={{marginLeft: 2, 
+                        width: '25%', 
+                        backgroundColor: 'rgba(244,67,54,1)',
                         '&:hover': {backgroundColor: 'rgba(224,47,34,1)'}}}
                     disabled={!selecting}
                     variant='contained'
-                    onClick={addCellTypes}
+                    onClick={removeCellTypes}
                     >
                     Remove
                 </Button>
                 <Button
-                    sx={{marginLeft: 2, backgroundColor: 'rgba(0,0,0,0.1)', color: 'rgba(0,0,0,0.65)',
+                    sx={{marginLeft: 2, 
+                        width: '25%', 
+                        backgroundColor: 'rgba(0,0,0,0.1)', 
+                        color: 'rgba(0,0,0,0.65)',
                         '&:hover': {backgroundColor: 'rgba(0,0,0,0.2)'}}}
                     disabled={!selecting}
                     variant='contained'

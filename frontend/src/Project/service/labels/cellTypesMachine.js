@@ -112,6 +112,7 @@ function updateFromCells(cellTypes, cells) {
 									// From editCellTypesMachine
 									ADD_CELL: { actions: 'addCell', target: 'editing' },
 									MULTI_ADD_CELLS: { actions: 'addCells', target: 'editing' },
+									MULTI_REMOVE_CELLS: { actions: 'removeCells', target: 'editing' },
 									ADD_CELLTYPE: { actions: ['addCellType', 'addIsOn', 'addOpacity', 'setMaxId'], target: 'editing' },
 									REMOVE_CELLTYPE: { actions: 'removeCellType', target: 'editing' },
 									REMOVE_CELL: { actions: 'removeCell', target: 'editing' },
@@ -295,10 +296,24 @@ function updateFromCells(cellTypes, cells) {
 				cellTypes = ctx.cellTypes.map(
 					cellType => cellType.id === evt.cellType
 						? {...cellType, cells: cellType.cells.filter(
-								cell => !(cell === evt.cell)
+							cell => !(cell === evt.cell)
 						)}
 						: cellType
 				)
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+
+			// Removes a list of cells from a specified cell type
+			removeCells: send((ctx, evt) => {
+				let cellTypes;
+				const removedCells = evt.cells;
+				cellTypes = ctx.cellTypes.map(
+					cellType => (cellType.id === evt.cellType)
+						? {...cellType, cells: cellType.cells.filter(
+							cell => !(removedCells.includes(cell))
+						)}
+						: cellType
+				);
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
 

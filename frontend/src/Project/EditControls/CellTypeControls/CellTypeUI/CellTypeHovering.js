@@ -35,7 +35,8 @@ function CellTypeHovering() {
       position: 'relative',
       top: (y - sy) * zoom * scale,
       left: (x - sx) * zoom * scale,
-      pointerEvents: 'none'
+      pointerEvents: 'none',
+      zIndex: 1500,
     }}>
       {noCells ? (
         <></>

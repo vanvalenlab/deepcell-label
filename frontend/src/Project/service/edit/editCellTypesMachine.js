@@ -39,6 +39,7 @@
               mouseup: { actions: 'select' },
               ADD: { target: 'addingCell', actions: ['setCellType', 'setName'] },
               MULTIADD: { actions: ['setCellType', 'multiAddCells' ] },
+              MULTIREMOVE: { actions: ['setCellType', 'multiRemoveCells'] },
               REMOVE_MODE: { target: 'removingCell', actions: ['setCellType', 'setName'] },
               ADD_TYPE: { actions: ['setColor', 'addCellType'] },
               COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
@@ -134,6 +135,16 @@
            (ctx) => [
              send({
               type: 'MULTI_ADD_CELLS',
+              cellType: ctx.cellType,
+              cells: ctx.multiSelected,
+             },
+             { to: 'cellTypes' }),
+             assign({ multiSelected: [] })
+           ]),
+         multiRemoveCells: pure(
+           (ctx) => [
+             send({
+              type: 'MULTI_REMOVE_CELLS',
               cellType: ctx.cellType,
               cells: ctx.multiSelected,
              },

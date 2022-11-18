@@ -1,33 +1,34 @@
 import { Box, FormLabel} from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
+import { useState } from 'react';
 import Calculate from './ChannelExpressionUI/Calculate';
 import ChannelPlot from './ChannelExpressionUI/ChannelPlot';
 import ChannelSelect from './ChannelExpressionUI/ChannelSelect';
 import AddRemoveCancel from './ChannelExpressionUI/AddRemoveCancel';
-import { useCanvas, useChannelExpression, useLabelMode, useRaw } from '../../ProjectContext';
+import { useCanvas, useChannelExpression, useLabelMode } from '../../ProjectContext';
 
 function ChannelExpressionPlot() {
 
     const channelExpression = useChannelExpression();
     const labelMode = useLabelMode();
-    const raw = useRaw();
     const canvas = useCanvas();
-    const names = useSelector(raw, (state) => state.context.channelNames);
     const cellTypesEditing = useSelector(labelMode, (state) => state.matches('editCellTypes'));
     const calculations = useSelector(channelExpression, (state) => state.context.calculations);
     const calculated = calculations ? true : false;
     const sw = useSelector(canvas, (state) => state.context.width);
     const sh = useSelector(canvas, (state) => state.context.height);
     const scale = useSelector(canvas, (state) => state.context.scale);
+    const [channelX, setChannelX] = useState(0);
+    const [channelY, setChannelY] = useState(2);
 
     return (
         cellTypesEditing
         ? <Box sx={{
             position: 'absolute', 
-            left: 525 + sw * scale, 
+            left: 500 + sw * scale, 
             height: scale * sh,
-            overflow: 'hidden',
+            overflow: 'hidden', 
             overflowY: 'auto',
             '&::-webkit-scrollbar': {
                 width: 5,
@@ -48,8 +49,8 @@ function ChannelExpressionPlot() {
                 <Calculate />
                 {calculated
                     ? <>
-                        <ChannelSelect names={names} />
-                        <ChannelPlot calculations={calculations} />
+                        <ChannelSelect channelX={channelX} setChannelX={setChannelX} channelY={channelY} setChannelY={setChannelY} />
+                        <ChannelPlot channelX={channelX} channelY={channelY} calculations={calculations} />
                         <AddRemoveCancel />
                     </>
                     : <></>
