@@ -1,25 +1,22 @@
 import Checkbox from '@mui/material/Checkbox';
-import { useSelector } from '@xstate/react';
-import { useState } from 'react';
-import { useCellTypes, useEditCellTypes } from '../../../ProjectContext';
+import { useEditCellTypes } from '../../../ProjectContext';
 
 const checkStyle = {
   marginTop: 40,
   marginBottom: 5,
 }
 
-function CellTypeCheckbox({ color, id, openColor }) {
+function CellTypeCheckbox(props) {
 
+    const { color, id, openColor, toggleArray, setToggleArray } = props;
     const editCellTypes = useEditCellTypes();
-    const cellTypes = useCellTypes();
-    const isOnArray = useSelector(cellTypes, (state) => state.context.isOn);
-    const [isOn, setIsOn] = useState(true);
+    const isOn = toggleArray[id];
 
-    const handleCheck = () => {
+    const handleCheck = () => { 
       // Handle MUI bug where checkbox is invisible above color popper
       if (!openColor) {
         editCellTypes.send({type: 'TOGGLE', cellType: id});
-        setIsOn(isOnArray[id]);
+        setToggleArray(toggleArray.map((t, i) => i == id ? !isOn : t));
       }
     };
 

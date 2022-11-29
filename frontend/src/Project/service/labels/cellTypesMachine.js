@@ -159,6 +159,8 @@ function updateFromCells(cellTypes, cells) {
 							// SWAP: { actions: ['swap', 'sendCellTypes'] },
 							EDITED_CELLS: { actions: ['setCells', 'updateFromCells', 'updateColorMap'] },
 							EDIT_IS_ON: { actions: ['editIsOn', 'updateColorMap'] },
+							TOGGLE_ALL_ON: { actions: ['toggleAll', 'updateColorMap'] },
+							TOGGLE_ALL_OFF: { actions: ['untoggleAll', 'updateColorMap'] },
 							EDIT_OPACITY: { actions: ['editOpacities', 'updateColorMap'] },
 							CELLS: { actions: 'setCells' },
 							RESTORE: { actions: ['restore', 'updateColorMap'] },
@@ -361,7 +363,19 @@ function updateFromCells(cellTypes, cells) {
 			// Toggle a specified cell type on/off for the color map
 			editIsOn: assign({isOn: (ctx, evt) => {
 				let isOn = ctx.isOn;
-				isOn[evt.cellType] = !(isOn[evt.cellType]);
+				isOn[evt.cellType] = !isOn[evt.cellType];
+				return isOn;
+			}}),
+
+			// Toggle all cell types on for the color map
+			toggleAll: assign({isOn: (ctx) => {
+				let isOn = ctx.isOn.map(t => 1);
+				return isOn;
+			}}),
+
+			// Toggle all cell types off for the color map
+			untoggleAll: assign({isOn: (ctx) => {
+				let isOn = ctx.isOn.map(t => 0);
 				return isOn;
 			}}),
 
@@ -375,7 +389,7 @@ function updateFromCells(cellTypes, cells) {
 			// Add a new cell type to track for color map toggling
 			addIsOn: assign({ isOn: (ctx) => {
 				let isOn = ctx.isOn;
-				isOn.push(1);
+				isOn.push(true);
 				return isOn
 			}}),
 

@@ -37,7 +37,7 @@ function RGBControlsTop() {
       (state) => [state.context.width, state.context.scale],
       equal
   );
-  const menuWidth = scale * sw + 50;
+  const menuWidth = scale * sw + 355;
   const scrollRef = useHorizontalScroll();
 
   return (

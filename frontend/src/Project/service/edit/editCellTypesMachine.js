@@ -45,6 +45,8 @@
               COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
               NAME: { actions: ['setCellType', 'setName', 'editName'] },
               TOGGLE: { actions: ['setCellType', 'toggleOn'] },
+              TOGGLE_ALL: { actions: 'toggleAll' },
+              UNTOGGLE_ALL: { actions: 'untoggleAll' },
               OPACITY: { actions: ['setCellType', 'changeOpacity'] },
             },
           },
@@ -178,6 +180,18 @@
           (ctx) => ({
               type: 'EDIT_IS_ON',
               cellType: ctx.cellType,
+            }),
+            { to: 'cellTypes' }
+         ),
+         toggleAll: send(
+          (ctx) => ({
+              type: 'TOGGLE_ALL_ON',
+            }),
+            { to: 'cellTypes' }
+         ),
+         untoggleAll: send(
+          (ctx) => ({
+              type: 'TOGGLE_ALL_OFF',
             }),
             { to: 'cellTypes' }
          ),

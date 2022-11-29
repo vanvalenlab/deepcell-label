@@ -3,7 +3,7 @@ import Plot from 'react-plotly.js';
 import { useSelector } from '@xstate/react';
 import { useCellTypes, useEditCellTypes, useRaw, useSelect } from '../../../ProjectContext';
 
-function ChannelPlot({ calculations, channelX, channelY }) {
+function ChannelPlot({ calculations, channelX, channelY, plot }) {
 
     const cellTypes = useCellTypes();
     const editCellTypes = useEditCellTypes();
@@ -12,12 +12,16 @@ function ChannelPlot({ calculations, channelX, channelY }) {
     const names = useSelector(raw, (state) => state.context.channelNames);
     const selection = useSelector(editCellTypes, (state) => state.context.multiSelected);
     let colorMap = useSelector(cellTypes, (state) => state.context.colorMap);
+    let widthMap = [...colorMap];
     if (colorMap) {
         colorMap = colorMap.map((color, i) => selection.includes(i)
         ? `rgba(255,255,255,1)`
         : color[3] === 0
             ? 'rgba(33,150,243,0.15)'
             : `rgba(${color[0]},${color[1]},${color[2]},1)`);
+        widthMap = widthMap.map((color, i) => selection.includes(i)
+        ? 1.3 
+        : 0.5);
     }
 
     const handleSelection = (evt) => {
@@ -37,12 +41,12 @@ function ChannelPlot({ calculations, channelX, channelY }) {
 
     return (
         <Grid item>
-            {channelY > 0
+            {plot == 'scatter'
                 ? <Plot
                     data={[
                     {
                         x: calculations[channelX],
-                        y: calculations[channelY - 1],
+                        y: calculations[channelY],
                         type: 'scatter',
                         mode: 'markers',
                         marker: {
@@ -50,14 +54,14 @@ function ChannelPlot({ calculations, channelX, channelY }) {
                             size: 6,
                             line: {
                                 color: 'rgba(0,0,0,1)',
-                                width: 0.5,
+                                width: widthMap,
                             },
                         },
                     },
                     ]}
                     layout={ {width: 350, height: 350, margin: {l: 30, r: 20, b: 30, t: 20, pad: 5},
                         xaxis: {automargin: true, title: names[channelX]},
-                        yaxis: {automargin: true, title: names[channelY - 1]}, } }
+                        yaxis: {automargin: true, title: names[channelY ]}, } }
                     onSelected={handleSelection}
                     onClick={handleClick}
                 />

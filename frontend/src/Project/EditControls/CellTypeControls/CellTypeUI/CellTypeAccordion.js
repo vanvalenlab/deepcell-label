@@ -21,7 +21,7 @@ const accordionSummaryStyle = {
 }
 
 function CellTypeAccordion(props) {
-    const { cellType, expanded, setExpanded } = props;
+    const { cellType, expanded, setExpanded, toggleArray, setToggleArray } = props;
 
     const [openColor, toggleColor] = useReducer((v) => !v, false);
 
@@ -37,7 +37,7 @@ function CellTypeAccordion(props) {
         <Accordion sx={rowStyle} expanded={expanded === cellType.id} onChange={handleChange(cellType.id)}>
             <AccordionSummary style={accordionSummaryStyle}>
                 {/* Toggle view of Cell Type with checkbox*/}
-                <CellTypeCheckbox id={cellType.id} color={cellType.color} openColor={openColor} />
+                <CellTypeCheckbox id={cellType.id} color={cellType.color} openColor={openColor} toggleArray={toggleArray} setToggleArray={setToggleArray} />
 
                 {/* Slider for cell type opacity on canvas */}
                 <CellTypeOpacitySlider id={cellType.id} color={cellType.color} />

@@ -6,8 +6,9 @@ import { useReducer, useRef } from 'react';
 import { TwitterPicker } from 'react-color';
 import { useEditCellTypes } from '../../../ProjectContext';
 
-function AddCellTypeLabel() {
+function AddCellTypeLabel(props) {
 
+    const { toggleArray, setToggleArray } = props;
 	const editCellTypesRef = useEditCellTypes();
 
     const [open, toggle] = useReducer((v) => !v, false);
@@ -15,6 +16,7 @@ function AddCellTypeLabel() {
 
 	const handleChange = (color) => {
 		editCellTypesRef.send({type: 'ADD_TYPE', color: color.hex});
+        setToggleArray(toggleArray.concat([true]));
 		toggle();
 	};
 

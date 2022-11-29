@@ -24,10 +24,11 @@
          t: 0,
          feature: 0,
          labeled: null, // currently displayed labeled frame (Int32Array[][])
-         raw: null, // current displayed raw frame (Uint8Array[][])
+         raw: null, // current displayed raw frame (?Array[][])
          cells: null,
          numCells: null,
          calculations: null,
+         calculation: null,
        },
        initial: 'loading',
        on: {
@@ -77,19 +78,19 @@
                 entry: choose([
                   {
                     cond: (_, evt) => evt.stat === 'Mean UMAP',
-                    actions: send('MEAN_UMAP')
+                    actions: ['setStat', send('MEAN_UMAP')]
                   },
                   {
                     cond: (_, evt) => evt.stat === 'Total UMAP',
-                    actions: send('TOTAL_UMAP')
+                    actions: ['setStat', send('TOTAL_UMAP')]
                   },
                   {
                     cond: (_, evt) => evt.stat === 'Mean',
-                    actions: send('MEAN')
+                    actions: ['setStat', send('MEAN')]
                   },
                   {
                     cond: (_, evt) => evt.stat === 'Total',
-                    actions: send('TOTAL')
+                    actions: ['setStat', send('TOTAL')]
                   },
                 ]),
                 on: {
@@ -117,14 +118,14 @@
      },
      {
        actions: {
-         setRaw: assign({ raw: (_, evt) => evt.raw }),
+         setRaw: assign({ raw: (_, evt) => evt.rawOriginal }),
          setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
          setCells: assign({ cells: (_, evt) => evt.cells }),
          setNumCells: assign({ numCells: (_, evt) => new Cells(evt.cells).getNewCell() }),
          setT: assign({ t: (_, evt) => evt.t }),
          setFeature: assign({ feature: (_, evt) => evt.feature }),
+         setStat: assign({ calculation: (_, evt) => evt.stat }),
          calculateMean: assign({ calculations: (ctx) => {
-            console.time('timing');
             const { t, feature, labeled, raw, cells, numCells } = ctx;
             const width = labeled[0].length;
             const height = labeled.length;
@@ -158,7 +159,6 @@
                 channelMeans[c][i] = totalValues[c][i] / cellSizes[c][i];
               }
             }
-            console.timeEnd('timing');
             return channelMeans;
          }}),
          calculateTotal: assign({ calculations: (ctx) => {

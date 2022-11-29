@@ -28,7 +28,7 @@ function EditingPrompt() {
   }
 
   return (
-    <Box sx={{zIndex: 1, position: 'absolute', left: toolTipWidth, top: 100}}>
+    <Box sx={{zIndex: 1, position: 'absolute', left: toolTipWidth, top: 170}}>
     <Paper style={paperStyle}>
       {cell ? (
         <Typography sx={{color: 'white'}}>
