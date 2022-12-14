@@ -9,7 +9,7 @@ function getName(cellTypes, id) {
     return type.name;
 };
 
-function ChannelPlot() {
+function AddRemoveCancel() {
     const cellTypes = useCellTypes();
     const editCellTypes = useEditCellTypes();
     const labeled = useLabeled();
@@ -42,7 +42,7 @@ function ChannelPlot() {
         <>
             <Grid item>
                 <TextField select size='small' value={cellType} onChange={handleCellType}
-                    sx={{width: '94%'}}>
+                    sx={{width: 325.5, marginLeft: 1.45}}>
                     {cellTypeIds.map((opt, index) => (
                         <MenuItem key={index} value={index}>
                             {getName(cellTypesList, opt)}
@@ -50,9 +50,9 @@ function ChannelPlot() {
                     ))}
                 </TextField>
             </Grid>
-            <Grid item>
+            <Grid item sx={{marginLeft: 0.5, marginBottom: 1}}>
                 <Button
-                    sx={{marginLeft: 2, width: '25%'}}
+                    sx={{marginLeft: 1, width: 95}}
                     disabled={!selecting}
                     variant='contained'
                     onClick={addCellTypes}
@@ -60,8 +60,8 @@ function ChannelPlot() {
                     Add
                 </Button>
                 <Button
-                    sx={{marginLeft: 2, 
-                        width: '25%', 
+                    sx={{marginLeft: 1, 
+                        width: 107, 
                         backgroundColor: 'rgba(244,67,54,1)',
                         '&:hover': {backgroundColor: 'rgba(224,47,34,1)'}}}
                     disabled={!selecting}
@@ -71,8 +71,8 @@ function ChannelPlot() {
                     Remove
                 </Button>
                 <Button
-                    sx={{marginLeft: 2, 
-                        width: '25%', 
+                    sx={{marginLeft: 1, 
+                        width: 105, 
                         backgroundColor: 'rgba(0,0,0,0.1)', 
                         color: 'rgba(0,0,0,0.65)',
                         '&:hover': {backgroundColor: 'rgba(0,0,0,0.2)'}}}
@@ -87,4 +87,4 @@ function ChannelPlot() {
     );
 };
 
-export default ChannelPlot;
+export default AddRemoveCancel;

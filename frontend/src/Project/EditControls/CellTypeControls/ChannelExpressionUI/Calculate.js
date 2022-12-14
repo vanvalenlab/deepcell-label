@@ -1,12 +1,13 @@
 import { Button, MenuItem, TextField } from '@mui/material';
+import CalculateIcon from '@mui/icons-material/Calculate';
 import Grid from '@mui/material/Grid';
 import { useState } from 'react';
 import { useChannelExpression } from '../../../ProjectContext';
 
-function ChannelPlot() {
+function Calculate() {
     
     const channelExpression = useChannelExpression();
-    const quantities = ['Mean', 'Total', 'Mean UMAP', 'Total UMAP'];
+    const quantities = ['Mean', 'Total'];
     const [stat, setStat] = useState(0);
 
     const handleCalculation = () => {
@@ -14,9 +15,15 @@ function ChannelPlot() {
     };
 
     return (
-        <Grid item display='flex'>
-            <TextField select size='small' value={stat} onChange={(evt) => setStat(evt.target.value)}
-                sx={{width: 130}}>
+        <Grid item display='flex' sx={{marginTop: 1}}>
+            <TextField
+                select
+                size='small'
+                value={stat}
+                label='Statistic'
+                onChange={(evt) => setStat(evt.target.value)}
+                sx={{width: 130}}
+            >
                 {quantities.map((opt, index) => (
                 <MenuItem key={index} value={index}>
                     {opt}
@@ -27,6 +34,7 @@ function ChannelPlot() {
                 sx={{marginLeft: 2}}
                 variant='contained'
                 onClick={handleCalculation}
+                startIcon={<CalculateIcon/>}
                 >
                 Calculate
             </Button>
@@ -34,4 +42,4 @@ function ChannelPlot() {
     );
 };
 
-export default ChannelPlot;
+export default Calculate;

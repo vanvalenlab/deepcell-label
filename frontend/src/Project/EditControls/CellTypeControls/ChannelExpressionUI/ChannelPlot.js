@@ -1,16 +1,17 @@
 import Grid from '@mui/material/Grid';
 import Plot from 'react-plotly.js';
 import { useSelector } from '@xstate/react';
-import { useCellTypes, useEditCellTypes, useRaw, useSelect } from '../../../ProjectContext';
+import { useCellTypes, useChannelExpression, useEditCellTypes, useRaw } from '../../../ProjectContext';
 
 function ChannelPlot({ calculations, channelX, channelY, plot }) {
 
     const cellTypes = useCellTypes();
     const editCellTypes = useEditCellTypes();
     const raw = useRaw();
-    const select = useSelect();
+    const channelExpression = useChannelExpression();
     const names = useSelector(raw, (state) => state.context.channelNames);
     const selection = useSelector(editCellTypes, (state) => state.context.multiSelected);
+    const stat = useSelector(channelExpression, (state) => state.context.calculation);
     let colorMap = useSelector(cellTypes, (state) => state.context.colorMap);
     let widthMap = [...colorMap];
     if (colorMap) {
@@ -34,9 +35,15 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
         }
     };
 
+    const handleDeselect = () => {
+        if (selection.length > 0) {
+            editCellTypes.send({type: 'MULTISELECTION', selected: []});
+        }
+    };
+
     const handleClick = (evt) => {
         const cell = evt.points[0].pointNumber;
-        select.send({ type: 'SELECT', cell: cell });
+        editCellTypes.send({ type: 'MULTISELECTION', selected: [cell] });
     };
 
     return (
@@ -59,10 +66,12 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
                         },
                     },
                     ]}
-                    layout={ {width: 350, height: 350, margin: {l: 30, r: 20, b: 30, t: 20, pad: 5},
+                    layout={ {width: 350, height: 370, margin: {l: 30, r: 20, b: 30, t: 30, pad: 5},
+                        title: { text: stat },
                         xaxis: {automargin: true, title: names[channelX]},
                         yaxis: {automargin: true, title: names[channelY ]}, } }
                     onSelected={handleSelection}
+                    onDoubleClick={handleDeselect}
                     onClick={handleClick}
                 />
                 : <Plot
@@ -75,7 +84,8 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
                         },
                     },
                     ]}
-                    layout={ {bargap: 0.1, width: 350, height: 350, margin: {l: 30, r: 20, b: 30, t: 20, pad: 5},
+                    layout={ {bargap: 0.1, width: 350, height: 350, margin: {l: 30, r: 20, b: 30, t: 30, pad: 5},
+                        title: { text: stat },
                         xaxis: {automargin: true, title: names[channelX]}, } }
                     onSelected={handleSelection}
                 />

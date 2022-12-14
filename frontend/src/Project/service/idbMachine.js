@@ -62,7 +62,10 @@ function createIDBMachine({ projectId, eventBuses }) {
         loadProject: {
           on: {
             LOADED: {
-              actions: forwardTo('idb'),
+              actions: send((ctx, evt) => {
+                const {rawOriginal, ...data} = evt;
+                return data;
+              }, { to: 'idb' }),
               target: 'idle',
             },
           },

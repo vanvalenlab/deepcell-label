@@ -112,6 +112,7 @@ function updateFromCells(cellTypes, cells) {
 									// From editCellTypesMachine
 									ADD_CELL: { actions: 'addCell', target: 'editing' },
 									MULTI_ADD_CELLS: { actions: 'addCells', target: 'editing' },
+									ADD_PREDICTIONS: { actions: 'addPredictions', target: 'editing' },
 									MULTI_REMOVE_CELLS: { actions: 'removeCells', target: 'editing' },
 									ADD_CELLTYPE: { actions: ['addCellType', 'addIsOn', 'addOpacity', 'setMaxId'], target: 'editing' },
 									REMOVE_CELLTYPE: { actions: 'removeCellType', target: 'editing' },
@@ -288,7 +289,22 @@ function updateFromCells(cellTypes, cells) {
 						? {...cellType, cells: [...cellType.cells, ...newCells].sort(function(a, b) {
 							return a - b;})}
 						: cellType
-				);
+				)
+				return { type: 'EDITED_CELLTYPES', cellTypes };
+			}),
+
+			// Add a prediction map of cells with their label
+			addPredictions: send((ctx, evt) => {
+				let cellTypes = ctx.cellTypes;
+				const pred = evt.predictions;
+				for (var cell in pred) {
+					cellTypes = cellTypes.map(
+						cellType => (cellType.id === pred[cell] + 1 && !cellType.cells.includes(cell))
+							? {...cellType, cells: [...cellType.cells, parseInt(cell)].sort(function(a, b) {
+								return a - b;})}
+							: cellType
+					)
+				}
 				return { type: 'EDITED_CELLTYPES', cellTypes };
 			}),
 
