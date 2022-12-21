@@ -23,9 +23,10 @@ function CellTypeOpacitySlider({ color, id }) {
     return (
         <Slider 
             value={opacity}
+            valueLabelDisplay='auto'
             min={0.1}
             max={0.8}
-            step={0.01}
+            step={0.1}
             onClick={(e) => e.stopPropagation()}
             onChange={handleChange}
             onDoubleClick={handleDoubleClick}
@@ -34,7 +35,11 @@ function CellTypeOpacitySlider({ color, id }) {
                     marginTop: 5,
                     marginLeft: 4.95,
                     color: color,
-                    '& .MuiSlider-thumb': { height: 15, width: 15 }
+                    '& .MuiSlider-thumb': { height: 15, width: 15,
+                        // '&:hover': {
+                        //     boxShadow: `0 0 0 8px ${color}`,
+                        // },
+                    }
             }}
             size='small'
         />

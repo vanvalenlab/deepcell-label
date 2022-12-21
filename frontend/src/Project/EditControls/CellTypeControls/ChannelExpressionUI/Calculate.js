@@ -1,5 +1,4 @@
 import { Button, MenuItem, TextField } from '@mui/material';
-import CalculateIcon from '@mui/icons-material/Calculate';
 import Grid from '@mui/material/Grid';
 import { useState } from 'react';
 import { useChannelExpression } from '../../../ProjectContext';
@@ -34,7 +33,6 @@ function Calculate() {
                 sx={{marginLeft: 2}}
                 variant='contained'
                 onClick={handleCalculation}
-                startIcon={<CalculateIcon/>}
                 >
                 Calculate
             </Button>

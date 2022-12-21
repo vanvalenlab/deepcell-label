@@ -125,8 +125,7 @@
       shuffle: true,
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          sendBack({ type: 'SET_EPOCH', epoch: epoch });
-          console.log(logs);
+          sendBack({ type: 'SET_EPOCH', epoch: epoch, logs: logs });
         },
       },
    });
@@ -152,12 +151,28 @@ async function train(ctx, evt, sendBack) {
 
   const model = createModel([inputs.shape[1]], labels.shape[1]);
   await trainModel(model, inputs, labels, sendBack, evt.batchSize, evt.epochs, evt.lr);
+  // Finish by sending the trained model back to parent
+  sendBack({type: 'DONE', model: model, inputMax: inputMax, inputMin: inputMin, epoch: 0});
+};
+
+async function predict(ctx, evt) {
+  const numChannels = ctx.raw.length;
+  let vectors = [];
+  for (let i = 0; i < ctx.calculations[0].length; i++) {
+    let vector = [];
+    for (let c = 0; c < numChannels; c++) {
+      vector.push(ctx.calculations[c][i]);
+    }
+    vectors.push(vector);
+  }
+  const [inputMin, inputMax] = ctx.range;
+  const cells = getCellList(ctx.cellTypes);
   const { unlabeled, unlabeledTensor } = getUnlabeledTensor(cells, vectors);
   const normalized = unlabeledTensor.sub(inputMin).div(inputMax.sub(inputMin));
-  const pred = model.predict(normalized);
-  const predMap = getPredictions(pred, unlabeled);
-  sendBack({type: 'DONE', data: predMap, epoch: 0});
-};
+  const pred = ctx.model.predict(normalized);
+  const predMap = await getPredictions(pred, unlabeled);
+  return predMap;
+}
 
  const createChannelExpressionMachine = ({ eventBuses }) =>
    Machine(
@@ -175,6 +190,7 @@ async function train(ctx, evt, sendBack) {
          t: 0,
          feature: 0,
          epoch: 0,
+         range: null,
          labeled: null, // currently displayed labeled frame (Int32Array[][])
          raw: null, // current displayed raw frame (?Array[][])
          cells: null,
@@ -183,10 +199,13 @@ async function train(ctx, evt, sendBack) {
          calculations: null,
          reduction: null,
          calculation: null,
+         model: null,
+         logs: [],
        },
        initial: 'loading',
        on: {
          LABELED: { actions: 'setLabeled' },
+         RAW: { actions: 'setRaw' },
          CELLS: { actions: ['setCells', 'setNumCells'] },
          CELLTYPES: { actions: 'setCellTypes' },
          SET_T: { actions: 'setT' },
@@ -229,6 +248,7 @@ async function train(ctx, evt, sendBack) {
                   CALCULATE: { target: 'calculating' },
                   CALCULATE_UMAP: { target: 'visualizing' },
                   TRAIN: { target: 'training' },
+                  PREDICT: { target: 'predicting' },
                 },
               },
               calculating: {
@@ -248,11 +268,11 @@ async function train(ctx, evt, sendBack) {
                 entry: choose([
                   {
                     cond: (_, evt) => evt.stat === 'Mean',
-                    actions: ['setStat', 'calculateMean', 'calculateUmap'],
+                    actions: ['setStat', 'resetLogs', 'calculateMean', 'calculateUmap'],
                   },
                   {
                     cond: (_, evt) => evt.stat === 'Total',
-                    actions: ['setStat', 'calculateTotal', 'calculateUmap'],
+                    actions: ['setStat', 'resetLogs', 'calculateTotal', 'calculateUmap'],
                   },
                 ]),
                 always: 'idle',
@@ -261,11 +281,11 @@ async function train(ctx, evt, sendBack) {
                 entry: choose([
                   {
                     cond: (_, evt) => evt.stat === 'Mean',
-                    actions: ['setStat', 'calculateMean'],
+                    actions: ['setStat', 'calculateMean', 'resetLogs', 'resetVis'],
                   },
                   {
                     cond: (_, evt) => evt.stat === 'Total',
-                    actions: ['setStat', 'calculateTotal'],
+                    actions: ['setStat', 'calculateTotal', 'resetLogs', 'resetVis'],
                   },
                 ]),
                 invoke: {
@@ -277,20 +297,42 @@ async function train(ctx, evt, sendBack) {
                   // onError: { target: 'idle', actions: (c, e) => console.log(c, e) },
                 },
                 on: {
-                  SET_EPOCH: { actions: 'setEpoch' },
+                  SET_EPOCH: { actions: ['setEpoch', 'setLogs'] },
                   DONE: {
                     target: 'idle',
-                    actions: ['setEpoch', 'sendPredictions'],
+                    actions: ['setEpoch', 'setModel', 'setRange'],
                   },
                 }
               },
+              predicting: {
+                entry: choose([
+                  {
+                    cond: (_, evt) => evt.stat === 'Mean',
+                    actions: ['setStat', 'calculateMean'],
+                  },
+                  {
+                    cond: (_, evt) => evt.stat === 'Total',
+                    actions: ['setStat', 'calculateTotal'],
+                  },
+                ]),
+                invoke: {
+                  id: 'predicting',
+                  src: predict,
+                  onDone: {
+                    target: 'idle',
+                    actions: 'sendPredictions',
+                  },
+                  // TODO: send error message to parent and display in UI
+                  onError: { target: 'idle', actions: ['sendApiError', (c, e) => console.log(c, e)] },
+                },
+              }
             },
           },
        },
      },
      {
        actions: {
-         setRaw: assign({ raw: (_, evt) => evt.rawOriginal }),
+         setRaw: assign({ raw: (_, evt) => evt.raw }),
          setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
          setCells: assign({ cells: (_, evt) => evt.cells }),
          setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
@@ -298,7 +340,12 @@ async function train(ctx, evt, sendBack) {
          setT: assign({ t: (_, evt) => evt.t }),
          setFeature: assign({ feature: (_, evt) => evt.feature }),
          setEpoch: assign({ epoch: (_, evt) => evt.epoch }),
+         setLogs: assign({ logs: (ctx, evt) => ctx.logs.concat([evt.logs.loss]) }),
+         resetLogs: assign({ logs: (_) => [] }),
+         resetVis: assign({ reduction: (_) => null }),
          setStat: assign({ calculation: (_, evt) => evt.stat }),
+         setModel: assign({ model: (_, evt) => evt.model }),
+         setRange: assign({ range: (_, evt) => [evt.inputMin, evt.inputMax] }),
          sendPredictions: send((_, evt) => ({ type: 'ADD_PREDICTIONS', predictions: evt.data }), { to: 'cellTypes', }),
          calculateMean: assign({ calculations: (ctx) => {
             const { t, feature, labeled, raw, cells, numCells } = ctx;

@@ -61,7 +61,15 @@ function EmbeddingPlot({ embedding }) {
                     },
                 },
                 ]}
-                layout={ {width: 350, height: 350, margin: {l: 30, r: 20, b: 30, t: 20, pad: 5},} }
+                layout={{
+                    width: 350,
+                    height: 350,
+                    margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
+                }}
+                config={{
+                    displaylogo: false,
+                    modeBarButtonsToRemove: ['toImage', 'autoScale2d', 'zoomIn2d', 'zoomOut2d']
+                }}
                 onSelected={handleSelection}
                 onClick={handleClick}
                 onDoubleClick={handleDeselect}

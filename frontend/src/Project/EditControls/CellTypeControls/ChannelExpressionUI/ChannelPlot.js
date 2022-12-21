@@ -66,10 +66,18 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
                         },
                     },
                     ]}
-                    layout={ {width: 350, height: 370, margin: {l: 30, r: 20, b: 30, t: 30, pad: 5},
+                    layout={{
+                        width: 350,
+                        height: 370,
+                        margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
                         title: { text: stat },
-                        xaxis: {automargin: true, title: names[channelX]},
-                        yaxis: {automargin: true, title: names[channelY ]}, } }
+                        xaxis: { automargin: true, title: names[channelX] },
+                        yaxis: { automargin: true, title: names[channelY ] },
+                    }}
+                    config={{
+                        displaylogo: false,
+                        modeBarButtonsToRemove: ['toImage', 'autoScale2d', 'zoomIn2d', 'zoomOut2d']
+                    }}
                     onSelected={handleSelection}
                     onDoubleClick={handleDeselect}
                     onClick={handleClick}
@@ -84,9 +92,18 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
                         },
                     },
                     ]}
-                    layout={ {bargap: 0.1, width: 350, height: 350, margin: {l: 30, r: 20, b: 30, t: 30, pad: 5},
+                    layout={{
+                        bargap: 0.1,
+                        width: 350,
+                        height: 350,
+                        margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
                         title: { text: stat },
-                        xaxis: {automargin: true, title: names[channelX]}, } }
+                        xaxis: { automargin: true, title: names[channelX] },
+                    }}
+                    config={{
+                        displaylogo: false,
+                        modeBarButtonsToRemove: ['toImage', 'autoScale2d', 'zoomIn2d', 'zoomOut2d']
+                    }}
                     onSelected={handleSelection}
                 />
             }

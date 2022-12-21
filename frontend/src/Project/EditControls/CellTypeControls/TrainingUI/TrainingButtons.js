@@ -2,7 +2,7 @@ import { Box, Button, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import InsightsIcon from '@mui/icons-material/Insights';
 import LinearProgress from '@mui/material/LinearProgress';
-import ScatterPlotIcon from '@mui/icons-material/ScatterPlot';
+import MiscellaneousServicesIcon from '@mui/icons-material/MiscellaneousServices';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
@@ -17,8 +17,8 @@ function TrainingButtons({ quantities, embedding }) {
     const lrs = [0.001, 0.01, 0.1, 1.0];
     const channelExpression = useChannelExpression();
     const theme = useTheme();
-    const processing = useSelector(channelExpression, (state) => state.matches('loaded.training'));
     const cellTypes = useSelector(channelExpression, (state) => state.context.cellTypes);
+    const model = useSelector(channelExpression, (state) => state.context.model);
     const cellCount = getCellList(cellTypes).length;
     const progress = useSelector(channelExpression, (state) => state.context.epoch);
     const [batch, setBatch] = useState(batches[0]);
@@ -26,18 +26,18 @@ function TrainingButtons({ quantities, embedding }) {
     const [lr, setLr] = useState(lrs[0]);
     const badBatch = batch > cellCount;
 
-    const handleVisualize = () => {
-        channelExpression.send({ type: 'CALCULATE_UMAP', stat: quantities[embedding] });
-    };
-
-    const handlePredict = () => {
+    const handleTrain = () => {
         if (!badBatch) {
             channelExpression.send({ type: 'TRAIN', stat: quantities[embedding], batchSize: batch, epochs: epoch, lr: lr });
         }
     };
 
+    const handlePredict = () => {
+        channelExpression.send({ type: 'PREDICT', stat: quantities[embedding] });
+    };
+
     return (
-        <Box sx={{marginTop: 2, marginLeft: 1.8}}>
+        <Box sx={{marginTop: 4, marginLeft: 1.8}}>
             <Hyperparameters
                 badBatch={badBatch}
                 batches={batches}
@@ -62,17 +62,29 @@ function TrainingButtons({ quantities, embedding }) {
             </Grid>
             <Grid item display='flex' sx={{marginTop: 1}}>
                 <Button
-                    sx={{ marginLeft: 1.55, width: 154.6 }}
+                    sx={{
+                        marginLeft: 1.55,
+                        width: 154.6,
+                        height: 35,
+                        backgroundColor: 'rgba(245, 20, 87, 1)',
+                        '&:hover': { backgroundColor: 'rgba(224, 0, 67, 1)' }
+                    }}
                     variant='contained'
-                    onClick={handleVisualize}
-                    startIcon={<ScatterPlotIcon/>}
+                    onClick={handleTrain}
+                    startIcon={<MiscellaneousServicesIcon/>}
                 >
-                    Visualize
+                    Train
                 </Button>
                 <Button
-                    sx={{ marginLeft: 2, width: 154.6 }}
+                    disabled={model ? false : true}
+                    sx={{
+                        marginLeft: 2,
+                        width: 154.6,
+                        height: 35,
+                        backgroundColor: 'rgba(20, 200, 83, 1)',
+                        '&:hover': { backgroundColor: 'rgba(0, 180, 63, 1)' }
+                    }}
                     variant='contained'
-                    color='success'
                     onClick={handlePredict}
                     startIcon={<InsightsIcon/>}
                 >
@@ -80,18 +92,11 @@ function TrainingButtons({ quantities, embedding }) {
                 </Button>
             </Grid>
             <Grid item>
-                { processing
-                    ? <LinearProgress
-                        variant="determinate"
-                        value={progress / epoch * 100}
-                        sx={{ marginTop: 3, marginLeft: 1.6, width: 325 }}
-                    />
-                    : <LinearProgress
-                        variant="determinate"
-                        value={progress / epoch * 100}
-                        sx={{ marginTop: 3, marginLeft: 1.6, width: 325 }}
-                    />
-                }
+                <LinearProgress
+                    variant="determinate"
+                    value={progress / epoch * 100}
+                    sx={{ marginTop: 3, marginLeft: 1.6, width: 325 }}
+                />
             </Grid>
         </Box>
     );

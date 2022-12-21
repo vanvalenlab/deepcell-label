@@ -4,11 +4,12 @@ import {
   useAlphaGpu,
   useArrays,
   useCanvas,
-  useCellMatrix,
+  useCellsAtTime,
   useChannel,
   useImage,
   useLabeled,
   useRaw,
+  useReducedCellMatrix,
   useSelectedCell,
 } from '../ProjectContext';
 
@@ -38,14 +39,15 @@ const OutlineCanvas = ({ setBitmaps }) => {
     (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
-  const cellMatrix = useCellMatrix();
+  const cellsList = useCellsAtTime();
+  const { cellMatrix, minCell, minValue } = useReducedCellMatrix();
 
   const gpu = useAlphaGpu();
   const kernelRef = useRef();
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (data, cells, numValues, numLabels, opacity, cell, invert) {
+      `function (data, cells, minCell, minValue, cellsList, numValues, numLabels, opacity, cell, invert) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -66,13 +68,17 @@ const OutlineCanvas = ({ setBitmaps }) => {
           east = data[y + 1][x];
         }
         let outlineOpacity = 1;
-        if (value < numValues) {
+        if (value - minValue < numValues && value - minValue >= 0) {
           for (let i = 0; i < numLabels; i++) {
-            if (cells[value][i] === 1) {
-              if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0
-                  || north >= numValues || south >= numValues || west >= numValues || east >= numValues)
-             {
-                if (cell === i) {
+            const currCell = cellsList[i];
+            if (cells[value - minValue][currCell - minCell] === 1) {
+              if (north === 0 || south === 0 || west === 0 || east === 0
+                  || cells[north - minValue][currCell - minCell] === 0 || cells[south - minValue][currCell - minCell] === 0
+                  || cells[west - minValue][currCell - minCell] === 0 || cells[east - minValue][currCell - minCell] === 0
+                  || north - minValue >= numValues || south - minValue >= numValues
+                  || west - minValue >= numValues || east - minValue >= numValues)
+              {
+                if (cell === currCell) {
                   outlineOpacity = outlineOpacity * (1 - opacity[1]);
                 } else {
                   outlineOpacity = outlineOpacity * (1 - opacity[0]);
@@ -102,17 +108,17 @@ const OutlineCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    if (labeledArray && cellMatrix) {
-      const numLabels = cellMatrix[0].length;
+    if (labeledArray && cellMatrix && cellsList.length > 0) {
+      const numLabels = cellsList.length;
       const numValues = cellMatrix.length;
       // Compute the outline of the labels with the kernel
-      kernel(labeledArray, cellMatrix, numValues, numLabels, [opacity, opacity], cell, invert);
+      kernel(labeledArray, cellMatrix, minCell, minValue, cellsList, numValues, numLabels, [opacity, opacity], cell, invert);
       // Rerender the parent canvas
       createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, outline: bitmap }));
       });
     }
-  }, [labeledArray, cellMatrix, opacity, cell, invert, setBitmaps, width, height]);
+  }, [labeledArray, cellMatrix, minCell, minValue, cellsList, opacity, cell, invert, setBitmaps, width, height]);
 
   return null;
 };

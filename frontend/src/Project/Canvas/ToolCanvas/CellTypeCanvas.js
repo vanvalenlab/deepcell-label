@@ -5,10 +5,11 @@ import {
   useAlphaGpu,
   useArrays,
   useCanvas,
-  useCellMatrix,
+  useCellsAtTime,
   useCellTypes,
   useImage,
   useLabeled,
+  useReducedCellMatrix,
   useSelectedCell,
 } from '../../ProjectContext';
 
@@ -34,14 +35,15 @@ function CellTypeCanvas({ setBitmaps }) {
   const cellTypes = useCellTypes();
   const colorMap = useSelector(cellTypes, (state) => state.context.colorMap);
 
-  const cellMatrix = useCellMatrix();
+  const cellsList = useCellsAtTime();
+  const { cellMatrix, minCell, minValue } = useReducedCellMatrix();
 
   const gpu = useAlphaGpu();
   const kernelRef = useRef();
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (data, cell, cells, numLabels, numValues, colorMap) {
+      `function (data, cell, cells, minCell, minValue, cellsList, numLabels, numValues, colorMap) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -63,21 +65,25 @@ function CellTypeCanvas({ setBitmaps }) {
         }
         let outlineOpacity = 1;
         let [r, g, b, a] = [0, 0, 0, 1];
-        if (value < numValues) {
+        if (value - minValue < numValues && value >= minValue) {
           for (let i = 0; i < numLabels; i++) {
+            const currCell = cellsList[i];
             let [sr, sg, sb, sa] = [0, 0, 0, 0];
-            if (cells[value][i] === 1) {
-              if (cells[north][i] === 0 || cells[south][i] === 0 || cells[west][i] === 0 || cells[east][i] === 0
-                  || north >= numValues || south >= numValues || west >= numValues || east >= numValues)
+            if (cells[value - minValue][currCell - minCell] === 1) {
+              if (north === 0 || south === 0 || west === 0 || east === 0
+                || cells[north - minValue][currCell - minCell] === 0 || cells[south - minValue][currCell - minCell] === 0
+                || cells[west - minValue][currCell - minCell] === 0 || cells[east - minValue][currCell - minCell] === 0
+                || north - minValue >= numValues || south - minValue >= numValues
+                || west - minValue >= numValues || east - minValue >= numValues)
               {
-                if (i === cell) {
+                if (currCell === cell) {
                   this.color(1, 1, 1, 1);
                 }
                 else {
-                  sr = colorMap[i][0];
-                  sg = colorMap[i][1];
-                  sb = colorMap[i][2];
-                  sa = colorMap[i][3];
+                  sr = colorMap[currCell][0];
+                  sg = colorMap[currCell][1];
+                  sb = colorMap[currCell][2];
+                  sa = colorMap[currCell][3];
                   if (sa > 0) {
                     sa = 1;
                   }
@@ -85,16 +91,16 @@ function CellTypeCanvas({ setBitmaps }) {
                 }
               }
               else {
-                if (colorMap[i][3] !== 0) {
+                if (colorMap[currCell][3] !== 0) {
                   let opacity = 1;
-                  sa = colorMap[i][3];
+                  sa = colorMap[currCell][3];
                   // Use mixing if overlap exists
                   if (a < 1) {
                     opacity = sa;
                   }
-                  sr = opacity * colorMap[i][0];
-                  sg = opacity * colorMap[i][1];
-                  sb = opacity * colorMap[i][2];
+                  sr = opacity * colorMap[currCell][0];
+                  sg = opacity * colorMap[currCell][1];
+                  sb = opacity * colorMap[currCell][2];
                   r = r + sr - r * sr;
                   g = g + sg - g * sg;
                   b = b + sb - b * sb;
@@ -120,16 +126,16 @@ function CellTypeCanvas({ setBitmaps }) {
   useEffect(() => {
     const kernel = kernelRef.current;
     
-    if (labeledArray && cellMatrix) {
+    if (labeledArray && cellMatrix && cellsList.length > 0) {
+      const numLabels = cellsList.length;
       const numValues = cellMatrix.length;
-      const numLabels = cellMatrix[0].length;
-      kernel(labeledArray, cell, cellMatrix, numLabels, numValues, colorMap);
+      kernel(labeledArray, cell, cellMatrix, minCell, minValue, cellsList, numLabels, numValues, colorMap);
       // Rerender the parent canvas
       createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, types: bitmap }));
       });
     }
-  }, [labeledArray, cell, cellMatrix, colorMap, setBitmaps, width, height]);
+  }, [labeledArray, cell, cellMatrix, cellsList, minCell, minValue, colorMap, setBitmaps, width, height]);
 
   useEffect(
     () => () =>

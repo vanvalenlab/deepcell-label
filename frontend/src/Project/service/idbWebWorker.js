@@ -113,7 +113,7 @@ const idbMachine = createMachine(
         message: 'from idb web worker machine',
       })),
       setProject: assign((ctx, evt) => {
-        const { type, rawOriginal, ...project } = evt;
+        const { type, ...project } = evt;
         return { project };
       }),
       setProjectFromDb: assign({ project: (ctx, evt) => ({ ...evt.data }) }),

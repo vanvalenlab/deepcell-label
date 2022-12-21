@@ -19,13 +19,6 @@ function Hyperparameters(props) {
                 size='small'
                 sx={{ width: 100, marginLeft: 1.55, marginBottom: 2}}
                 onChange={(evt) => setBatch(batches[evt.target.value])}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position='start'>
-                            <HeightIcon fontSize='small' sx={{marginLeft: -1}}/>
-                        </InputAdornment>
-                    ),
-                }}
             >
                 {batches.map((opt, index) => (
                     <MenuItem key={index} value={index}>
@@ -40,13 +33,6 @@ function Hyperparameters(props) {
                 size='small'
                 sx={{ width: 100, marginLeft: 1, marginBottom: 2}}
                 onChange={(evt) => setEpoch(epochs[evt.target.value])}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position='start'>
-                            <AccessTimeIcon fontSize='small' sx={{marginLeft: -1}}/>
-                        </InputAdornment>
-                    )
-                }}
             >
                 {epochs.map((opt, index) => (
                     <MenuItem key={index} value={index}>
@@ -61,13 +47,6 @@ function Hyperparameters(props) {
                 size='small'
                 sx={{ width: 110, marginLeft: 1, marginBottom: 2}}
                 onChange={(evt) => setLr(lrs[evt.target.value])}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position='start'>
-                            <SpeedIcon fontSize='small' sx={{marginLeft: -1}}/>
-                        </InputAdornment>
-                    )
-                }}
             >
                 {lrs.map((opt, index) => (
                     <MenuItem key={index} value={index}>

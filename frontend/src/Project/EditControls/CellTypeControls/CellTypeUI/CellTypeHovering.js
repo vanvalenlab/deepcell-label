@@ -1,4 +1,5 @@
 import { Box, Typography, Paper } from '@mui/material';
+import equal from 'fast-deep-equal';
 import CircleIcon from '@mui/icons-material/Circle';
 import { useSelector } from '@xstate/react';
 import { useCanvas, useCellTypes, useHovering } from '../../../ProjectContext';
@@ -21,12 +22,16 @@ function CellTypeHovering() {
   const cellTypes = useSelector(cellTypesRef, (state) => state.context.cellTypes);
   const feature = useSelector(cellTypesRef, (state) => state.context.feature);
   const currentCellTypes = cellTypes.filter((cellType) => cellType.feature === feature);
-  const sx = useSelector(canvas, (state) => state.context.sx);
-  const sy = useSelector(canvas, (state) => state.context.sy);
-  const x = useSelector(canvas, (state) => state.context.x);
-  const y = useSelector(canvas, (state) => state.context.y);
-  const zoom = useSelector(canvas, (state) => state.context.zoom);
-  const scale = useSelector(canvas, (state) => state.context.scale);
+
+  const { sx, sy, x, y, width, height, zoom, scale } = useSelector(
+    canvas,
+    (state) => {
+      const { sx, sy, x, y, width, height, zoom, scale } = state.context;
+      return { sx, sy, x, y, width, height, zoom, scale };
+    },
+    equal
+  );
+
   const noCells = !cells || cells.length === 0;
   
   return (
@@ -38,23 +43,22 @@ function CellTypeHovering() {
       pointerEvents: 'none',
       zIndex: 1500,
     }}>
-      {noCells ? (
-        <></>
-      ) : (
-        <Paper sx={{wordWrap: 'break-word'}}>
-            {cells.map((cell) => (
-                getCellTypeList(cell, currentCellTypes).map((type) => (
-                  <Box key={type.id}>
-                    <CircleIcon sx={{ fontSize: 10, color: type.color, display: 'inline-block', marginBottom: 0.11, marginLeft: 0.5, marginRight: 0.75 }}/>
-                    <Typography sx={{ fontSize: 11, display: 'inline', position: 'relative', top: -2 }}>
-                      {type.name} ({cell})
-                    </Typography>
-                    <br/>
-                  </Box>
-                  ))
-              ))}
+      {(noCells || x === 0 || x === width - 1 || y === 0 || y === height - 1)
+        ? null
+        : <Paper sx={{wordWrap: 'break-word'}}>
+          {cells.map((cell) => (
+              getCellTypeList(cell, currentCellTypes).map((type) => (
+                <Box key={type.id}>
+                  <CircleIcon sx={{ fontSize: 10, color: type.color, display: 'inline-block', marginBottom: 0.11, marginLeft: 0.5, marginRight: 0.75 }}/>
+                  <Typography sx={{ fontSize: 11, display: 'inline', position: 'relative', top: -2 }}>
+                    {type.name} ({cell})
+                  </Typography>
+                  <br/>
+                </Box>
+                ))
+            ))}
         </Paper>
-      )}
+      }
     </div>
   );
 }
