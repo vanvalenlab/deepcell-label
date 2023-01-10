@@ -97,6 +97,12 @@ export function useChannelExpression() {
   return channelExpression;
 }
 
+export function useTraining() {
+  const project = useProject();
+  const training = useSelector(project, (state) => state.context.trainingRef);
+  return training;
+}
+
 export function useDivisions() {
   const project = useProject();
   const divisions = useSelector(project, (state) => state.context.divisionsRef);

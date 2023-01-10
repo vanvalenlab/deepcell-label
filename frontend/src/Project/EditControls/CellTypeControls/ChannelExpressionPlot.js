@@ -10,10 +10,9 @@ import AddRemoveCancel from './ChannelExpressionUI/AddRemoveCancel';
 import Calculate from './ChannelExpressionUI/Calculate';
 import ChannelPlot from './ChannelExpressionUI/ChannelPlot';
 import ChannelSelect from './ChannelExpressionUI/ChannelSelect';
-import EmbeddingSelect from './TrainingUI/EmbeddingSelect';
+import LearnTab from './TrainingUI/LearnTab';
 import { useCanvas, useChannelExpression, useLabelMode } from '../../ProjectContext';
 import EmbeddingPlot from './TrainingUI/EmbeddingPlot';
-import TrainingPlot from './TrainingUI/TrainingPlot';
 
 function TabPanel({ children, value, index }) {
     return value === index && children;
@@ -84,11 +83,7 @@ function ChannelExpressionPlot() {
                         }
                     </TabPanel>
                     <TabPanel value={tab} index={1}>
-                        <EmbeddingSelect />
-                        {logs.length > 0
-                            ? <TrainingPlot />
-                            : null
-                        }
+                        <LearnTab />
                         {embedding
                             ? <>
                                 <EmbeddingPlot embedding={embedding} />

@@ -17,6 +17,7 @@ import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
+import createTrainingMachine from './labels/trainingMachine';
 import createUndoMachine from './undo';
 
 const createProjectMachine = (projectId) =>
@@ -41,6 +42,7 @@ const createProjectMachine = (projectId) =>
           arrays: new EventBus('arrays'), // also receives GET_ARRAYS and responds with ARRAYS
           cells: new EventBus('cells'),
           channelExpression: new EventBus('channelExpression'),
+          training: new EventBus('training'),
           divisions: new EventBus('divisions'),
           spots: new EventBus('spots'),
         },
@@ -104,6 +106,7 @@ const createProjectMachine = (projectId) =>
           actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
           actors.channelExpressionRef = spawn(createChannelExpressionMachine(ctx), 'channelExpression');
           actors.toolRef = spawn(createToolMachine(ctx), 'tool');
+          actors.trainingRef = spawn(createTrainingMachine(ctx), 'training');
           actors.spotsRef = spawn(createSpotsMachine(ctx), 'spots');
           return actors;
         }),

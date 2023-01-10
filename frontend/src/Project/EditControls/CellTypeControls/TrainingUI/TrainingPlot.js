@@ -2,12 +2,12 @@ import equal from 'fast-deep-equal';
 import Grid from '@mui/material/Grid';
 import Plot from 'react-plotly.js';
 import { useSelector } from '@xstate/react';
-import { useChannelExpression } from '../../../ProjectContext';
+import { useTraining } from '../../../ProjectContext';
 
 function TrainingPlot() {
 
-    const channelExpression = useChannelExpression();
-    const logs = useSelector(channelExpression, (state) => state.context.logs, equal);
+    const training = useTraining();
+    const logs = useSelector(training, (state) => state.context.logs, equal);
     const epochs = logs.map((_, i) => i);
 
     return (
@@ -24,8 +24,8 @@ function TrainingPlot() {
                 },
                 ]}
                 layout={{
-                    width: 350,
-                    height: 350,
+                    width: 550,
+                    height: 550,
                     margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
                     xaxis: { range: [0, epochs.length], automargin: true, title: 'Epoch' },
                     yaxis: { range: [0, logs[0] * 1.1], automargin: true, title: 'Softmax Loss' },

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import TrainingButtons from './TrainingButtons';
 import { useChannelExpression } from '../../../ProjectContext';
 
-function EmbeddingSelect() {
+function LearnTab() {
     
     const quantities = ['Mean', 'Total'];
     const [embedding, setEmbedding] = useState(0);
@@ -38,9 +38,9 @@ function EmbeddingSelect() {
                 Visualize
             </Button>
         </Grid>
-        <TrainingButtons quantities={quantities} embedding={embedding} />
+        <TrainingButtons />
         </>
     );
 };
 
-export default EmbeddingSelect;
+export default LearnTab;
