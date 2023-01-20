@@ -11,7 +11,6 @@ function TrainingButtons() {
 
     const training = useTraining();
     const model = useSelector(training, (state) => state.context.model);
-    const embedding = useSelector(training, (state) => state.context.embedding);
     const [open, setOpen] = useState(false);
 
     const handleTrain = () => {
@@ -19,7 +18,7 @@ function TrainingButtons() {
     };
 
     const handlePredict = () => {
-        training.send({ type: 'PREDICT', stat: embedding });
+        training.send({ type: 'PREDICT' });
     };
 
     return (

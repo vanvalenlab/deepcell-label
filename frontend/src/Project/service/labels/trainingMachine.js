@@ -40,18 +40,19 @@ export function getCellList(cellTypes) {
   return [...new Set(cellsList)];
 };
 
-function convertToTensor(cells, embedding, cellTypes, maxId) {
+function convertToTensor(cells, embedding, cellTypes, maxId, valSplit) {
   // Convert cells and embedding lists into tensors
 
   return tf.tidy(() => {
     // Convert to tensor
     const inputs = cells.map(i => embedding[i]);
     const labels = cells.map(cell => getLabelFromCell(cellTypes, cell) - 1);
-    const unshuffledInput = tf.tensor2d(inputs, [inputs.length, inputs[0].length]);
+    const numExamples = inputs.length;
+    const unshuffledInput = tf.tensor2d(inputs, [numExamples, inputs[0].length]);
     const unshuffledLabels = tf.oneHot(tf.tensor1d(labels, 'int32'), maxId);
 
     // Shuffle training data
-    let indices = [...Array(cells.length).keys()]
+    let indices = [...Array(cells.length).keys()];
     tf.util.shuffle(indices);
     const inputTensor = unshuffledInput.gather(indices);
     const labelTensor = unshuffledLabels.gather(indices);
@@ -62,9 +63,17 @@ function convertToTensor(cells, embedding, cellTypes, maxId) {
 
     const normalizedInputs = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
 
+    // Split training data
+    const trainSize = Math.ceil(numExamples * valSplit);
+    const valSize = numExamples - trainSize;
+    const [trainInputs, valInputs] = tf.split(normalizedInputs, [trainSize, valSize], 0);
+    const [trainLabels, valLabels] = tf.split(labelTensor, [trainSize, valSize], 0);
+
     return {
-      inputs: normalizedInputs,
-      labels: labelTensor,
+      trainInputs: trainInputs,
+      trainLabels: trainLabels,
+      valInputs: valInputs,
+      valLabels: valLabels,
       // Return the min/max bounds so we can use them later.
       inputMax,
       inputMin,
@@ -108,18 +117,19 @@ function createModel(inputShape, units) {
    return model;
 };
 
-async function trainModel(model, inputs, labels, sendBack, batchSize, epochs, lr) {
+async function trainModel(model, trainInputs, trainLabels, valInputs, valLabels, sendBack, batchSize, epochs, lr) {
    // Prepare the model for training.
    model.compile({
      optimizer: tf.train.adam(lr),
-     loss: (labels.shape[1] === 2) ? 'binaryCrossentropy' : 'categoricalCrossentropy',
+     loss: (trainLabels.shape[1] === 2) ? 'binaryCrossentropy' : 'categoricalCrossentropy',
      metrics: ['accuracy'],
    });
 
-   return await model.fit(inputs, labels, {
+   return await model.fit(trainInputs, trainLabels, {
      batchSize,
      epochs,
      shuffle: true,
+     validationData: [valInputs, valLabels],
      callbacks: {
        onEpochEnd: (epoch, logs) => {
          sendBack({ type: 'SET_EPOCH', epoch: epoch, logs: logs });
@@ -128,12 +138,24 @@ async function trainModel(model, inputs, labels, sendBack, batchSize, epochs, lr
   });
 };
 
+function calculateConfusion(model, valInputs, valLabels) {
+  const pred = model.predict(valInputs);
+  const numClasses = valLabels.arraySync()[0].length;
+  const decodedPredictions = pred.arraySync().map((logits) => argMax(logits));
+  const decodedLabels = valLabels.arraySync().map((oneHot) => argMax(oneHot));
+  const confusionMatrix = tf.math.confusionMatrix(decodedLabels, decodedPredictions, numClasses).arraySync();
+  const normalized = confusionMatrix.map((row) => {
+    const sum = row.reduce((partialSum, e) => partialSum + e, 0);
+    return row.map((e) => e / sum);
+  })
+  return normalized;
+};
+
 async function train(ctx, evt, sendBack) {
-  const numChannels = ctx.raw.length;
   let vectors = [];
   for (let i = 0; i < ctx.calculations[0].length; i++) {
     let vector = [];
-    for (let c = 0; c < numChannels; c++) {
+    for (let c = 0; c < ctx.numChannels; c++) {
       vector.push(ctx.calculations[c][i]);
     }
     vectors.push(vector);
@@ -144,20 +166,20 @@ async function train(ctx, evt, sendBack) {
   if (ids.length > 0) {
     maxId = Math.max.apply(null, ids);
   }
-  const { inputs, labels, inputMax, inputMin } = convertToTensor(cells, vectors, ctx.cellTypes, maxId);
+  const { trainInputs, trainLabels, valInputs, valLabels, inputMax, inputMin } = convertToTensor(cells, vectors, ctx.cellTypes, maxId, ctx.valSplit);
 
-  const model = createModel([inputs.shape[1]], labels.shape[1]);
-  await trainModel(model, inputs, labels, sendBack, ctx.batchSize, ctx.numEpochs, ctx.learningRate);
+  const model = createModel([trainInputs.shape[1]], trainLabels.shape[1]);
+  await trainModel(model, trainInputs, trainLabels, valInputs, valLabels, sendBack, ctx.batchSize, ctx.numEpochs, ctx.learningRate);
+  const confusionMatrix = calculateConfusion(model, valInputs, valLabels);
   // Finish by sending the trained model back to parent
-  sendBack({type: 'DONE', model: model, inputMax: inputMax, inputMin: inputMin });
+  sendBack({type: 'DONE', model: model, confusionMatrix: confusionMatrix, inputMax: inputMax, inputMin: inputMin });
 };
 
 async function predict(ctx, evt) {
-  const numChannels = ctx.raw.length;
   let vectors = [];
   for (let i = 0; i < ctx.calculations[0].length; i++) {
     let vector = [];
-    for (let c = 0; c < numChannels; c++) {
+    for (let c = 0; c < ctx.numChannels; c++) {
       vector.push(ctx.calculations[c][i]);
     }
     vectors.push(vector);
@@ -178,7 +200,6 @@ const createTrainingMachine = ({ eventBuses }) =>
       invoke: [
         { id: 'eventBus', src: fromEventBus('training', () => eventBuses.training) },
         { id: 'load', src: fromEventBus('training', () => eventBuses.load, 'LOADED') },
-        { id: 'arrays', src: fromEventBus('training', () => eventBuses.arrays, 'RAW') },
         { id: 'cellTypes', src: fromEventBus('training', () => eventBuses.cellTypes) },
         { id: 'channelExpression', src: fromEventBus('training', () => eventBuses.channelExpression) },
         { src: fromEventBus('training', () => eventBuses.image, 'SET_T') },
@@ -189,19 +210,21 @@ const createTrainingMachine = ({ eventBuses }) =>
         batchSize: 1,
         numEpochs: 20,
         learningRate: 0.01,
+        valSplit: 0.8,
+        confusionMatrix: null,
         t: 0,
         feature: 0,
         epoch: 0,
         range: null,
-        raw: null, // current displayed raw frame (?Array[][])
+        numChannels: null, // from raw
         cellTypes: null,
         calculations: null,
         model: null,
-        logs: [],
+        valLogs: [],
+        trainLogs: [],
       },
       initial: 'loading',
       on: {
-        RAW: { actions: 'setRaw' },
         CELLTYPES: { actions: 'setCellTypes' },
         SET_T: { actions: 'setT' },
         SET_FEATURE: { actions: 'setFeature' },
@@ -226,7 +249,7 @@ const createTrainingMachine = ({ eventBuses }) =>
               states: {
                 waiting: {
                   on: {
-                    LOADED: { actions: 'setRaw', target: 'done' },
+                    LOADED: { actions: 'setNumChannels', target: 'done' },
                   },
                 },
                 done: { type: 'final' },
@@ -246,6 +269,7 @@ const createTrainingMachine = ({ eventBuses }) =>
                  BATCH_SIZE: { actions: 'setBatchSize' },
                  LEARNING_RATE: { actions: 'setLearningRate' },
                  NUM_EPOCHS: { actions: 'setNumEpochs' },
+                 VAL_SPLIT: { actions: 'setValSplit' },
                },
              },
              training: {
@@ -284,21 +308,21 @@ const createTrainingMachine = ({ eventBuses }) =>
                 CANCEL: { target: 'idle' },
                 DONE: {
                   target: 'idle',
-                  actions: ['saveModel', 'setRange'],
+                  actions: ['saveModel', 'setConfusionMatrix', 'setRange'],
                 },
                }
              },
              predicting: {
-               entry: choose([
-                 {
-                   cond: (_, evt) => evt.stat === 'Mean',
-                   actions: 'getMean',
-                 },
-                 {
-                   cond: (_, evt) => evt.stat === 'Total',
-                   actions: 'getTotal',
-                 },
-               ]),
+              //  entry: choose([
+              //    {
+              //      cond: (ctx) => ctx.embedding === 'Mean',
+              //      actions: 'getMean',
+              //    },
+              //    {
+              //      cond: (ctx) => ctx.embedding === 'Total',
+              //      actions: 'getTotal',
+              //    },
+              //  ]),
                invoke: {
                  id: 'predicting',
                  src: predict,
@@ -320,16 +344,24 @@ const createTrainingMachine = ({ eventBuses }) =>
         setEmbedding: assign({ embedding: (_, evt) => evt.embedding }),
         setNumEpochs: assign({ numEpochs: (_, evt) => evt.numEpochs }),
         setLearningRate: assign({ learningRate: (_, evt) => evt.learningRate }),
-        setRaw: assign({ raw: (_, evt) => evt.raw }),
+        setValSplit: assign({ valSplit: (_, evt) => evt.valSplit }),
+        setNumChannels: assign({ numChannels: (_, evt) => evt.raw.length }),
         setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
         setT: assign({ t: (_, evt) => evt.t }),
         setFeature: assign({ feature: (_, evt) => evt.feature }),
         setEpoch: assign({ epoch: (_, evt) => evt.epoch }),
-        setLogs: assign({ logs: (ctx, evt) => ctx.logs.concat([evt.logs.loss]) }),
+        setLogs: assign({
+          valLogs: (ctx, evt) => ctx.valLogs.concat([evt.logs.val_loss]),
+          trainLogs: (ctx, evt) => ctx.trainLogs.concat([evt.logs.loss]),
+        }),
         setCalculation: assign({ calculations: (_, evt) => evt.calculations }),
+        setConfusionMatrix: assign({ confusionMatrix: (_, evt) => evt.confusionMatrix }),
         getMean: send({ type: 'CALCULATE', stat: 'Mean' }, { to: 'channelExpression' }),
         getTotal: send({ type: 'CALCULATE', stat: 'Total' }, { to: 'channelExpression' }),
-        resetLogs: assign({ logs: (_) => [] }),
+        resetLogs: assign({
+          valLogs: [],
+          trainLogs: [],
+        }),
         resetEpoch: assign({ epoch: () => 0}),
         saveModel: assign({ model: (_, evt) => evt.model }),
         setRange: assign({ range: (_, evt) => [evt.inputMin, evt.inputMax] }),

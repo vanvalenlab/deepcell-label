@@ -16,7 +16,8 @@
        id: 'channelExpression',
        invoke: [
          { id: 'eventBus', src: fromEventBus('channelExpression', () => eventBuses.channelExpression) },
-         { id: 'arrays', src: fromEventBus('channelExpression', () => eventBuses.arrays, ['RAW', 'LABELED']) },
+         { id: 'channelExpression', src: fromEventBus('channelExpression', () => eventBuses.channelExpression, 'CALCULATION') },
+         { id: 'arrays', src: fromEventBus('channelExpression', () => eventBuses.arrays, 'LABELED') },
          { id: 'cells', src: fromEventBus('channelExpression', () => eventBuses.cells, 'CELLS') },
          { id: 'load', src: fromEventBus('channelExpression', () => eventBuses.load, 'LOADED') },
          { src: fromEventBus('channelExpression', () => eventBuses.image, 'SET_T') },
@@ -36,7 +37,6 @@
        initial: 'loading',
        on: {
          LABELED: { actions: 'setLabeled' },
-         RAW: { actions: 'setRaw' },
          CELLS: { actions: ['setCells', 'setNumCells'] },
          SET_T: { actions: 'setT' },
          SET_FEATURE: { actions: 'setFeature' },
@@ -96,14 +96,16 @@
                 entry: choose([
                   {
                     cond: (_, evt) => evt.stat === 'Mean',
-                    actions: ['setStat', 'calculateMean', 'calculateUmap'],
+                    actions: ['setStat', 'calculateMean'],
                   },
                   {
                     cond: (_, evt) => evt.stat === 'Total',
-                    actions: ['setStat', 'calculateTotal', 'calculateUmap'],
+                    actions: ['setStat', 'calculateTotal'],
                   },
                 ]),
-                always: 'idle',
+                on: {
+                  CALCULATION: { actions: 'calculateUmap', target: 'idle' },
+                },
               },
             },
           },

@@ -7,6 +7,7 @@ import Modal from '@mui/material/Modal';
 import NotStartedIcon from '@mui/icons-material/NotStarted';
 import Typography from '@mui/material/Typography';
 import { useSelector } from '@xstate/react';
+import ConfusionMatrix from './ConfusionMatrix';
 import { getCellList } from '../../../service/labels/trainingMachine';
 import Hyperparameters from './Hyperparameters';
 import TrainingPlot from './TrainingPlot';
@@ -16,13 +17,15 @@ function VisualizationModal({ open, setOpen }) {
 
     const trainingRef = useTraining();
     const cellTypes = useSelector(trainingRef, (state) => state.context.cellTypes);
-    const logs = useSelector(trainingRef, (state) => state.context.logs);
+    const logs = useSelector(trainingRef, (state) => state.context.trainLogs);
+    const confusionMatrix = useSelector(trainingRef, (state) => state.context.confusionMatrix);
     const progress = useSelector(trainingRef, (state) => state.context.epoch);
     const numEpochs = useSelector(trainingRef, (state) => state.context.numEpochs);
     const training = useSelector(trainingRef, (state) => state.matches('loaded.training.train'));
-    const cellCount = getCellList(cellTypes).length;
+    const valSplit = useSelector(trainingRef, (state) => state.context.valSplit) * 100;
+    const trainSize = Math.ceil(getCellList(cellTypes).length * valSplit / 100);
     const batchSize = useSelector(trainingRef, (state) => state.context.batchSize);
-    const badBatch = batchSize > cellCount;
+    const badBatch = batchSize > trainSize;
 
     const style = {
         position: 'absolute',
@@ -44,7 +47,7 @@ function VisualizationModal({ open, setOpen }) {
     };
 
     const handleCancel = () => {
-        training.send({ type: 'CANCEL' });
+        trainingRef.send({ type: 'CANCEL' });
     };
 
     return (
@@ -118,6 +121,11 @@ function VisualizationModal({ open, setOpen }) {
                         ? <TrainingPlot />
                         : null
                     }
+                </Grid>
+                <Grid item>
+                    {confusionMatrix
+                        ? <ConfusionMatrix confusionMatrix={confusionMatrix} />
+                        : null}
                 </Grid>
             </Grid>
         </Box>
