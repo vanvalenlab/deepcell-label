@@ -472,6 +472,16 @@ export function useCellsAtTime() {
   return cellList;
 }
 
+export function useOverlaps() {
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+  const labeled = useLabeled();
+  const c = useSelector(labeled, (state) => state.context.feature);
+  const cells = useCells();
+  const overlaps = useMemo(() => cells.getOverlaps(t, c), [cells, t, c]);
+  return overlaps;
+}
+
 export function useCellMatrix() {
   const image = useImage();
   const t = useSelector(image, (state) => state.context.t);

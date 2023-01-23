@@ -51,7 +51,7 @@ function OutlineOpacitySlider() {
         min={0}
         max={1}
         // track={false}
-        step={0.1}
+        step={0.01}
         size='small'
         onChange={handleChange}
         onDoubleClick={handleDoubleClick}

@@ -2,12 +2,40 @@
 
 type Cell = { value: number; cell: number; t: number; c: number };
 type CellMatrix = (0 | 1)[][];
+type Overlaps = { overlaps: number[][], numCells: number[], maxCell: number };
 
 class Cells {
   cells: Cell[];
 
   constructor(cells: Cell[]) {
     this.cells = cells;
+  }
+
+  /** Converts the cell list to a jagged array where element i is an array of cell ids that encode value i + numCells
+   * @param t Time to generate cell array for.
+   * @param c Feature to generate cell array for.
+   * @returns Jagged array where element i is an array of cell ids that encode value i + numCells at time t
+   */
+  getOverlaps(t: number, c: number): Overlaps {
+    const atT = this.cells.filter((cell) => cell.t === t && cell.c === c);
+    const maxCell = atT.reduce((max, cell) => Math.max(max, cell.cell), 0);
+    const maxValue = atT.reduce((max, cell) => Math.max(max, cell.value), 0);
+    const overlaps = atT.filter((cell) => cell.value > maxCell);
+    const matrix: number[][] = Array.from({length: maxValue - maxCell}, () => []);
+    const numCells: number[] = new Array(maxValue - maxCell).fill(0);
+    // For each cell involved in overlap, push cell to matrix and record number of cells involved
+    for (const entry of overlaps) {
+      const cell = entry.cell;
+      const value = entry.value;
+      matrix[value - maxCell - 1].push(cell);
+      numCells[value - maxCell - 1]++;
+    }
+    // Handle edge case where there are no overlaps to prevent gpu kernel from crashing
+    if (matrix.length === 0) {
+      matrix.push([0]);
+      numCells.push(0);
+    }
+    return {overlaps: matrix, numCells: numCells, maxCell: maxCell};
   }
 
   /** Converts the cell list to a sparse matrix where the (i, j)th element is 1 if value i encodes cell j at time t.

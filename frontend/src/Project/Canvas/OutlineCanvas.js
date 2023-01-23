@@ -68,23 +68,14 @@ const OutlineCanvas = ({ setBitmaps }) => {
           east = data[y + 1][x];
         }
         let outlineOpacity = 1;
-        if (value - minValue < numValues && value - minValue >= 0) {
-          for (let i = 0; i < numLabels; i++) {
-            const currCell = cellsList[i];
-            if (cells[value - minValue][currCell - minCell] === 1) {
-              if (north === 0 || south === 0 || west === 0 || east === 0
-                  || cells[north - minValue][currCell - minCell] === 0 || cells[south - minValue][currCell - minCell] === 0
-                  || cells[west - minValue][currCell - minCell] === 0 || cells[east - minValue][currCell - minCell] === 0
-                  || north - minValue >= numValues || south - minValue >= numValues
-                  || west - minValue >= numValues || east - minValue >= numValues)
-              {
-                if (cell === currCell) {
-                  outlineOpacity = outlineOpacity * (1 - opacity[1]);
-                } else {
-                  outlineOpacity = outlineOpacity * (1 - opacity[0]);
-                }
-              }
-            }
+        if (value !== 0) {
+          if (north === 0 || south === 0 || west === 0 || east === 0
+              || north !== value || south !== value
+              || west !== value || east !== value
+              || north - minValue >= numValues || south - minValue >= numValues
+              || west - minValue >= numValues || east - minValue >= numValues)
+          {
+            outlineOpacity = outlineOpacity * (1 - opacity[1]);
           }
         }
         let [r, g, b] = [1, 1, 1];
@@ -95,6 +86,54 @@ const OutlineCanvas = ({ setBitmaps }) => {
         }
         this.color(r, g, b, 1 - outlineOpacity);
       }`,
+      // `function (data, cells, minCell, minValue, cellsList, numValues, numLabels, opacity, cell, invert) {
+      //   const x = this.thread.x;
+      //   const y = this.constants.h - 1 - this.thread.y;
+      //   const value = data[y][x];
+      //   let north = value;
+      //   let south = value;
+      //   let east = value;
+      //   let west = value;
+      //   if (x !== 0) {
+      //     north = data[y][x - 1];
+      //   }
+      //   if (x !== this.constants.w - 1) {
+      //     south = data[y][x + 1];
+      //   }
+      //   if (y !== 0) {
+      //     west = data[y - 1][x];
+      //   }
+      //   if (y !== this.constants.h - 1) {
+      //     east = data[y + 1][x];
+      //   }
+      //   let outlineOpacity = 1;
+      //   if (value - minValue < numValues && value - minValue >= 0) {
+      //     for (let i = 0; i < numLabels; i++) {
+      //       const currCell = cellsList[i];
+      //       if (cells[value - minValue][currCell - minCell] === 1) {
+      //         if (north === 0 || south === 0 || west === 0 || east === 0
+      //             || cells[north - minValue][currCell - minCell] === 0 || cells[south - minValue][currCell - minCell] === 0
+      //             || cells[west - minValue][currCell - minCell] === 0 || cells[east - minValue][currCell - minCell] === 0
+      //             || north - minValue >= numValues || south - minValue >= numValues
+      //             || west - minValue >= numValues || east - minValue >= numValues)
+      //         {
+      //           if (cell === currCell) {
+      //             outlineOpacity = outlineOpacity * (1 - opacity[1]);
+      //           } else {
+      //             outlineOpacity = outlineOpacity * (1 - opacity[0]);
+      //           }
+      //         }
+      //       }
+      //     }
+      //   }
+      //   let [r, g, b] = [1, 1, 1];
+      //   if (invert) {
+      //     r = 0;
+      //     g = 0;
+      //     b = 0;
+      //   }
+      //   this.color(r, g, b, 1 - outlineOpacity);
+      // }`,
       {
         constants: { w: width, h: height },
         output: [width, height],

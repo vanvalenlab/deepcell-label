@@ -3,11 +3,10 @@ import { useEffect, useRef } from 'react';
 import {
   useAlphaGpu,
   useCanvas,
-  useCellsAtTime,
   useColormap,
   useLabeled,
   useLabeledArray,
-  useReducedCellMatrix,
+  useOverlaps,
   useSelectedCell,
 } from '../ProjectContext';
 
@@ -23,8 +22,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
   const opacity = useSelector(labeled, (state) => state.context.cellsOpacity);
 
   const labeledArray = useLabeledArray();
-  const cellsList = useCellsAtTime();
-  const { cellMatrix, minCell, minValue } = useReducedCellMatrix();
+  const { overlaps, numCells, maxCell } = useOverlaps();
   const colormap = useColormap();
   const cell = useSelectedCell();
 
@@ -33,41 +31,49 @@ export const LabeledCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (labelArray, cellMatrix, minCell, minValue, cellsList, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
+      `function (labelArray, overlaps, numCells, maxCell, opacity, colormap, cell, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
-        let [r, g, b, a] = [0, 0, 0, 1];
-        if (value - minValue < numValues && value >= minValue) {
-          for (let i = 0; i < numLabels; i++) {
-            const currCell = cellsList[i];
-            if (cellMatrix[value - minValue][currCell - minCell] === 1) {
-              let [sr, sg, sb] = [0, 0, 0];
-              if (currCell === cell && highlight) {
-                sr = highlightColor[0];
-                sg = highlightColor[1];
-                sb = highlightColor[2];
-              } else {
-                sr = colormap[currCell][0];
-                sg = colormap[currCell][1];
-                sb = colormap[currCell][2];
-              }
-
-              let sa = 1;
-              // Only use mixing if overlap
-              if (a < 1) {
-                sa = opacity;
-              }
-              a = a * (1 - opacity);
-              sr = sa * sr / 255;
-              sg = sa * sg / 255;
-              sb = sa * sb / 255;
-              
-              r = r + sr - r * sr;
-              g = g + sg - g * sg;
-              b = b + sb - b * sb;
-            }
-          }
+        let [r, g, b, a] = [0, 0, 0, 0];
+        if (value !== 0) {
+          a = opacity;
         }
-        this.color(r, g, b, 1 - a);
+        if (value === cell && highlight) {
+          r = highlightColor[0];
+          g = highlightColor[1];
+          b = highlightColor[2];
+        }
+        // There should be no overlaps, just use map
+        else if (value <= maxCell) {
+          r = colormap[value][0] / 255;
+          g = colormap[value][1] / 255;
+          b = colormap[value][2] / 255;
+        }
+        // Overlap detected
+        else {
+          a = 1;
+          const numOverlapping = numCells[value - maxCell - 1];
+
+          // Mix each of the cell colors for all cells in overlap
+          for (let i = 0; i < numOverlapping; i++) {
+            const currCell = overlaps[value - maxCell - 1][i];
+            a = a * (1 - opacity);
+            let sr = colormap[currCell][0] * opacity / 255;
+            let sg = colormap[currCell][1] * opacity / 255;
+            let sb = colormap[currCell][2] * opacity / 255;
+            
+            // If highlighting a cell with overlaps also mix highlight color
+            if (cell === currCell && highlight) {
+              sr = highlightColor[0] * opacity / 255;
+              sg = highlightColor[1] * opacity / 255;
+              sb = highlightColor[2] * opacity / 255;
+            }
+            r = r + sr - r * sr;
+            g = g + sg - g * sg;
+            b = b + sb - b * sb;
+          }
+          a = 1 - a;
+        }
+        this.color(r, g, b, a);
       }`,
       {
         constants: { w: width, h: height },
@@ -82,21 +88,16 @@ export const LabeledCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    if (labeledArray && cellMatrix && cellsList.length > 0) {
-      const numLabels = cellsList.length;
-      const numValues = cellMatrix.length;
+    if (labeledArray && overlaps && maxCell) {
       // Compute the label image with the kernel
       kernel(
         labeledArray,
-        cellMatrix,
-        minCell,
-        minValue,
-        cellsList,
+        overlaps,
+        numCells,
+        maxCell,
         opacity,
         colormap,
         cell,
-        numValues,
-        numLabels,
         highlight,
         highlightColor
       );
@@ -105,7 +106,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, labeled: bitmap }));
       });
     }
-  }, [labeledArray, cellMatrix, cellsList, minCell, minValue, opacity, colormap, cell, highlight, setBitmaps, width, height]);
+  }, [labeledArray, overlaps, maxCell, opacity, colormap, cell, highlight, setBitmaps, width, height]);
 
   return null;
 };
