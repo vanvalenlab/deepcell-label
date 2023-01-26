@@ -157,7 +157,10 @@ def rewrite_labeled(labeled, cells):
                     overlap_values.append([value, group])
 
             # Rewrite overlapping values with values higher than all cells
-            new_overlap_value = max(cells_at_t, key=lambda c: c['cell'])['cell'] + 1
+            if len(cells_at_t) == 0:
+                new_overlap_value = 0
+            else:
+                new_overlap_value = max(cells_at_t, key=lambda c: c['cell'])['cell'] + 1
             for overlap_value, overlap_cells in overlap_values:
                 for cell in overlap_cells:
                     frame = labeled[:, t, :, :]
