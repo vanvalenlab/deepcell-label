@@ -315,7 +315,13 @@ const createLoadMachine = (projectId: string) =>
         }),
         'set cellTypes': assign({
           // @ts-ignore
-          cellTypes: (context, event) => event.data.files['cellTypes.json'] as CellTypes,
+          cellTypes: (context, event) => {
+            const cellTypes = event.data.files['cellTypes.json'] as CellTypes;
+            if (cellTypes) {
+              return cellTypes;
+            }
+            return [];
+          },
         }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
