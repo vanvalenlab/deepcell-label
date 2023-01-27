@@ -167,7 +167,9 @@ function reshapeRaw(channels: TypedArray[][][], min: number[], max: number[]) {
       for (let y = 0; y < size_y; y++) {
         const row = new Uint8Array(size_x);
         for (let x = 0; x < size_x; x++) {
-          row[x] = Math.round(((channels[c][z][y][x] - channelMin) / (channelMax - channelMin)) * 255);
+          row[x] = Math.round(
+            ((channels[c][z][y][x] - channelMin) / (channelMax - channelMin)) * 255
+          );
         }
         frame.push(row);
       }
@@ -319,7 +321,13 @@ const createLoadMachine = (projectId: string) =>
         }),
         'set cellTypes': assign({
           // @ts-ignore
-          cellTypes: (context, event) => event.data.files['cellTypes.json'] as CellTypes,
+          cellTypes: (context, event) => {
+            const cellTypes = event.data.files['cellTypes.json'] as CellTypes;
+            if (cellTypes) {
+              return cellTypes;
+            }
+            return [];
+          },
         }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
