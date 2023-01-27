@@ -14,6 +14,7 @@ async function makeExportZip(context) {
     duration: raw[0].length,
     numChannels: raw.length,
     numFeatures: labeled.length,
+    dtype: raw[0][0][0].constructor.name,
   };
   const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
   await zipWriter.add('dimensions.json', new zip.TextReader(JSON.stringify(dimensions)));

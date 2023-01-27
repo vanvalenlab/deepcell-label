@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useEditSegment } from '../../../ProjectContext';
+import { useEditSegment, useSelect } from '../../../ProjectContext';
 import ToolButton from './ToolButton';
 
 function ThresholdButton(props) {
@@ -8,10 +8,15 @@ function ThresholdButton(props) {
   const tool = useSelector(segment, (state) => state.context.tool);
   const grayscale = useSelector(segment, (state) => state.matches('display.grayscale'));
 
-  const onClick = useCallback(
-    () => segment.send({ type: 'SET_TOOL', tool: 'threshold' }),
-    [segment]
-  );
+  const select = useSelect();
+  const cell = useSelector(select, (state) => state.context.selected);
+
+  const onClick = useCallback(() => {
+    segment.send({ type: 'SET_TOOL', tool: 'threshold' });
+    if (cell === 0) {
+      select.send('SELECT_NEW');
+    }
+  }, [segment, select, cell]);
 
   const tooltipText = grayscale ? (
     <span>

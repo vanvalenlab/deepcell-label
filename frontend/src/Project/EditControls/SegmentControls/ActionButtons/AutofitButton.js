@@ -1,13 +1,21 @@
 import { useSelector } from '@xstate/react';
 import React, { useCallback } from 'react';
-import { useEditSegment } from '../../../ProjectContext';
+import { useEditSegment, useSelect } from '../../../ProjectContext';
 import ActionButton from './ActionButton';
 
 function AutofitButton(props) {
   const segment = useEditSegment();
   const grayscale = useSelector(segment, (state) => state.matches('display.grayscale'));
 
-  const onClick = useCallback(() => segment.send('AUTOFIT'), [segment]);
+  const select = useSelect();
+  const cell = useSelector(select, (state) => state.context.selected);
+
+  const onClick = useCallback(() => {
+    // Do not fit the background "cell 0"
+    if (cell !== 0) {
+      segment.send('AUTOFIT');
+    }
+  }, [segment, select, cell]);
 
   const tooltipText = (
     <span>

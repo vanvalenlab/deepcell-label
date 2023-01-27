@@ -47,7 +47,7 @@ function ToolButtons() {
         </ToggleButton>
         <ToggleButton value={'replace'} sx={{ px: 0.5, py: 0 }}>
           <Tooltip title={<kbd>R</kbd>} placement='right'>
-            <div>Replace</div>
+            <div>Combine</div>
           </Tooltip>
         </ToggleButton>
         <ToggleButton value={'swap'} sx={{ px: 0.5, py: 0 }}>

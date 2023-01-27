@@ -122,11 +122,12 @@ def create_project_from_dropped_file():
     """
     start = timeit.default_timer()
     input_file = request.files.get('images')
+    axes = request.form['axes'] if 'axes' in request.form else None
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
     with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as f:
         f.write(input_file.read())
         f.seek(0)
-        loader = Loader(f)
+        loader = Loader(f, axes=axes)
         project = Project.create(loader)
     if not DELETE_TEMP:
         f.close()

@@ -10,7 +10,7 @@ function ToolShortcuts() {
     <Shortcuts>
       <Shortcut text='Select' shortcut='V' />
       <Shortcut text='Delete' shortcut='Backspace' />
-      <Shortcut text='Replace' shortcut='R' />
+      <Shortcut text='Combine' shortcut='R' />
       <Shortcut text='Swap' shortcut='S' />
       <Shortcut text='New' shortcut='N' />
     </Shortcuts>
@@ -65,7 +65,7 @@ function CellsInstructions() {
               <br />
               <strong>Delete</strong> removes the cell.
               <br />
-              <strong>Replace</strong> combines a second cell with the selected cell. First selects
+              <strong>Combine</strong> combines a second cell with the selected cell. First selects
               a cell, and then selects the cell to replace.
               <br />
               <strong>Swap</strong> switches a second cell with the selected cell. First picks

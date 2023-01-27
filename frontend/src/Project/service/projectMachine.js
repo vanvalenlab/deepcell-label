@@ -103,7 +103,7 @@ const createProjectMachine = (projectId) =>
         }),
         sendDimensions: send(
           (c, e) => {
-            const { raw, labeled } = e;
+            const { raw, labeled, rawOriginal } = e;
             return {
               type: 'DIMENSIONS',
               numChannels: raw.length,

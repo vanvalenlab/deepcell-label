@@ -59,9 +59,10 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
             sx: ctx.sx,
             sy: ctx.sy,
             zoom: ctx.zoom,
+            panOnDrag: ctx.panOnDrag,
           })),
         },
-        RESTORE: { actions: ['restore', respond('RESTORED')] },
+        RESTORE: { actions: ['restore', respond('RESTORED'), send('RESTORE_DRAG')] },
         COORDINATES: {
           cond: 'newCoordinates',
           actions: ['setCoordinates', forwardTo('eventBus')],
@@ -83,6 +84,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
                 panOnDrag: {
                   on: {
                     SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
+                    RESTORE_DRAG: { target: 'checkDrag' },
                   },
                   initial: 'idle',
                   states: {
@@ -117,6 +119,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
                     mouseup: { actions: 'sendToEventBus' },
                     mousemove: { actions: 'computeCoordinates' },
                     SET_PAN_ON_DRAG: { target: 'checkDrag', actions: 'setPanOnDrag' },
+                    RESTORE_DRAG: { target: 'checkDrag' },
                   },
                 },
               },
