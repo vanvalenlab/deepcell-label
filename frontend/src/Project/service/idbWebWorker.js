@@ -117,9 +117,9 @@ const idbMachine = createMachine(
       setProjectFromDb: assign({ project: (ctx, evt) => ({ ...evt.data }) }),
       updateLabeled: assign({
         project: (ctx, evt) => {
-          const { t, feature } = evt;
+          const { t, c } = evt;
           const labeled = ctx.project.labeled.map((arr, i) =>
-            i === feature ? arr.map((arr, j) => (j === t ? evt.labeled : arr)) : arr
+            i === c ? arr.map((arr, j) => (j === t ? evt.labeled : arr)) : arr
           );
           return { ...ctx.project, labeled };
         },

@@ -36,7 +36,7 @@ function DivisionsInstructions() {
             <strong>Dismiss:</strong> If the division is on the edge, the second daughter may be off
             screen.
             <br />
-            <strong>Fix:</strong> Combine the parent and daughter with Replace in the Cells tab.
+            <strong>Fix:</strong> Combine the parent and daughter with Combine in the Cells tab.
           </Typography>
         </Grid>
         <Grid item xs={3}>

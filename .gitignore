@@ -150,6 +150,10 @@ fmd_config.cfg
 # production
 /build
 
+# models and other pickled files
+*.h5
+*.npy
+
 # misc
 .DS_Store
 .env.local
@@ -161,5 +165,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 package-lock.json
+package.json
 
 .nyc_output

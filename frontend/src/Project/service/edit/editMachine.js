@@ -56,7 +56,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
           },
         },
         editSegment: {
-          entry: assign({ tool: 'editSegment' }),
+          entry: [assign({ tool: 'editSegment' }), send({ type: 'ENTER_TAB' })],
           on: {
             mouseup: { actions: forwardTo('editSegment') },
             mousedown: { actions: forwardTo('editSegment') },
@@ -103,6 +103,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         EDIT_SPOTS: 'editSpots',
 
         SET_PAN_ON_DRAG: { actions: forwardTo('canvas') },
+        ENTER_TAB: { actions: forwardTo('editSegment') },
       },
     },
     {

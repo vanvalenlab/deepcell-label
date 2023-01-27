@@ -33,7 +33,7 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (data, cells, cell, color) {
+      `function (data, cells, numValues, cell, color) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -53,10 +53,12 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
         if (y !== this.constants.h - 1) {
           east = data[y + 1][x];
         }
-        if (cells[value][cell] === 0) {
+        if (cells[value][cell] === 0 && value < numValues) {
           if (cells[north][cell] === 1 || cells[south][cell] === 1 || cells[west][cell] === 1 || cells[east][cell] === 1) {
-            const [r, g, b, a] = color;
-            this.color(r, g, b, a);
+            if (north < numValues && south < numValues && west < numValues && east < numValues) {
+              const [r, g, b, a] = color;
+              this.color(r, g, b, a);
+            }
           }
         }
       }`,
@@ -80,7 +82,8 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
         return rest;
       });
     } else if (labeledArray && cellMatrix) {
-      kernel(labeledArray, cellMatrix, cell, color);
+      const numValues = cellMatrix.length;
+      kernel(labeledArray, cellMatrix, numValues, cell, color);
       // Rerender the parent canvas
       createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));

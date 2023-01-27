@@ -72,10 +72,11 @@ async function splitArrays(files: Files) {
   const labeledFile = files['y.ome.tiff'] as OmeTiff;
   const raw = await getRawRasters(rawFile.data[0]);
   const labeled = await getLabelRasters(labeledFile.data[0]);
-  return { raw, labeled };
+  const rawOriginal = await getRawOriginalRasters(rawFile.data[0]);
+  return { raw, labeled, rawOriginal };
 }
 
-async function getRawRasters(source: TiffPixelSource) {
+async function getRawOriginalRasters(source: TiffPixelSource) {
   const { labels, shape } = source;
   const c = shape[labels.indexOf('c')];
   const z = shape[labels.indexOf('z')];
@@ -85,12 +86,44 @@ async function getRawRasters(source: TiffPixelSource) {
     for (let j = 0; j < z; j++) {
       const selection = { t: 0, c: i, z: j };
       const raster = (await source.getRaster({ selection })) as Raster;
-      const frame = splitRows(raster) as Uint8Array[];
+      const frame = splitRows(raster);
       frames.push(frame);
     }
     channels.push(frames);
   }
   return channels;
+}
+
+async function getRawRasters(source: TiffPixelSource) {
+  const { labels, shape } = source;
+  const c = shape[labels.indexOf('c')];
+  const z = shape[labels.indexOf('z')];
+  const channels = [];
+  var max = 0;
+  var min = Infinity;
+  for (let i = 0; i < c; i++) {
+    const frames = [];
+    for (let j = 0; j < z; j++) {
+      const selection = { t: 0, c: i, z: j };
+      const raster = (await source.getRaster({ selection })) as Raster;
+      const frame = splitRows(raster);
+      // Record max and min across frames
+      for (let k = 0; k < frame.length; k++) {
+        for (let l = 0; l < frame[k].length; l++) {
+          if (frame[k][l] > max) {
+            max = frame[k][l];
+          }
+          if (frame[k][l] < min) {
+            min = frame[k][l];
+          }
+        }
+      }
+      frames.push(frame);
+    }
+    channels.push(frames);
+  }
+  const reshaped = reshapeRaw(channels, min, max);
+  return reshaped;
 }
 
 async function getLabelRasters(source: TiffPixelSource) {
@@ -111,15 +144,58 @@ async function getLabelRasters(source: TiffPixelSource) {
   return channels;
 }
 
-type Raster = { data: Uint8Array | Int32Array; width: number; height: number };
+function reshapeRaw(channels: TypedArray[][][], min: number, max: number) {
+  const size_c = channels.length;
+  const size_z = channels[0].length;
+  const size_y = channels[0][0].length;
+  const size_x = channels[0][0][0].length;
+  const reshaped = [];
+  // Normalize each pixel to 0-255 for rendering
+  for (let c = 0; c < size_c; c++) {
+    const frames = [];
+    for (let z = 0; z < size_z; z++) {
+      const frame = [];
+      for (let y = 0; y < size_y; y++) {
+        const row = new Uint8Array(size_x);
+        for (let x = 0; x < size_x; x++) {
+          row[x] = Math.round(((channels[c][z][y][x] - min) / (max - min)) * 255);
+        }
+        frame.push(row);
+      }
+      frames.push(frame);
+    }
+    reshaped.push(frames);
+  }
+  return reshaped;
+}
+
+type TypedArray =
+  | Uint8Array
+  | Int8Array
+  | Uint16Array
+  | Int16Array
+  | Uint32Array
+  | Int32Array
+  | Float32Array
+  | Float64Array;
+
+type Raster = { data: TypedArray; width: number; height: number };
 
 function splitRows(raster: Raster) {
   const { data, width, height } = raster;
   const frame = [];
   for (let i = 0; i < height; i++) {
     const row =
-      data instanceof Uint8Array
+      data instanceof Uint8Array || data instanceof Int8Array
         ? new Uint8Array(data.buffer, width * i, width)
+        : data instanceof Uint16Array || data instanceof Int16Array
+        ? new Uint16Array(data.buffer, width * i * 2, width)
+        : data instanceof Uint32Array
+        ? new Uint32Array(data.buffer, width * i * 4, width)
+        : data instanceof Float32Array
+        ? new Float32Array(data.buffer, width * i * 4, width)
+        : data instanceof Float64Array
+        ? new Float64Array(data.buffer, width * i * 8, width)
         : new Int32Array(data.buffer, width * i * 4, width);
     frame.push(row);
   }
@@ -137,6 +213,7 @@ interface Context {
   numFeatures: number | null;
   raw: Uint8Array[][][] | null;
   labeled: Int32Array[][][] | null;
+  rawOriginal: TypedArray[][][] | null;
   labels: Cells | null;
   spots: Spots | null;
   divisions: Divisions | null;
@@ -157,6 +234,7 @@ const createLoadMachine = (projectId: string) =>
         numFeatures: null,
         raw: null,
         labeled: null,
+        rawOriginal: null,
         labels: null,
         spots: null,
         divisions: null,
@@ -175,6 +253,7 @@ const createLoadMachine = (projectId: string) =>
             data: {
               raw: Uint8Array[][][];
               labeled: Int32Array[][][];
+              rawOriginal: TypedArray[][][];
             };
           };
         },
@@ -244,11 +323,13 @@ const createLoadMachine = (projectId: string) =>
         'set arrays': assign({
           raw: (_, event) => event.data.raw,
           labeled: (_, event) => event.data.labeled,
+          rawOriginal: (_, event) => event.data.rawOriginal,
         }),
         'send loaded': sendParent((ctx) => ({
           type: 'LOADED',
           raw: ctx.raw,
           labeled: ctx.labeled,
+          rawOriginal: ctx.rawOriginal,
           spots: ctx.spots,
           divisions: ctx.divisions,
           cells: ctx.cells,

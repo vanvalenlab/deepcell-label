@@ -1,10 +1,11 @@
 import { Paper, Tab, Tabs } from '@mui/material';
 import { useSelector } from '@xstate/react';
+import { bind } from 'mousetrap';
 import { useEffect } from 'react';
 import { useLabelMode, useSpots } from '../ProjectContext';
 
 const tabKeybinds = {
-  display: ['c', 'f', 'y', 'i', '0', 'z', 'o'],
+  display: ['c', 'f', 'y', 'i', '0', 'o'],
   segment: ['b', 'e', 'x', 'k', 'g', 't', 'w', 'm', 'q'],
   cells: ['Backspace', 'r', 's'],
 };
@@ -56,6 +57,8 @@ function EditTabs() {
         labelMode.send('EDIT_CELLS');
       }
     };
+    // Bind 'z' for edge case where Undo triggers DISPLAY
+    bind('z', () => labelMode.send('DISPLAY'));
     document.addEventListener('keydown', listener);
     return () => {
       document.removeEventListener('keydown', listener);

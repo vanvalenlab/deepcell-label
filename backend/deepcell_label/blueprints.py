@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import io
+import os
 import tempfile
 import timeit
 import traceback
@@ -11,7 +12,7 @@ import requests
 from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
-from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, DELETE_TEMP
 from deepcell_label.export import Export
 from deepcell_label.label import Edit
 from deepcell_label.loaders import Loader
@@ -74,7 +75,9 @@ def create_project():
         )
     labels_url = request.form['labels'] if 'labels' in request.form else None
     axes = request.form['axes'] if 'axes' in request.form else None
-    with tempfile.NamedTemporaryFile() as image_file, tempfile.NamedTemporaryFile() as label_file:
+    with tempfile.NamedTemporaryFile(
+        delete=DELETE_TEMP
+    ) as image_file, tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as label_file:
         if images_url is not None:
             image_response = requests.get(images_url)
             if image_response.status_code != 200:
@@ -99,6 +102,10 @@ def create_project():
             label_file = image_file
         loader = Loader(image_file, label_file, axes)
         project = Project.create(loader)
+    if not DELETE_TEMP:
+        image_file.close()
+        label_file.close()
+        os.remove(image_file.name)  # Manually close and delete if using Windows
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,
@@ -115,12 +122,16 @@ def create_project_from_dropped_file():
     """
     start = timeit.default_timer()
     input_file = request.files.get('images')
+    axes = request.form['axes'] if 'axes' in request.form else None
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
-    with tempfile.NamedTemporaryFile() as f:
+    with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as f:
         f.write(input_file.read())
         f.seek(0)
-        loader = Loader(f)
+        loader = Loader(f, axes=axes)
         project = Project.create(loader)
+    if not DELETE_TEMP:
+        f.close()
+        os.remove(f.name)  # Manually close and delete if using Windows
     current_app.logger.info(
         'Created project %s from %s in %s s.',
         project.project,
