@@ -7,28 +7,26 @@ import CellTypeAccordionList from './CellTypeUI/CellTypeAccordionList';
 import EditingPrompt from './CellTypeUI/EditingPrompt';
 
 function CellTypeControls() {
-
-    return (
-        <Box display='flex' flexDirection='column'> 
-            <FormLabel sx={{marginBottom: 2}}>
-            Cell Type Labels 
-                <Button 
-                  variant='contained'
-                  disableElevation
-                  disableRipple
-                  style={{borderRadius: 100,}}
-                  color='secondary'
-                  sx={{width: 5,
-                      height: 20,
-                      top: -1,
-                      marginLeft: 1,}}
-                > Beta
-                </Button>
-            </FormLabel>
-            <AddCellTypeLabel />
-            <CellTypeAccordionList />
-			<EditingPrompt/>
-        </Box>
+  return (
+    <Box display='flex' flexDirection='column'>
+      <FormLabel sx={{ marginBottom: 2 }}>
+        Cell Type Labels
+        <Button
+          variant='contained'
+          disableElevation
+          disableRipple
+          style={{ borderRadius: 100 }}
+          color='secondary'
+          sx={{ width: 5, height: 20, top: -1, marginLeft: 1 }}
+        >
+          {' '}
+          Beta
+        </Button>
+      </FormLabel>
+      <AddCellTypeLabel />
+      <CellTypeAccordionList />
+      <EditingPrompt />
+    </Box>
   );
 }
 

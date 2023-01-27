@@ -1,6 +1,12 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useEditCells, useEditCellTypes, useEditDivisions, useEditSegment, useLabelMode } from '../../ProjectContext';
+import {
+  useEditCells,
+  useEditCellTypes,
+  useEditDivisions,
+  useEditSegment,
+  useLabelMode,
+} from '../../ProjectContext';
 import AddDaughterCanvas from './AddDaughterCanvas';
 import AddCellTypeCanvas from './AddCellTypeCanvas';
 import BrushCanvas from './BrushCanvas';
@@ -23,7 +29,6 @@ function ToolCanvas({ setBitmaps }) {
 
   const editCellTypes = useEditCellTypes();
   const addingCell = useSelector(editCellTypes, (state) => state.matches('addingCell'));
-
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
@@ -69,11 +74,11 @@ function ToolCanvas({ setBitmaps }) {
     case 'cellTypes':
       if (addingCell) {
         return (
-                <>
-                  <CellTypeCanvas setBitmaps={setBitmaps} />
-                  <AddCellTypeCanvas setBitmaps={setBitmaps} />
-                </>
-               );
+          <>
+            <CellTypeCanvas setBitmaps={setBitmaps} />
+            <AddCellTypeCanvas setBitmaps={setBitmaps} />
+          </>
+        );
       }
       return <CellTypeCanvas setBitmaps={setBitmaps} />;
     default:

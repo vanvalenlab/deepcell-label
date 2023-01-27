@@ -9,7 +9,6 @@ const Cell = React.forwardRef(({ cell }, ref) => {
   const color = colors[cell] ?? '#000000';
   const textColor = contrast(color, '#000000') > contrast(color, '#ffffff') ? '#000000' : '#ffffff';
 
-
   const onClick = () => {
     select.send({ type: 'SELECT', cell: cell });
   };

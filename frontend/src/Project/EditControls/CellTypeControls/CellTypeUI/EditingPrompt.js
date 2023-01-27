@@ -4,8 +4,8 @@ import { useSelector } from '@xstate/react';
 import { useEditCellTypes, useCanvas } from '../../../ProjectContext';
 
 const paperStyle = {
-    backgroundColor: 'black',
-    opacity: '50%',
+  backgroundColor: 'black',
+  opacity: '50%',
 };
 
 function EditingPrompt() {
@@ -16,27 +16,29 @@ function EditingPrompt() {
 
   const canvasMachine = useCanvas();
   const [sw, scale] = useSelector(
-      canvasMachine,
-      (state) => [state.context.width, state.context.scale],
-      equal
+    canvasMachine,
+    (state) => [state.context.width, state.context.scale],
+    equal
   );
-  const toolTipWidth = scale * sw / 2 + 370;
+  const toolTipWidth = (scale * sw) / 2 + 370;
 
   if (!addingCell) {
     return null;
   }
 
   return (
-    <Box sx={{zIndex: 1, position: 'absolute', left: toolTipWidth, top: 100}}>
-    <Paper style={paperStyle}>
-      {cell ? (
-        <Typography sx={{color: 'white'}}>
-          Click again to add cell {cell} to cell type {cellType}.
-        </Typography>
-      ) : (
-        <Typography sx={{color: 'white'}}>Click a cell to add to cell type {cellType}.</Typography>
-      )}
-    </Paper>
+    <Box sx={{ zIndex: 1, position: 'absolute', left: toolTipWidth, top: 100 }}>
+      <Paper style={paperStyle}>
+        {cell ? (
+          <Typography sx={{ color: 'white' }}>
+            Click again to add cell {cell} to cell type {cellType}.
+          </Typography>
+        ) : (
+          <Typography sx={{ color: 'white' }}>
+            Click a cell to add to cell type {cellType}.
+          </Typography>
+        )}
+      </Paper>
     </Box>
   );
 }

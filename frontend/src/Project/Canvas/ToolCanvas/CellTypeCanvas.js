@@ -98,7 +98,7 @@ function CellTypeCanvas({ setBitmaps }) {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    
+
     if (labeledArray && cellMatrix) {
       const numValues = cellMatrix.length;
       const numLabels = cellMatrix[0].length;

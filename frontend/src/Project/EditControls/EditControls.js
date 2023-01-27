@@ -6,7 +6,7 @@ import RawControls from '../DisplayControls/RawControls';
 import SpotsControls from '../DisplayControls/SpotsControls';
 import { useLabelMode } from '../ProjectContext';
 import CellControls from './CellControls';
-import CellTypeControls from './CellTypeControls'
+import CellTypeControls from './CellTypeControls';
 import TrackingControls from './DivisionsControls';
 import SegmentControls from './SegmentControls';
 
