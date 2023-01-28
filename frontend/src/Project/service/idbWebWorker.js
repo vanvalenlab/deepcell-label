@@ -22,6 +22,7 @@ const idbMachine = createMachine(
         raw: null, // Uint8Array[][][]
         labeled: null, // Int32Array[][][]
         cells: null, // list of cells (not the Cells object) { value: number, cell, number, t: number}[]
+        cellTypes: null, // list of cell types { id: number, name: string, color: string, cells: number[] }
         divisions: null, // list of divisions { parent: number, daughters: number[], t: number}[]
         spots: null, // list of spot coordinates [number, number][]
       },
@@ -70,6 +71,7 @@ const idbMachine = createMachine(
             internal: false,
           },
           CELLS: { target: '.putProject', actions: 'updateCells', internal: false },
+          CELLTYPES: { target: '.putProject', actions: 'updateCellTypes', internal: false },
           DIVISIONS: {
             target: '.putProject',
             actions: 'updateDivisions',
@@ -126,6 +128,9 @@ const idbMachine = createMachine(
       }),
       updateCells: assign({
         project: (ctx, evt) => ({ ...ctx.project, cells: evt.cells }),
+      }),
+      updateCellTypes: assign({
+        project: (ctx, evt) => ({ ...ctx.project, cellTypes: evt.cellTypes }),
       }),
       updateDivisions: assign({
         project: (ctx, evt) => ({ ...ctx.project, divisions: evt.divisions }),

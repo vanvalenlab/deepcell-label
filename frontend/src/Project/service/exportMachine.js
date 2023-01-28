@@ -7,7 +7,7 @@ import { fromEventBus } from './eventBus';
 
 /** Creates a blob for a zip file with all project data. */
 async function makeExportZip(context) {
-  const { raw, labeled, cells, divisions, spots } = context;
+  const { raw, labeled, cells, cellTypes, divisions, spots } = context;
   const dimensions = {
     width: raw[0][0][0].length,
     height: raw[0][0].length,
@@ -21,6 +21,7 @@ async function makeExportZip(context) {
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeled))));
   await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
   await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
+  await zipWriter.add('cellTypes.json', new zip.TextReader(JSON.stringify(cellTypes)));
   await zipWriter.add('divisions.json', new zip.TextReader(JSON.stringify(divisions)));
   if (spots) {
     await zipWriter.add(
@@ -83,6 +84,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         { id: 'arrays', src: fromEventBus('export', () => eventBuses.arrays, 'ARRAYS') },
         { id: 'cells', src: fromEventBus('export', () => eventBuses.cells, 'CELLS') },
         { id: 'divisions', src: fromEventBus('export', () => eventBuses.divisions, 'DIVISIONS') },
+        { id: 'cellTypes', src: fromEventBus('export', () => eventBuses.cellTypes, 'CELLTYPES') },
         { id: 'spots', src: fromEventBus('export', () => eventBuses.spots, 'SPOTS') },
       ],
       context: {
@@ -92,11 +94,13 @@ const createExportMachine = ({ projectId, eventBuses }) =>
         raw: null,
         labeled: null,
         cells: null,
+        cellTypes: null,
         divisions: null,
         spots: null,
       },
       on: {
         CELLS: { actions: 'setCells' },
+        CELLTYPES: { actions: 'setCellTypes' },
         DIVISIONS: { actions: 'setDivisions' },
         SPOTS: { actions: 'setSpots' },
       },
@@ -160,6 +164,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
           labeled: evt.labeled,
         })),
         setCells: assign({ cells: (_, evt) => evt.cells }),
+        setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
         setDivisions: assign({ divisions: (_, evt) => evt.divisions }),
         setSpots: assign({ spots: (_, evt) => evt.spots }),
       },

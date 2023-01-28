@@ -6,6 +6,7 @@ import RawControls from '../DisplayControls/RawControls';
 import SpotsControls from '../DisplayControls/SpotsControls';
 import { useLabelMode } from '../ProjectContext';
 import CellControls from './CellControls';
+import CellTypeControls from './CellTypeControls';
 import TrackingControls from './DivisionsControls';
 import SegmentControls from './SegmentControls';
 
@@ -36,8 +37,10 @@ function EditControls() {
       ? 2
       : state.matches('editDivisions')
       ? 3
-      : state.matches('editSpots')
+      : state.matches('editCellTypes')
       ? 4
+      : state.matches('editSpots')
+      ? 5
       : false;
   });
 
@@ -65,6 +68,9 @@ function EditControls() {
         <TrackingControls />
       </TabPanel>
       <TabPanel value={value} index={4}>
+        <CellTypeControls />
+      </TabPanel>
+      <TabPanel value={value} index={5}>
         <SpotsControls />
       </TabPanel>
     </Box>

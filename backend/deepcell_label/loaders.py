@@ -35,6 +35,7 @@ class Loader:
         self.y = None
         self.spots = None
         self.divisions = None
+        self.cellTypes = None
         self.cells = None
 
         self.image_file = image_file
@@ -55,6 +56,7 @@ class Loader:
         self.y = load_segmentation(self.label_file)
         self.spots = load_spots(self.label_file)
         self.divisions = load_divisions(self.label_file)
+        self.cellTypes = load_cellTypes(self.label_file)
         self.cells = load_cells(self.label_file)
 
         if self.y is None:
@@ -67,6 +69,7 @@ class Loader:
         self.write_segmentation()
         self.write_spots()
         self.write_divisions()
+        self.write_cellTypes()
         self.write_cells()
 
     def write_images(self):
@@ -118,6 +121,10 @@ class Loader:
     def write_divisions(self):
         """Writes divisions to divisions.json in the output zip."""
         self.zip.writestr('divisions.json', json.dumps(self.divisions))
+
+    def write_cellTypes(self):
+        """Writes cell types to cellTypes.json in the output zip."""
+        self.zip.writestr('cellTypes.json', json.dumps(self.cellTypes))
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
@@ -225,6 +232,26 @@ def load_divisions(f):
     if divisions is None:
         return []
     return divisions
+
+
+def load_cellTypes(f):
+    """
+    Load cell types from cellTypes.json in project archive
+
+    Args:
+        zf: zip file with cellTypes.json
+
+    Returns:
+        dict or None if cellTypes.json not found
+    """
+    f.seek(0)
+    cellTypes = None
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        cellTypes = load_zip_json(zf, filename='cellTypes.json')
+    if cellTypes is None:
+        return []
+    return cellTypes
 
 
 def load_cells(f):

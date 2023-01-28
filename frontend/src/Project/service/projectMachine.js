@@ -11,6 +11,7 @@ import createIDBMachine from './idbMachine';
 import createImageMachine from './imageMachine';
 import createArraysMachine from './labels/arraysMachine';
 import createCellsMachine from './labels/cellsMachine';
+import createCellTypesMachine from './labels/cellTypesMachine';
 import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
 import createLoadMachine from './loadMachine';
@@ -32,6 +33,7 @@ const createProjectMachine = (projectId) =>
           image: new EventBus('image'), // SET_T
           labeled: new EventBus('labeled'), // SET_FEATURE
           raw: new EventBus('raw'), // SET_CHANNEL
+          cellTypes: new EventBus('cellTypes'), // CELL_TYPES
           select: new EventBus('select'), // SELECTED, receives GET_SELECTED and responds with SELECTED
           // EDIT events and label changes
           // TODO: rename to segment and separate raw arrays
@@ -93,6 +95,7 @@ const createProjectMachine = (projectId) =>
           actors.hoveringRef = spawn(createHoveringMachine(ctx), 'hovering');
           actors.imageRef = spawn(createImageMachine(ctx), 'image');
           actors.arraysRef = spawn(createArraysMachine(ctx), 'arrays');
+          actors.cellTypesRef = spawn(createCellTypesMachine(ctx), 'cellTypes');
           actors.exportRef = spawn(createExportMachine(ctx), 'export');
           actors.selectRef = spawn(createSelectMachine(ctx), 'select');
           actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');

@@ -1,8 +1,16 @@
 import { useSelector } from '@xstate/react';
 import React from 'react';
-import { useEditCells, useEditDivisions, useEditSegment, useLabelMode } from '../../ProjectContext';
+import {
+  useEditCells,
+  useEditCellTypes,
+  useEditDivisions,
+  useEditSegment,
+  useLabelMode,
+} from '../../ProjectContext';
 import AddDaughterCanvas from './AddDaughterCanvas';
+import AddCellTypeCanvas from './AddCellTypeCanvas';
 import BrushCanvas from './BrushCanvas';
+import CellTypeCanvas from './CellTypeCanvas';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
@@ -19,6 +27,9 @@ function ToolCanvas({ setBitmaps }) {
   const editDivisions = useEditDivisions();
   const addingDaughter = useSelector(editDivisions, (state) => state.matches('addingDaughter'));
 
+  const editCellTypes = useEditCellTypes();
+  const addingCell = useSelector(editCellTypes, (state) => state.matches('addingCell'));
+
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
     state.matches('editSegment')
@@ -27,6 +38,8 @@ function ToolCanvas({ setBitmaps }) {
       ? 'cells'
       : state.matches('editDivisions')
       ? 'divisions'
+      : state.matches('editCellTypes')
+      ? 'cellTypes'
       : false
   );
 
@@ -58,6 +71,16 @@ function ToolCanvas({ setBitmaps }) {
         return <AddDaughterCanvas setBitmaps={setBitmaps} />;
       }
       return null;
+    case 'cellTypes':
+      if (addingCell) {
+        return (
+          <>
+            <CellTypeCanvas setBitmaps={setBitmaps} />
+            <AddCellTypeCanvas setBitmaps={setBitmaps} />
+          </>
+        );
+      }
+      return <CellTypeCanvas setBitmaps={setBitmaps} />;
     default:
       return null;
   }

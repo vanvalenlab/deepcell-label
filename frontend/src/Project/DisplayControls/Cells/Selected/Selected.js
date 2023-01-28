@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
 import React, { useEffect, useState } from 'react';
-import { useSelect } from '../../../ProjectContext';
+import { useEditCellTypes, useSelect } from '../../../ProjectContext';
 import Cell from '../Cell';
 import NewCellButton from './NewCellButton';
 import NextCellButton from './NextCellButton';
@@ -12,6 +12,7 @@ let numMounted = 0;
 
 function Selected() {
   const select = useSelect();
+  const editCellTypes = useEditCellTypes();
   const cell = useSelector(select, (state) => state.context.selected);
 
   useEffect(() => {
@@ -19,6 +20,7 @@ function Selected() {
       switch (e.key) {
         case 'Escape':
           select.send('RESET');
+          editCellTypes.send('RESET');
           break;
         case 'n':
           select.send('SELECT_NEW');
