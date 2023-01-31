@@ -7,22 +7,22 @@ import OutlineOpacitySlider from './OutlineOpacitySlider';
 const LabeledControlsTop = () => {
   return (
     <>
-      <Grid sx={{width: 150}} container direction='column' spacing={1}>
+      <Grid sx={{ width: 150 }} container direction='column' spacing={1}>
         <Grid item>
-            <FormLabel sx={{fontSize: 18}}> Segmentation </FormLabel>
+          <FormLabel sx={{ fontSize: 18 }}> Segmentation </FormLabel>
         </Grid>
         <Grid item>
           <FeatureSelect />
         </Grid>
       </Grid>
-      <Grid sx={{marginLeft: 0.2, width: 145}} container direction='column' spacing={1}>
+      <Grid sx={{ marginLeft: 0.2, width: 145 }} container direction='column' spacing={1}>
         <Grid item>
-            <FormLabel>Cells Opacity</FormLabel>
-            <CellsOpacitySlider />
+          <FormLabel>Cells Opacity</FormLabel>
+          <CellsOpacitySlider />
         </Grid>
         <Grid item>
-            <FormLabel>Outline Opacity</FormLabel>
-            <OutlineOpacitySlider />
+          <FormLabel>Outline Opacity</FormLabel>
+          <OutlineOpacitySlider />
         </Grid>
       </Grid>
     </>

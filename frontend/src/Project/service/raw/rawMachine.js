@@ -75,7 +75,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
                 // Need propagate event to root actor to rerender canvas
                 ADD_LAYER: { actions: ['addLayer', sendParent((c, e) => e)] },
                 REMOVE_LAYER: { actions: ['removeLayer', sendParent((c, e) => e), 'setLayers'] },
-                EDIT_NAME: { actions: 'editChannelName' }
+                EDIT_NAME: { actions: 'editChannelName' },
               },
             },
             grayscale: {
@@ -112,15 +112,14 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
             let channelNames = ctx.channelNames;
             channelNames[evt.channel] = evt.name;
             return channelNames;
-          }
+          },
         }),
         checkChannels: assign({
           channelNames: (ctx) => {
             let channelNames = ctx.channelNames;
-            channelNames = channelNames.map((name, i) =>
-              name ? name : `channel ${i}`);
+            channelNames = channelNames.map((name, i) => (name ? name : `channel ${i}`));
             return channelNames;
-          }
+          },
         }),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
         setChannel: assign({ channel: (_, { channel }) => channel }),
