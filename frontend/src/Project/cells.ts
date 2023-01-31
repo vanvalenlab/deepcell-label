@@ -2,7 +2,7 @@
 
 type Cell = { value: number; cell: number; t: number; c: number };
 type CellMatrix = (0 | 1)[][];
-type Overlaps = { overlaps: number[][], numCells: number[], maxCell: number };
+type Overlaps = { overlaps: number[][]; numCells: number[]; maxCell: number };
 
 class Cells {
   cells: Cell[];
@@ -21,7 +21,7 @@ class Cells {
     const maxCell = atT.reduce((max, cell) => Math.max(max, cell.cell), 0);
     const maxValue = atT.reduce((max, cell) => Math.max(max, cell.value), 0);
     const overlaps = atT.filter((cell) => cell.value > maxCell);
-    const matrix: number[][] = Array.from({length: maxValue - maxCell}, () => []);
+    const matrix: number[][] = Array.from({ length: maxValue - maxCell }, () => []);
     const numCells: number[] = new Array(maxValue - maxCell).fill(0);
     // For each cell involved in overlap, push cell to matrix and record number of cells involved
     for (const entry of overlaps) {
@@ -35,7 +35,7 @@ class Cells {
       matrix.push([0]);
       numCells.push(0);
     }
-    return {overlaps: matrix, numCells: numCells, maxCell: maxCell};
+    return { overlaps: matrix, numCells: numCells, maxCell: maxCell };
   }
 
   /** Converts the cell list to a sparse matrix where the (i, j)th element is 1 if value i encodes cell j at time t.
@@ -80,17 +80,15 @@ class Cells {
     for (const cell of atT) {
       matrix[cell.value - minValue][cell.cell - minCell] = 1;
     }
-    return {cellMatrix: matrix, minCell: minCell, minValue: minValue};
+    return { cellMatrix: matrix, minCell: minCell, minValue: minValue };
   }
-  
+
   /** Returns the cells that are present in a frame at time t.
    * @param {number} t Time to get cells in.
    * @returns List of cells
    */
   getCellsAtTime(t: number, c: number) {
-    let cells = this.cells
-      .filter((cell) => cell.t === t && cell.c === c)
-      .map((cell) => cell.cell);
+    let cells = this.cells.filter((cell) => cell.t === t && cell.c === c).map((cell) => cell.cell);
     cells = [...new Set(cells)];
     cells.sort((a, b) => a - b);
     return cells;

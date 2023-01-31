@@ -15,9 +15,9 @@ import createCellTypesMachine from './labels/cellTypesMachine';
 import createChannelExpressionMachine from './labels/channelExpressionMachine';
 import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
+import createTrainingMachine from './labels/trainingMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
-import createTrainingMachine from './labels/trainingMachine';
 import createUndoMachine from './undo';
 
 const createProjectMachine = (projectId) =>
@@ -104,7 +104,10 @@ const createProjectMachine = (projectId) =>
           actors.selectRef = spawn(createSelectMachine(ctx), 'select');
           actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');
           actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
-          actors.channelExpressionRef = spawn(createChannelExpressionMachine(ctx), 'channelExpression');
+          actors.channelExpressionRef = spawn(
+            createChannelExpressionMachine(ctx),
+            'channelExpression'
+          );
           actors.toolRef = spawn(createToolMachine(ctx), 'tool');
           actors.trainingRef = spawn(createTrainingMachine(ctx), 'training');
           actors.spotsRef = spawn(createSpotsMachine(ctx), 'spots');
@@ -112,7 +115,7 @@ const createProjectMachine = (projectId) =>
         }),
         sendDimensions: send(
           (c, e) => {
-            const { raw, labeled, rawOriginal } = e;
+            const { raw, labeled } = e;
             return {
               type: 'DIMENSIONS',
               numChannels: raw.length,
