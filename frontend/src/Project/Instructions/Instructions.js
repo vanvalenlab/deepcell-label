@@ -10,6 +10,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import CanvasInstructions from './CanvasInstructions';
 import CellsInstructions from './CellsInstructions';
+import CellTypeInstructions from './CellTypeInstructions';
 import DisplayInstructions from './DisplayInstructions';
 import DivisionsInstructions from './DivisionsInstructions';
 import OverviewInstructions from './OverviewInstructions';
@@ -141,6 +142,7 @@ export default function Instructions() {
             <Tab label='Segment' />
             <Tab label='Cells' />
             <Tab label='Divisions' />
+            <Tab label='Cell Types' />
           </Tabs>
           <TabPanel value={value} index={0}>
             <OverviewInstructions />
@@ -162,6 +164,9 @@ export default function Instructions() {
           </TabPanel>
           <TabPanel value={value} index={6}>
             <DivisionsInstructions />
+          </TabPanel>
+          <TabPanel value={value} index={7}>
+            <CellTypeInstructions />
           </TabPanel>
         </AccordionDetails>
       </Accordion>

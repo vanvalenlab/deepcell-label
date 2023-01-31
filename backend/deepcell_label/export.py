@@ -159,7 +159,7 @@ def rewrite_labeled(labeled, cells):
             # Rewrite overlapping values with values higher than all cells
             if len(cells_at_t) == 0:
                 new_overlap_value = 0
-            else:
+            else: 
                 new_overlap_value = max(cells_at_t, key=lambda c: c['cell'])['cell'] + 1
             for overlap_value, overlap_cells in overlap_values:
                 for cell in overlap_cells:

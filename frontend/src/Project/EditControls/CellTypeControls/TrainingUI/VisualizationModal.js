@@ -1,0 +1,136 @@
+import Box from '@mui/material/Box';
+import { Button } from '@mui/material';
+import CancelIcon from '@mui/icons-material/Cancel';
+import Grid from '@mui/material/Grid';
+import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
+import Modal from '@mui/material/Modal';
+import NotStartedIcon from '@mui/icons-material/NotStarted';
+import Typography from '@mui/material/Typography';
+import { useSelector } from '@xstate/react';
+import ConfusionMatrix from './ConfusionMatrix';
+import { getCellList } from '../../../service/labels/trainingMachine';
+import Hyperparameters from './Hyperparameters';
+import TrainingPlot from './TrainingPlot';
+import { useTraining } from '../../../ProjectContext';
+
+function VisualizationModal({ open, setOpen }) {
+
+    const trainingRef = useTraining();
+    const cellTypes = useSelector(trainingRef, (state) => state.context.cellTypes);
+    const logs = useSelector(trainingRef, (state) => state.context.trainLogs);
+    const confusionMatrix = useSelector(trainingRef, (state) => state.context.confusionMatrix);
+    const progress = useSelector(trainingRef, (state) => state.context.epoch);
+    const numEpochs = useSelector(trainingRef, (state) => state.context.numEpochs);
+    const training = useSelector(trainingRef, (state) => state.matches('loaded.training.train'));
+    const valSplit = useSelector(trainingRef, (state) => state.context.valSplit) * 100;
+    const trainSize = Math.ceil(getCellList(cellTypes).length * valSplit / 100);
+    const batchSize = useSelector(trainingRef, (state) => state.context.batchSize);
+    const badBatch = batchSize > trainSize;
+
+    const style = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '80vw',
+        height: '80vh',
+        bgcolor: 'background.paper',
+        borderRadius: 2,
+        boxShadow: 24,
+        p: 4,
+    };
+
+    const handleTrain = () => {
+        if (!badBatch) {
+            trainingRef.send({ type: 'TRAIN' });
+        }
+    };
+
+    const handleCancel = () => {
+        trainingRef.send({ type: 'CANCEL' });
+    };
+
+    return (
+    <Modal open={open} onClose={() => setOpen(false)}>
+        <Box sx={style} display='flex'>
+            <Grid container item direction='column' spacing={'2vh'}>
+                <Grid item>
+                    <Typography variant='h6' component='h2'>
+                        Training Parameters
+                    </Typography>
+                </Grid>
+                <Grid item>
+                    <Hyperparameters badBatch={badBatch} />
+                </Grid>
+                <Grid item display='flex'>
+                    <Button
+                        disabled={training}
+                        sx={{
+                            width: '46%',
+                            marginRight: '1em',
+                            backgroundColor: 'rgba(30, 200, 80, 1)',
+                            '&:hover': { backgroundColor: 'rgba(0, 170, 50, 1)' }
+                        }}
+                        onClick={handleTrain}
+                        variant='contained'
+                        startIcon={<NotStartedIcon />}
+                    >
+                        Start
+                    </Button>
+                    <Button
+                        disabled={!training}
+                        sx={{
+                            width: '46%',
+                            backgroundColor: 'rgba(245, 20, 87, 1)',
+                            '&:hover': { backgroundColor: 'rgba(224, 0, 67, 1)' }
+                        }}
+                        onClick={handleCancel}
+                        variant='contained'
+                        startIcon={<CancelIcon />}
+                    >
+                        Cancel
+                    </Button>
+                </Grid>
+                <Grid item>
+                    <LinearProgress
+                        variant="determinate"
+                        value={progress / (numEpochs - 1) * 100}
+                        sx={{
+                            width: 'calc(92% + 1em)',
+                            height: '0.5em',
+                            borderRadius: '1em',
+                            [`&.${linearProgressClasses.colorPrimary}`]: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.07)',
+                            },
+                            [`& .${linearProgressClasses.bar}`]: {
+                                backgroundColor: (progress + 1 === numEpochs) ? 'rgba(30, 200, 80, 1)' : 'rgba(0, 166, 255, 1)',
+                                borderRadius: '1em',
+                            },
+                        }}
+                    />
+                </Grid>
+            </Grid>
+            <Grid container item direction='column' spacing={'2vh'}>
+                <Grid item>
+                    <Typography variant='h6' component='h2'>
+                        Training Visualizations
+                    </Typography>
+                </Grid>
+                <Grid item>
+                    {logs.length > 0
+                        ? <TrainingPlot />
+                        : null
+                    }
+                </Grid>
+                <Grid item>
+                    {confusionMatrix
+                        ? <ConfusionMatrix confusionMatrix={confusionMatrix} />
+                        : null}
+                </Grid>
+            </Grid>
+        </Box>
+    </Modal>
+    );
+}
+
+export default VisualizationModal;

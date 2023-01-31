@@ -48,15 +48,15 @@ function OutlineOpacitySlider() {
     <Tooltip title={<kbd>O</kbd>} placement='right'>
       <Slider
         value={opacity}
-        valueLabelDisplay='off'
         min={0}
         max={1}
         // track={false}
         step={0.01}
+        size='small'
         onChange={handleChange}
         onDoubleClick={handleDoubleClick}
         componentsProps={{ input: { ref: inputRef } }}
-        sx={{ py: 0 }}
+        sx={{ py: 0, '& .MuiSlider-thumb': { height: 15, width: 15 } }}
       />
     </Tooltip>
     // </Tooltip>

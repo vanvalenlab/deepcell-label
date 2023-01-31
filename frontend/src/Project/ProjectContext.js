@@ -91,10 +91,16 @@ export function useCellTypes() {
   return cellTypes;
 }
 
-export function useCellTypeList() {
-  const cellTypesMachine = useCellTypes();
-  const cellTypes = useSelector(cellTypesMachine, (state) => state.context.cellTypes);
-  return cellTypes;
+export function useChannelExpression() {
+  const project = useProject();
+  const channelExpression = useSelector(project, (state) => state.context.channelExpressionRef);
+  return channelExpression;
+}
+
+export function useTraining() {
+  const project = useProject();
+  const training = useSelector(project, (state) => state.context.trainingRef);
+  return training;
 }
 
 export function useDivisions() {
@@ -456,6 +462,26 @@ export function useCells() {
   return useMemo(() => new Cells(cells), [cells]);
 }
 
+export function useCellsAtTime() {
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+  const labeled = useLabeled();
+  const c = useSelector(labeled, (state) => state.context.feature);
+  const cells = useCells();
+  const cellList = useMemo(() => cells.getCellsAtTime(t, c), [cells, t, c]);
+  return cellList;
+}
+
+export function useOverlaps() {
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+  const labeled = useLabeled();
+  const c = useSelector(labeled, (state) => state.context.feature);
+  const cells = useCells();
+  const overlaps = useMemo(() => cells.getOverlaps(t, c), [cells, t, c]);
+  return overlaps;
+}
+
 export function useCellMatrix() {
   const image = useImage();
   const t = useSelector(image, (state) => state.context.t);
@@ -463,6 +489,16 @@ export function useCellMatrix() {
   const c = useSelector(labeled, (state) => state.context.feature);
   const cells = useCells();
   const cellMatrix = useMemo(() => cells.getMatrix(t, c), [cells, t, c]);
+  return cellMatrix;
+}
+
+export function useReducedCellMatrix() {
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+  const labeled = useLabeled();
+  const c = useSelector(labeled, (state) => state.context.feature);
+  const cells = useCells();
+  const cellMatrix = useMemo(() => cells.getReducedMatrix(t, c), [cells, t, c]);
   return cellMatrix;
 }
 

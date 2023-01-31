@@ -106,8 +106,8 @@ async function getRawRasters(source: TiffPixelSource) {
   const c = shape[labels.indexOf('c')];
   const z = shape[labels.indexOf('z')];
   const channels = [];
-  var max = 0;
-  var min = Infinity;
+  var max = Array(c).fill(0);
+  var min = Array(c).fill(Infinity);
   for (let i = 0; i < c; i++) {
     const frames = [];
     for (let j = 0; j < z; j++) {
@@ -117,11 +117,11 @@ async function getRawRasters(source: TiffPixelSource) {
       // Record max and min across frames
       for (let k = 0; k < frame.length; k++) {
         for (let l = 0; l < frame[k].length; l++) {
-          if (frame[k][l] > max) {
-            max = frame[k][l];
+          if (frame[k][l] > max[i]) {
+            max[i] = frame[k][l];
           }
-          if (frame[k][l] < min) {
-            min = frame[k][l];
+          if (frame[k][l] < min[i]) {
+            min[i] = frame[k][l];
           }
         }
       }
@@ -151,7 +151,7 @@ async function getLabelRasters(source: TiffPixelSource) {
   return channels;
 }
 
-function reshapeRaw(channels: TypedArray[][][], min: number, max: number) {
+function reshapeRaw(channels: TypedArray[][][], min: number[], max: number[]) {
   const size_c = channels.length;
   const size_z = channels[0].length;
   const size_y = channels[0][0].length;
@@ -159,13 +159,17 @@ function reshapeRaw(channels: TypedArray[][][], min: number, max: number) {
   const reshaped = [];
   // Normalize each pixel to 0-255 for rendering
   for (let c = 0; c < size_c; c++) {
+    const channelMin = min[c];
+    const channelMax = max[c];
     const frames = [];
     for (let z = 0; z < size_z; z++) {
       const frame = [];
       for (let y = 0; y < size_y; y++) {
         const row = new Uint8Array(size_x);
         for (let x = 0; x < size_x; x++) {
-          row[x] = Math.round(((channels[c][z][y][x] - min) / (max - min)) * 255);
+          row[x] = Math.round(
+            ((channels[c][z][y][x] - channelMin) / (channelMax - channelMin)) * 255
+          );
         }
         frame.push(row);
       }
@@ -216,6 +220,7 @@ interface Context {
   width: number | null;
   height: number | null;
   t: number | null;
+  channels: string[] | null;
   numChannels: number | null;
   numFeatures: number | null;
   raw: Uint8Array[][][] | null;
@@ -238,6 +243,7 @@ const createLoadMachine = (projectId: string) =>
         width: null,
         height: null,
         t: null,
+        channels: null,
         numChannels: null,
         numFeatures: null,
         raw: null,
@@ -326,10 +332,11 @@ const createLoadMachine = (projectId: string) =>
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
           const { metadata } = evt.data.files['X.ome.tiff'];
-          const { SizeX, SizeY, SizeZ, SizeT, SizeC } = metadata.Pixels;
+          const { SizeX, SizeY, SizeZ, SizeC, Channels } = metadata.Pixels;
           // @ts-ignore
           const { metadata: labelMetadata } = evt.data.files['y.ome.tiff'];
           const { SizeC: labelSizeC } = labelMetadata;
+          const channelNames = Channels.map((i: any) => i.Name);
           return {
             width: SizeX,
             height: SizeY,
@@ -337,6 +344,7 @@ const createLoadMachine = (projectId: string) =>
             // SizeT,
             numChannels: SizeC,
             numFeatures: labelSizeC,
+            channels: channelNames,
           };
         }),
         'set arrays': assign({
@@ -353,6 +361,7 @@ const createLoadMachine = (projectId: string) =>
           divisions: ctx.divisions,
           cells: ctx.cells,
           cellTypes: ctx.cellTypes,
+          channels: ctx.channels,
         })),
       },
     }

@@ -1,21 +1,30 @@
-import ClickAwayListener from '@mui/material/ClickAwayListener';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton } from '@mui/material';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
-import { useEditCellTypes } from '../../../ProjectContext';
 import { useReducer, useRef } from 'react';
+import { useEditCellTypes } from '../../../ProjectContext';
+
+const editStyle = {
+  position: 'absolute',
+  marginLeft: 30,
+  marginTop: -0.5,
+  color: 'gray',
+  height: '42%',
+};
 
 function EditDeleteMenu(props) {
-  const { toggleType, id } = props;
+  const { toggleType, id, toggleArray, setToggleArray } = props;
   const editCellTypesRef = useEditCellTypes();
   const anchorRef = useRef(null);
   const [openMenu, toggleMenu] = useReducer((v) => !v, false);
 
   // Handler for when a cell type is deleted
   const handleRemove = () => {
+    setToggleArray(toggleArray.filter((e, i) => i !== id));
     editCellTypesRef.send({ type: 'REMOVE_TYPE', cellType: id });
   };
 
@@ -28,15 +37,10 @@ function EditDeleteMenu(props) {
   return (
     <IconButton
       onClick={handleClickMenu}
+      id={'editDeleteMenu'}
       ref={anchorRef}
       style={{ borderRadius: 20 }}
-      sx={{
-        position: 'absolute',
-        left: 255,
-        bottom: 30,
-        color: 'gray',
-        height: '50%',
-      }}
+      sx={editStyle}
     >
       <MoreVertIcon />
       <Popper open={openMenu} anchorEl={anchorRef.current} placement='bottom-start'>

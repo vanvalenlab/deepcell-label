@@ -14,7 +14,7 @@ import ColorPalette from './ColorPalette';
 
 const Span = styled('span')``;
 
-function LayerOptions({ layer }) {
+function LayerOptions({ layer, toggleType }) {
   const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
   const index = useSelector(layer, (state) => state.context.layer);
@@ -22,12 +22,18 @@ function LayerOptions({ layer }) {
   const raw = useRaw();
 
   const handleColorSelect = (color) => {
+    toggle();
     layer.send({ type: 'SET_COLOR', color });
   };
 
   const handleRemove = () => {
     toggle();
     raw.send({ type: 'REMOVE_LAYER', layer });
+  };
+
+  const handleEdit = () => {
+    toggle();
+    toggleType();
   };
 
   return (
@@ -45,6 +51,18 @@ function LayerOptions({ layer }) {
         <Paper sx={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}>
           <ClickAwayListener onClickAway={toggle}>
             <MenuList id='channel-options'>
+              <MenuItem dense disableGutters onClick={handleEdit}>
+                <Span
+                  sx={{
+                    width: '70px',
+                    textAlign: 'center',
+                    px: '2px',
+                    color: 'white',
+                  }}
+                >
+                  Edit Name
+                </Span>
+              </MenuItem>
               <MenuItem dense disableGutters onClick={handleRemove}>
                 <Span
                   sx={{

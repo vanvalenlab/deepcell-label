@@ -1,4 +1,4 @@
-import { Typography } from '@mui/material';
+import { FormLabel } from '@mui/material';
 import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
 import LabeledControls from '../DisplayControls/LabeledControls';
@@ -6,7 +6,7 @@ import RawControls from '../DisplayControls/RawControls';
 import SpotsControls from '../DisplayControls/SpotsControls';
 import { useLabelMode } from '../ProjectContext';
 import CellControls from './CellControls';
-import CellTypeControls from './CellTypeControls';
+import CellTypeControls from './CellTypeControls'
 import TrackingControls from './DivisionsControls';
 import SegmentControls from './SegmentControls';
 
@@ -53,9 +53,13 @@ function EditControls() {
       }}
     >
       <TabPanel value={value} index={0}>
-        <Typography>Segmentation</Typography>
+        <div style={{ marginBottom: 15 }}>
+          <FormLabel sx={{fontSize: 18}}> Segmentation </FormLabel>
+        </div>
         <LabeledControls />
-        <Typography>Image</Typography>
+        <div style={{ marginTop: 25, marginBottom: 10 }}>
+          <FormLabel sx={{ fontSize: 18 }}> Image </FormLabel>
+        </div>
         <RawControls />
       </TabPanel>
       <TabPanel value={value} index={1}>

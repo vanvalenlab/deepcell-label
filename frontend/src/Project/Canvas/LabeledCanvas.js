@@ -3,10 +3,11 @@ import { useEffect, useRef } from 'react';
 import {
   useAlphaGpu,
   useCanvas,
-  useCellMatrix,
+  useCellsAtTime,
   useColormap,
   useLabeled,
   useLabeledArray,
+  useReducedCellMatrix,
   useSelectedCell,
 } from '../ProjectContext';
 
@@ -22,7 +23,8 @@ export const LabeledCanvas = ({ setBitmaps }) => {
   const opacity = useSelector(labeled, (state) => state.context.cellsOpacity);
 
   const labeledArray = useLabeledArray();
-  const cellMatrix = useCellMatrix();
+  const cellsList = useCellsAtTime();
+  const { cellMatrix, minCell, minValue } = useReducedCellMatrix();
   const colormap = useColormap();
   const cell = useSelectedCell();
 
@@ -31,35 +33,34 @@ export const LabeledCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (labelArray, cellMatrix, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
+      `function (labelArray, cellMatrix, minCell, minValue, cellsList, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         let [r, g, b, a] = [0, 0, 0, 1];
-        if (value < numValues) {
+        if (value - minValue < numValues && value >= minValue) {
           for (let i = 0; i < numLabels; i++) {
-            if (cellMatrix[value][i] === 1) {
+            const currCell = cellsList[i];
+            if (cellMatrix[value - minValue][currCell - minCell] === 1) {
               let [sr, sg, sb] = [0, 0, 0];
-              if (i === cell && highlight) {
+              if (currCell === cell && highlight) {
                 sr = highlightColor[0];
                 sg = highlightColor[1];
                 sb = highlightColor[2];
               } else {
-                sr = colormap[i][0];
-                sg = colormap[i][1];
-                sb = colormap[i][2];
+                sr = colormap[currCell][0];
+                sg = colormap[currCell][1];
+                sb = colormap[currCell][2];
               }
 
-              if (i !== cell) {
-                a = a * (1 - opacity[0]);
-                sr = opacity[0] * sr / 255;
-                sg = opacity[0] * sg / 255;
-                sb = opacity[0] * sb / 255;
-              } else {
-
-                a = a * (1 - opacity[1]);
-                sr = opacity[1] * sr / 255;
-                sg = opacity[1] * sg / 255;
-                sb = opacity[1] * sb / 255;
+              let sa = 1;
+              // Only use mixing if overlap
+              if (a < 1) {
+                sa = opacity;
               }
+              a = a * (1 - opacity);
+              sr = sa * sr / 255;
+              sg = sa * sg / 255;
+              sb = sa * sb / 255;
+              
               r = r + sr - r * sr;
               g = g + sg - g * sg;
               b = b + sb - b * sb;
@@ -81,14 +82,17 @@ export const LabeledCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    if (labeledArray && cellMatrix) {
-      const numLabels = cellMatrix[0].length;
+    if (labeledArray && cellMatrix && cellsList.length > 0) {
+      const numLabels = cellsList.length;
       const numValues = cellMatrix.length;
       // Compute the label image with the kernel
       kernel(
         labeledArray,
         cellMatrix,
-        [opacity, opacity],
+        minCell,
+        minValue,
+        cellsList,
+        opacity,
         colormap,
         cell,
         numValues,
@@ -101,7 +105,20 @@ export const LabeledCanvas = ({ setBitmaps }) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, labeled: bitmap }));
       });
     }
-  }, [labeledArray, cellMatrix, opacity, colormap, cell, highlight, setBitmaps, width, height]);
+  }, [
+    labeledArray,
+    cellMatrix,
+    cellsList,
+    minCell,
+    minValue,
+    opacity,
+    colormap,
+    cell,
+    highlight,
+    setBitmaps,
+    width,
+    height,
+  ]);
 
   return null;
 };

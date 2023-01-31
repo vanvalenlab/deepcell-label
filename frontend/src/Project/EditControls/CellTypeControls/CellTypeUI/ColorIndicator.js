@@ -1,18 +1,52 @@
-import { Box, IconButton } from '@mui/material';
-import ClickAwayListener from '@mui/material/ClickAwayListener';
-import EditIcon from '@mui/icons-material/Edit';
-import Popper from '@mui/material/Popper';
+import ColorizeIcon from '@mui/icons-material/Colorize';
 import SquareRoundedIcon from '@mui/icons-material/SquareRounded';
-import { TwitterPicker } from 'react-color';
-import { useReducer, useRef, useState } from 'react';
+import { Box, IconButton, Paper } from '@mui/material';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
+import Popper from '@mui/material/Popper';
+import { useRef, useState } from 'react';
+import { CirclePicker } from 'react-color';
 import { useEditCellTypes } from '../../../ProjectContext';
 
-function EditNameField(props) {
-  const { id, color } = props;
+const colorStyle = {
+  position: 'absolute',
+  marginTop: '-0.4em',
+  marginLeft: '-0.6em',
+  marginBottom: '-0.6em',
+};
+
+export const colors = [
+  '#fe29e2',
+  '#f82387',
+  '#e13219',
+  '#fd9cba',
+  '#fd8f20',
+  '#fbd127',
+  '#82400f',
+  '#b18b34',
+  '#f2cf9c',
+  '#c0f442',
+  '#a0e3b7',
+  '#6a9c75',
+  '#73ae22',
+  '#195036',
+  '#2af464',
+  '#24fecd',
+  '#58b5e1',
+  '#8a96f7',
+  '#333a9e',
+  '#501bbf',
+  '#9900EF',
+  '#bd58db',
+  '#8a0458',
+  '#75435b',
+];
+
+function ColorIndicator(props) {
+  const { id, color, openColor, toggleColor } = props;
+
   const editCellTypesRef = useEditCellTypes();
   const anchorRef = useRef(null);
   const [editIcon, setEditIcon] = useState(0);
-  const [openColor, toggleColor] = useReducer((v) => !v, false);
 
   // Handler for when the color box is clicked
   const handleClickColor = (e) => {
@@ -27,47 +61,40 @@ function EditNameField(props) {
     toggleColor();
   };
 
-  // Handler to ensure hotkeys don't get used + Enter to finish typing
-  const handlePopper = (event) => {
-    event.stopPropagation();
-  };
-
   return (
-    <Box sx={{ position: 'relative', right: 15, bottom: 9 }}>
+    <Box style={colorStyle}>
       <IconButton
         onClick={handleClickColor}
         ref={anchorRef}
-        sx={{
-          position: 'relative',
-        }}
         onMouseEnter={() => setEditIcon(100)}
         onMouseLeave={() => setEditIcon(0)}
+        size='large'
       >
         <SquareRoundedIcon
           sx={{
-            left: 0,
+            position: 'absolute',
             fontSize: 35,
             color: color,
           }}
         />
-        <EditIcon
+        <ColorizeIcon
           sx={{
-            position: 'absolute',
+            position: 'relative',
             color: 'white',
-            fontSize: 18,
+            fontSize: 20,
             opacity: editIcon,
           }}
         />
       </IconButton>
       <Popper open={openColor} anchorEl={anchorRef.current} placement='bottom-start'>
         <ClickAwayListener onClickAway={toggleColor}>
-          <div onKeyDown={handlePopper} onClick={handlePopper}>
-            <TwitterPicker color={color} onChange={handleColor} />
-          </div>
+          <Paper sx={{ p: '1em' }}>
+            <CirclePicker color={color} colors={colors} onChange={handleColor} />
+          </Paper>
         </ClickAwayListener>
       </Popper>
     </Box>
   );
 }
 
-export default EditNameField;
+export default ColorIndicator;

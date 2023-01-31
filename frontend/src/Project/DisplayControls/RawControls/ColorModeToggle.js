@@ -1,5 +1,4 @@
-import { FormGroup, Switch } from '@mui/material';
-import FormControlLabel from '@mui/material/FormControlLabel';
+import { FormLabel, Switch } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
@@ -20,20 +19,15 @@ function ColorModeToggle() {
 
   return (
     <Tooltip title={<kbd>Y</kbd>} placement='right'>
-      <FormGroup row>
-        <FormControlLabel
-          control={
-            <Switch
-              size='small'
-              checked={!grayscale}
-              onChange={() => raw.send('TOGGLE_COLOR_MODE')}
-              inputRef={inputRef}
-            />
-          }
-          label='Color'
-          labelPlacement='end'
+      <>
+        <FormLabel>Color</FormLabel>
+        <Switch
+          size='small'
+          checked={!grayscale}
+          onChange={() => raw.send('TOGGLE_COLOR_MODE')}
+          inputRef={inputRef}
         />
-      </FormGroup>
+      </>
     </Tooltip>
   );
 }

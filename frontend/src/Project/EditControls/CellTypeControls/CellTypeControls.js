@@ -1,14 +1,22 @@
 // Controls for cell types menu, including button for adding cell type,
 // the list of cell types, and an editing prompt when adding cells
 
-import { Box, FormLabel, Button } from '@mui/material';
+import { Box, Button, FormLabel } from '@mui/material';
+import { useSelector } from '@xstate/react';
+import { useState } from 'react';
+import { useCellTypes } from '../../ProjectContext';
 import AddCellTypeLabel from './CellTypeUI/AddCellTypeLabel';
 import CellTypeAccordionList from './CellTypeUI/CellTypeAccordionList';
 import EditingPrompt from './CellTypeUI/EditingPrompt';
+import ToggleAll from './CellTypeUI/ToggleAll';
 
 function CellTypeControls() {
+  const cellTypes = useCellTypes();
+  const isOnArray = useSelector(cellTypes, (state) => state.context.isOn);
+  const [toggleArray, setToggleArray] = useState(isOnArray);
+
   return (
-    <Box display='flex' flexDirection='column'>
+    <Box id='cell-type-controls' display='flex' flexDirection='column'>
       <FormLabel sx={{ marginBottom: 2 }}>
         Cell Type Labels
         <Button
@@ -19,12 +27,12 @@ function CellTypeControls() {
           color='secondary'
           sx={{ width: 5, height: 20, top: -1, marginLeft: 1 }}
         >
-          {' '}
-          Beta
+          Alpha
         </Button>
       </FormLabel>
-      <AddCellTypeLabel />
-      <CellTypeAccordionList />
+      <AddCellTypeLabel toggleArray={toggleArray} setToggleArray={setToggleArray} />
+      <ToggleAll toggleArray={toggleArray} setToggleArray={setToggleArray} />
+      <CellTypeAccordionList toggleArray={toggleArray} setToggleArray={setToggleArray} />
       <EditingPrompt />
     </Box>
   );

@@ -15,6 +15,7 @@ import magic
 import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
+from xml.etree import ElementTree as ET
 
 from deepcell_label.utils import convert_lineage, reshape
 
@@ -37,6 +38,7 @@ class Loader:
         self.divisions = None
         self.cellTypes = None
         self.cells = None
+        self.channels = []
 
         self.image_file = image_file
         self.label_file = label_file if label_file else image_file
@@ -58,6 +60,7 @@ class Loader:
         self.divisions = load_divisions(self.label_file)
         self.cellTypes = load_cellTypes(self.label_file)
         self.cells = load_cells(self.label_file)
+        self.channels = load_channels(self.image_file)
 
         if self.y is None:
             shape = (*self.X.shape[:-1], 1)
@@ -84,8 +87,11 @@ class Loader:
             # Move channel axis
             X = np.moveaxis(X, -1, 1)
             images = io.BytesIO()
+            channels = []
+            for i in range(len(self.channels)):
+                channels.append({'Name': self.channels[i]})
             with TiffWriter(images, ome=True) as tif:
-                tif.write(X, compression='zlib', metadata={'axes': 'ZCYX'})
+                tif.write(X, compression='zlib', metadata={'axes': 'ZCYX', 'Pixels': {'Channel': channels}})
             images.seek(0)
             self.zip.writestr('X.ome.tiff', images.read())
         # else:
@@ -194,7 +200,7 @@ def load_spots(f):
     Load spots data from label file.
 
     Args:
-        zf: file with zipped csv containing spots data
+        f: file with zipped csv containing spots data
 
     Returns:
         bytes read from csv in zip or None if no csv in zip
@@ -212,7 +218,7 @@ def load_divisions(f):
     Loading from lineage.json from .trk file is supported, but deprecated.
 
     Args:
-        zf: zip file with divisions.json
+        f: zip file with divisions.json
             or tarfile with lineage.json
 
     Returns:
@@ -239,7 +245,7 @@ def load_cellTypes(f):
     Load cell types from cellTypes.json in project archive
 
     Args:
-        zf: zip file with cellTypes.json
+        f: zip file with cellTypes.json
 
     Returns:
         dict or None if cellTypes.json not found
@@ -259,7 +265,7 @@ def load_cells(f):
     Load cells from label file.
 
     Args:
-        zf: zip file with cells json
+        f: zip file with cells json
 
     Returns:
         dict or None if no json in zip
@@ -268,6 +274,32 @@ def load_cells(f):
     if zipfile.is_zipfile(f):
         zf = zipfile.ZipFile(f, 'r')
         return load_zip_json(zf, filename='cells.json')
+
+
+def load_channels(f):
+    """
+    Load channels from raw file.
+
+    Args:
+        f: X.ome.tiff or zip with X.ome.tiff with channel metadata
+
+    Returns:
+        list or None if no channel metadata
+    """
+    f.seek(0)
+    channels = []
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        for filename in zf.namelist():
+            if filename == 'X.ome.tiff':
+                with zf.open(filename) as X:
+                    tiff = TiffFile(X)
+                    if tiff.is_ome:
+                        root = ET.fromstring(tiff.ome_metadata)
+                        for child in root.iter():
+                            if child.tag.endswith('Channel') and 'Name' in child.attrib:
+                                channels.append(child.attrib['Name'])
+    return channels
 
 
 def load_zip_numpy(zf, name='X'):

@@ -1,21 +1,16 @@
 import { useSelector } from '@xstate/react';
-import React from 'react';
-import {
-  useEditCells,
-  useEditCellTypes,
-  useEditDivisions,
-  useEditSegment,
-  useLabelMode,
-} from '../../ProjectContext';
+import { useEditCells, useEditCellTypes, useEditDivisions, useEditSegment, useLabelMode } from '../../ProjectContext';
 import AddDaughterCanvas from './AddDaughterCanvas';
 import AddCellTypeCanvas from './AddCellTypeCanvas';
 import BrushCanvas from './BrushCanvas';
 import CellTypeCanvas from './CellTypeCanvas';
+import CellTypeHovering from '../../EditControls/CellTypeControls/CellTypeUI/CellTypeHovering';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
+import CellSelectionCanvas from './CellSelectionCanvas';
 
 function ToolCanvas({ setBitmaps }) {
   const editSegment = useEditSegment();
@@ -29,6 +24,7 @@ function ToolCanvas({ setBitmaps }) {
 
   const editCellTypes = useEditCellTypes();
   const addingCell = useSelector(editCellTypes, (state) => state.matches('addingCell'));
+  const removingCell = useSelector(editCellTypes, (state) => state.matches('removingCell'));
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
@@ -72,15 +68,22 @@ function ToolCanvas({ setBitmaps }) {
       }
       return null;
     case 'cellTypes':
-      if (addingCell) {
+      if (addingCell || removingCell) {
         return (
-          <>
-            <CellTypeCanvas setBitmaps={setBitmaps} />
-            <AddCellTypeCanvas setBitmaps={setBitmaps} />
-          </>
-        );
+                <>
+                  <CellTypeCanvas setBitmaps={setBitmaps} />
+                  <CellTypeHovering/>
+                  <AddCellTypeCanvas setBitmaps={setBitmaps} />
+                </>
+               );
       }
-      return <CellTypeCanvas setBitmaps={setBitmaps} />;
+      return (
+        <>
+          <CellTypeCanvas setBitmaps={setBitmaps} />
+          <CellTypeHovering/>
+          <CellSelectionCanvas setBitmaps={setBitmaps}/>
+        </>
+      )
     default:
       return null;
   }

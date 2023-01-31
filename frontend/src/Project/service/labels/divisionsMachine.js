@@ -268,7 +268,9 @@ function createDivisionsMachine({ eventBuses, undoRef }) {
           let divisions = remove(ctx.divisions, evt.cell);
           divisions = combine(ctx.divisions, divisions, evt.t, evt.mode);
           const before = { type: 'RESTORE', divisions: ctx.divisions };
+          // console.log(before);
           const after = { type: 'RESTORE', divisions: divisions };
+          // console.log(after);
           return [
             assign({ divisions }),
             send({ type: 'SNAPSHOT', edit: evt.edit, before, after }, { to: ctx.historyRef }),

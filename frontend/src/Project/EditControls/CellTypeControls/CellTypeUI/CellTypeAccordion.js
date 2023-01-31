@@ -2,13 +2,16 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import { useReducer } from 'react';
+import CellCountIndicator from './CellCountIndicator';
 import CellGrid from './CellGrid';
+import CellTypeCheckbox from './CellTypeCheckbox';
+import CellTypeOpacitySlider from './CellTypeOpacitySlider';
 import ColorIndicator from './ColorIndicator';
 import EditDeleteMenu from './EditDeleteMenu';
 import EditNameField from './EditNameField';
 
 const rowStyle = {
-  boxShadow: 1,
+  boxShadow: 2,
   marginTop: 1,
   marginBottom: 1,
 };
@@ -18,7 +21,9 @@ const accordionSummaryStyle = {
 };
 
 function CellTypeAccordion(props) {
-  const { cellType, expanded, setExpanded } = props;
+  const { cellType, expanded, setExpanded, toggleArray, setToggleArray } = props;
+
+  const [openColor, toggleColor] = useReducer((v) => !v, false);
 
   // Event handler for expanding accordion
   const handleChange = (panel) => (event, isExpanded) => {
@@ -35,8 +40,20 @@ function CellTypeAccordion(props) {
       onChange={handleChange(cellType.id)}
     >
       <AccordionSummary style={accordionSummaryStyle}>
-        {/* Editable color symbol for cell type */}
-        <ColorIndicator id={cellType.id} color={cellType.color} />
+        {/* Toggle view of Cell Type with checkbox*/}
+        <CellTypeCheckbox
+          id={cellType.id}
+          color={cellType.color}
+          openColor={openColor}
+          toggleArray={toggleArray}
+          setToggleArray={setToggleArray}
+        />
+
+        {/* Slider for cell type opacity on canvas */}
+        <CellTypeOpacitySlider id={cellType.id} color={cellType.color} />
+
+        {/* Indicator for how many cells are in a given cell type label */}
+        <CellCountIndicator id={cellType.id} />
 
         {/* Editable cell type name */}
         <EditNameField
@@ -46,17 +63,25 @@ function CellTypeAccordion(props) {
           toggleType={toggleType}
         />
 
+        {/* Editable color symbol for cell type */}
+        <ColorIndicator
+          id={cellType.id}
+          color={cellType.color}
+          openColor={openColor}
+          toggleColor={toggleColor}
+        />
+
         {/* Options button to open menu for name edit and delete */}
-        <EditDeleteMenu id={cellType.id} toggleType={toggleType} />
+        <EditDeleteMenu
+          id={cellType.id}
+          toggleType={toggleType}
+          toggleArray={toggleArray}
+          setToggleArray={setToggleArray}
+        />
       </AccordionSummary>
       <AccordionDetails>
         {/* Grid of cells to add and remove from cell type */}
-        <CellGrid
-          id={cellType.id}
-          color={cellType.color}
-          name={cellType.name}
-          cells={cellType.cells}
-        />
+        <CellGrid id={cellType.id} name={cellType.name} />
       </AccordionDetails>
     </Accordion>
   );

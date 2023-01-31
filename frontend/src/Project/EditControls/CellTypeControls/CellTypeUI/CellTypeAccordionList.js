@@ -3,37 +3,62 @@ import equal from 'fast-deep-equal';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import CellTypeAccordion from './CellTypeAccordion';
-import { useCellTypeList, useCanvas } from '../../../ProjectContext';
+import { useCellTypes, useCanvas } from '../../../ProjectContext';
 
 const accordionStyle = {
-  position: 'relative',
-  top: 50,
-  width: 300,
-  margin: 'auto',
-  overflow: 'hidden',
-  overflowY: 'auto',
+    position: 'relative',
+    top: 50,
+    width: 300,
+    margin: 'auto',
+    overflow: 'hidden',
+    overflowY: 'auto',
+    '&::-webkit-scrollbar': {
+        width: 5,
+        borderRadius: 10,
+        backgroundColor: 'rgba(0,0,0,0.1)'
+    },
+    '&::-webkit-scrollbar-thumb': {
+        borderRadius: 10,
+        backgroundColor: 'rgba(100,100,100,0.5)',
+    },
 };
 
-function CellTypeAccordionList() {
-  const cellTypes = useCellTypeList();
-  const [expanded, setExpanded] = useState(-1);
-  const canvasMachine = useCanvas();
-  const [sh, scale] = useSelector(
-    canvasMachine,
-    (state) => [state.context.height, state.context.scale],
-    equal
-  );
-  const menuHeight = scale * sh - 100;
+function CellTypeAccordionList(props) {
 
-  return (
-    <Box height={menuHeight} style={accordionStyle}>
-      {cellTypes.map((cellType) => (
-        <div key={cellType.id}>
-          <CellTypeAccordion cellType={cellType} expanded={expanded} setExpanded={setExpanded} />
-        </div>
-      ))}
-    </Box>
-  );
+    const { toggleArray, setToggleArray } = props;
+    const cellTypesRef = useCellTypes();
+    const [expanded, setExpanded] = useState(-1);
+    const canvasMachine = useCanvas();
+    const [sh, scale] = useSelector(
+        canvasMachine,
+        (state) => [state.context.height, state.context.scale],
+        equal
+    );
+    const cellTypes = useSelector(cellTypesRef, (state) => state.context.cellTypes);
+    const feature = useSelector(cellTypesRef, (state) => state.context.feature);
+   
+    const menuHeight = scale * sh - 100;
+    const currentCellTypes = cellTypes.filter((cellType) => cellType.feature === feature);
+
+    return (
+        <Box 
+            height={menuHeight}
+            sx={accordionStyle}
+        >
+            {currentCellTypes.map((cellType) => 
+                <div key={cellType.id}>
+                    <CellTypeAccordion
+                        cellType={cellType}
+                        expanded={expanded}
+                        setExpanded={setExpanded}
+                        toggleArray={toggleArray}
+                        setToggleArray={setToggleArray}
+                    />
+                </div>
+                )
+            } 
+        </Box>
+    );
 }
 
 export default CellTypeAccordionList;

@@ -12,8 +12,10 @@ import createImageMachine from './imageMachine';
 import createArraysMachine from './labels/arraysMachine';
 import createCellsMachine from './labels/cellsMachine';
 import createCellTypesMachine from './labels/cellTypesMachine';
+import createChannelExpressionMachine from './labels/channelExpressionMachine';
 import createDivisionsMachine from './labels/divisionsMachine';
 import createSpotsMachine from './labels/spotsMachine';
+import createTrainingMachine from './labels/trainingMachine';
 import createLoadMachine from './loadMachine';
 import createSelectMachine from './selectMachine';
 import createUndoMachine from './undo';
@@ -33,12 +35,14 @@ const createProjectMachine = (projectId) =>
           image: new EventBus('image'), // SET_T
           labeled: new EventBus('labeled'), // SET_FEATURE
           raw: new EventBus('raw'), // SET_CHANNEL
-          cellTypes: new EventBus('cellTypes'), // CELL_TYPES
+          cellTypes: new EventBus('cellTypes'), // CELLTYPES
           select: new EventBus('select'), // SELECTED, receives GET_SELECTED and responds with SELECTED
           // EDIT events and label changes
           // TODO: rename to segment and separate raw arrays
           arrays: new EventBus('arrays'), // also receives GET_ARRAYS and responds with ARRAYS
           cells: new EventBus('cells'),
+          channelExpression: new EventBus('channelExpression'),
+          training: new EventBus('training'),
           divisions: new EventBus('divisions'),
           spots: new EventBus('spots'),
         },
@@ -100,13 +104,18 @@ const createProjectMachine = (projectId) =>
           actors.selectRef = spawn(createSelectMachine(ctx), 'select');
           actors.divisionsRef = spawn(createDivisionsMachine(ctx), 'divisions');
           actors.cellsRef = spawn(createCellsMachine(ctx), 'cells');
+          actors.channelExpressionRef = spawn(
+            createChannelExpressionMachine(ctx),
+            'channelExpression'
+          );
           actors.toolRef = spawn(createToolMachine(ctx), 'tool');
+          actors.trainingRef = spawn(createTrainingMachine(ctx), 'training');
           actors.spotsRef = spawn(createSpotsMachine(ctx), 'spots');
           return actors;
         }),
         sendDimensions: send(
           (c, e) => {
-            const { raw, labeled, rawOriginal } = e;
+            const { raw, labeled } = e;
             return {
               type: 'DIMENSIONS',
               numChannels: raw.length,

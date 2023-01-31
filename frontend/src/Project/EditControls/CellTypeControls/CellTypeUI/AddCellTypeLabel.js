@@ -1,18 +1,21 @@
 import AddIcon from '@mui/icons-material/Add';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Paper } from '@mui/material';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Popper from '@mui/material/Popper';
 import { useReducer, useRef } from 'react';
-import { TwitterPicker } from 'react-color';
+import { CirclePicker } from 'react-color';
 import { useEditCellTypes } from '../../../ProjectContext';
+import { colors } from './ColorIndicator';
 
-function AddCellTypeLabel() {
+function AddCellTypeLabel(props) {
+  const { toggleArray, setToggleArray } = props;
   const editCellTypesRef = useEditCellTypes();
 
   const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleChange = (color) => {
+    setToggleArray(toggleArray.concat([true]));
     editCellTypesRef.send({ type: 'ADD_TYPE', color: color.hex });
     toggle();
   };
@@ -30,7 +33,6 @@ function AddCellTypeLabel() {
             }}
           />
         }
-        style={{ borderRadius: 10 }}
         sx={{
           position: 'absolute',
           m: 1,
@@ -50,7 +52,9 @@ function AddCellTypeLabel() {
       </Button>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom'>
         <ClickAwayListener onClickAway={toggle}>
-          <TwitterPicker onChange={handleChange} />
+          <Paper sx={{ p: '1em' }}>
+            <CirclePicker colors={colors} onChange={handleChange} />
+          </Paper>
         </ClickAwayListener>
       </Popper>
     </Box>

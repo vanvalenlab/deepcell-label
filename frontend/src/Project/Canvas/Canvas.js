@@ -72,7 +72,7 @@ function Canvas() {
     <Box
       id={'canvasBox'}
       sx={style}
-      boxShadow={10}
+      boxShadow={3}
       width={scale * sw}
       height={scale * sh}
       onMouseMove={canvas.send}

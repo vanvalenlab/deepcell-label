@@ -15,7 +15,7 @@ function AutofitButton(props) {
     if (cell !== 0) {
       segment.send('AUTOFIT');
     }
-  }, [segment, select, cell]);
+  }, [segment, cell]);
 
   const tooltipText = (
     <span>
