@@ -95,7 +95,7 @@ jobs:
 
       - name: Yarn Install
         working-directory: frontend
-        run: yarn
+        run: yarn install --update-checksums
 
       - name: Lint
         working-directory: frontend
