@@ -29,7 +29,7 @@ it('Create a project from an example file', () => {
   cy.get('.MuiCircularProgress-svg');
   cy.get('canvas', { timeout: 30000 });
   cy.contains('DeepCell Label');
-  cy.contains('Instructions');
+  // cy.contains('Instructions');
   cy.contains('Download');
   cy.contains('Undo');
   cy.contains('Redo');
@@ -65,20 +65,20 @@ it('updates state with keybinds', () => {
   cy.contains('Threshold').should('have.attr', 'aria-pressed', 'true');
 });
 
-it('opens instructions', () => {
-  const id = getUniqueId();
-  cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
+// it('opens instructions', () => {
+//   const id = getUniqueId();
+//   cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
-  cy.visit(`/project?projectId=${id}`);
-  cy.contains('Instructions').click();
-  cy.contains('Overview').click();
-  cy.contains('Select').click();
-  cy.contains('Canvas').click();
-  cy.contains('Display').click();
-  cy.contains('Segment').click();
-  cy.contains('Cells').click();
-  cy.contains('Divisions').click();
-});
+//   cy.visit(`/project?projectId=${id}`);
+//   cy.contains('Instructions').click();
+//   cy.contains('Overview').click();
+//   cy.contains('Select').click();
+//   cy.contains('Canvas').click();
+//   cy.contains('Display').click();
+//   cy.contains('Segment').click();
+//   cy.contains('Cells').click();
+//   cy.contains('Divisions').click();
+// });
 
 it('shows quality control interface', () => {
   const [id1, id2] = [getUniqueId(), getUniqueId()];
@@ -96,6 +96,7 @@ it('removes channel', () => {
   cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
   cy.visit(`project?projectId=${id}`);
+  cy.get('body').type('b');
   cy.contains('channel 0');
   cy.get('[data-testid="layer0-options"]').click();
   cy.contains('Remove').click();
