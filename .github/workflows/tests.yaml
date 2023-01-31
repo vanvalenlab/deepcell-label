@@ -52,6 +52,7 @@ jobs:
             npm run cypress:frontend
             npm run cypress:backend
           wait-on: "http://localhost:3000, http://localhost:5000/health"
+          wait-on-timeout: 300
           spec: |
             cypress/e2e/label.cy.js
             cypress/e2e/caliban.cy.js
