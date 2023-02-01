@@ -11,6 +11,9 @@ on:
 
 jobs:
   e2e-tests:
+    # e2e tests require keys which are only available (via secrets) in the
+    # main repo. Therefore don't try to run this job on forks
+    if: github.repository == 'vanvalenlab/deepcell-label'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
