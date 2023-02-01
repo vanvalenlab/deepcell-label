@@ -31,12 +31,12 @@ function ChannelExpressionPlot() {
   const [channelX, setChannelX] = useState(0);
   const [channelY, setChannelY] = useState(1);
   const [tab, setTab] = useState(0);
-  const [plot, setPlot] = useState('histogram');
+  const [plot, setPlot] = useState('scatter');
 
   const panelStyle = {
-    position: 'relative',
-    right: window.innerWidth - 860 - sw * scale,
-    paddingTop: 2,
+    position: 'absolute',
+    top: 255,
+    left: 500 + sw * scale,
     height: scale * sh - 60,
     overflow: 'hidden',
     overflowY: 'auto',
@@ -58,7 +58,7 @@ function ChannelExpressionPlot() {
   return cellTypesEditing ? (
     <Box>
       <Tabs
-        sx={{ position: 'relative', right: window.innerWidth - 860 - sw * scale, height: 10 }}
+        sx={{ position: 'absolute', left: 500 + sw * scale, height: 10 }}
         value={tab}
         onChange={handleTab}
         variant='fullWidth'
