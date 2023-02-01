@@ -15,6 +15,3 @@ jobs:
         run: |
           pip install pre-commit
           pre-commit run --all-files
-      # - name: If needed, commit changes to the pull request
-      #   if: failure()
-      #   uses: stefanzweifel/git-auto-commit-action@v4
