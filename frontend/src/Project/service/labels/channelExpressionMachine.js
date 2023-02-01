@@ -10,6 +10,117 @@ import { fromEventBus } from '../eventBus';
 
 const { choose } = actions;
 
+export function calculateMean(ctx) {
+  const { t, feature, labeled, raw, cells, numCells } = ctx;
+  const width = labeled[0].length;
+  const height = labeled.length;
+  const numChannels = raw.length;
+  const cellStructure = new Cells(cells);
+  let valueMapping = {};
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const value = labeled[i][j];
+      if (valueMapping[value] === undefined) {
+        valueMapping[value] = cellStructure.getCellsForValue(value, t, feature);
+      }
+    }
+  }
+  let totalValues = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  let cellSizes = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  let channelMeans = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  for (let c = 0; c < numChannels; c++) {
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const cellList = valueMapping[labeled[i][j]];
+        for (const cell of cellList) {
+          totalValues[c][cell] = totalValues[c][cell] + raw[c][t][i][j];
+          cellSizes[c][cell] = cellSizes[c][cell] + 1;
+        }
+      }
+    }
+  }
+  for (let c = 0; c < numChannels; c++) {
+    for (let i = 0; i < numCells; i++) {
+      channelMeans[c][i] = totalValues[c][i] / cellSizes[c][i];
+    }
+  }
+  return channelMeans;
+}
+
+export function calculateTotal(ctx) {
+  const { t, feature, labeled, raw, cells, numCells } = ctx;
+  const width = labeled[0].length;
+  const height = labeled.length;
+  const numChannels = raw.length;
+  const cellStructure = new Cells(cells);
+  let valueMapping = {};
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const value = labeled[i][j];
+      if (valueMapping[value] === undefined) {
+        valueMapping[value] = cellStructure.getCellsForValue(value, t, feature);
+      }
+    }
+  }
+  let totalValues = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  let cellSizes = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  for (let c = 0; c < numChannels; c++) {
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const cellList = valueMapping[labeled[i][j]];
+        for (const cell of cellList) {
+          totalValues[c][cell] = totalValues[c][cell] + raw[c][t][i][j];
+          cellSizes[c][cell] = cellSizes[c][cell] + 1;
+        }
+      }
+    }
+  }
+  for (let i = 0; i < numCells; i++) {
+    if (cellSizes[0][i] === 0) {
+      for (let c = 0; c < numChannels; c++) {
+        totalValues[c][i] = NaN;
+      }
+    }
+  }
+  return totalValues;
+}
+
+export function calculatePosition(ctx) {
+  const { t, feature, labeled, cells, numCells } = ctx;
+  const width = labeled[0].length;
+  const height = labeled.length;
+  const cellStructure = new Cells(cells);
+  let valueMapping = {};
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const value = labeled[i][j];
+      if (valueMapping[value] === undefined) {
+        valueMapping[value] = cellStructure.getCellsForValue(value, t, feature);
+      }
+    }
+  }
+  let totalX = new Array(numCells).fill(0);
+  let totalY = new Array(numCells).fill(0);
+  let cellSizes = new Array(numCells).fill(0);
+  let centroidsX = new Array(numCells).fill(0);
+  let centroidsY = new Array(numCells).fill(0);
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const cellList = valueMapping[labeled[i][j]];
+      for (const cell of cellList) {
+        totalX[cell] = totalX[cell] + j;
+        totalY[cell] = totalY[cell] + height - 1 - i;
+        cellSizes[cell] = cellSizes[cell] + 1;
+      }
+    }
+  }
+  for (let i = 0; i < numCells; i++) {
+    centroidsX[i] = totalX[i] / cellSizes[i];
+    centroidsY[i] = totalY[i] / cellSizes[i];
+  }
+  return [centroidsX, centroidsY];
+}
+
 const createChannelExpressionMachine = ({ eventBuses }) =>
   Machine(
     {
@@ -98,6 +209,10 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                   cond: (_, evt) => evt.stat === 'Total',
                   actions: ['setStat', 'calculateTotal'],
                 },
+                {
+                  cond: (_, evt) => evt.stat === 'Position',
+                  actions: 'calculatePosition',
+                },
               ]),
               always: 'idle',
             },
@@ -113,7 +228,10 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                 },
               ]),
               on: {
-                CALCULATION: { actions: 'calculateUmap', target: 'idle' },
+                CALCULATION: {
+                  actions: 'calculateUmap',
+                  target: 'idle',
+                },
               },
             },
           },
@@ -130,84 +248,20 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         setFeature: assign({ feature: (_, evt) => evt.feature }),
         setStat: assign({ calculation: (_, evt) => evt.stat }),
         calculateMean: pure((ctx) => {
-          const { t, feature, labeled, raw, cells, numCells } = ctx;
-          const width = labeled[0].length;
-          const height = labeled.length;
-          const numChannels = raw.length;
-          const cellStructure = new Cells(cells);
-          let valueMapping = {};
-          for (let i = 0; i < height; i++) {
-            for (let j = 0; j < width; j++) {
-              const value = labeled[i][j];
-              if (valueMapping[value] === undefined) {
-                valueMapping[value] = cellStructure.getCellsForValue(value, t, feature);
-              }
-            }
-          }
-          let totalValues = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
-          let cellSizes = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
-          let channelMeans = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
-          for (let c = 0; c < numChannels; c++) {
-            for (let i = 0; i < height; i++) {
-              for (let j = 0; j < width; j++) {
-                const cellList = valueMapping[labeled[i][j]];
-                for (const cell of cellList) {
-                  totalValues[c][cell] = totalValues[c][cell] + raw[c][t][i][j];
-                  cellSizes[c][cell] = cellSizes[c][cell] + 1;
-                }
-              }
-            }
-          }
-          for (let c = 0; c < numChannels; c++) {
-            for (let i = 0; i < numCells; i++) {
-              channelMeans[c][i] = totalValues[c][i] / cellSizes[c][i];
-            }
-          }
+          const channelMeans = calculateMean(ctx);
           return [
             assign({ calculations: channelMeans }),
             send({ type: 'CALCULATION', calculations: channelMeans }, { to: 'eventBus' }),
           ];
         }),
         calculateTotal: pure((ctx) => {
-          const { t, feature, labeled, raw, cells, numCells } = ctx;
-          const width = labeled[0].length;
-          const height = labeled.length;
-          const numChannels = raw.length;
-          const cellStructure = new Cells(cells);
-          let valueMapping = {};
-          for (let i = 0; i < height; i++) {
-            for (let j = 0; j < width; j++) {
-              const value = labeled[i][j];
-              if (valueMapping[value] === undefined) {
-                valueMapping[value] = cellStructure.getCellsForValue(value, t, feature);
-              }
-            }
-          }
-          let totalValues = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
-          let cellSizes = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
-          for (let c = 0; c < numChannels; c++) {
-            for (let i = 0; i < height; i++) {
-              for (let j = 0; j < width; j++) {
-                const cellList = valueMapping[labeled[i][j]];
-                for (const cell of cellList) {
-                  totalValues[c][cell] = totalValues[c][cell] + raw[c][t][i][j];
-                  cellSizes[c][cell] = cellSizes[c][cell] + 1;
-                }
-              }
-            }
-          }
-          for (let i = 0; i < numCells; i++) {
-            if (cellSizes[0][i] === 0) {
-              for (let c = 0; c < numChannels; c++) {
-                totalValues[c][i] = NaN;
-              }
-            }
-          }
+          const totalValues = calculateTotal(ctx);
           return [
             assign({ calculations: totalValues }),
             send({ type: 'CALCULATION', calculations: totalValues }, { to: 'eventBus' }),
           ];
         }),
+        calculatePosition: assign({ reduction: (ctx) => calculatePosition(ctx) }),
         calculateUmap: assign({
           reduction: (ctx) => {
             const { raw, calculations } = ctx;
