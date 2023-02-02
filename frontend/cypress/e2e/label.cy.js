@@ -17,27 +17,30 @@ it('finds DeepCell Label homepage text', () => {
   cy.contains('Caltech');
 });
 
-it('Create a project from an example file', () => {
-  cy.visit('/');
-  cy.get('.MuiNativeSelect-select').select('2D tissue segmentation');
-  cy.get('#submitExample').click();
-  cy.get('.MuiLinearProgress-root');
-  cy.url({ timeout: 30000 })
-    .should('include', '/project')
-    .and('include', 'projectId=')
-    .and('include', 'download=true');
-  cy.get('.MuiCircularProgress-svg');
-  cy.get('canvas', { timeout: 30000 });
-  cy.contains('DeepCell Label');
-  // cy.contains('Instructions');
-  cy.contains('Download');
-  cy.contains('Undo');
-  cy.contains('Redo');
-  cy.contains('Display');
-  cy.contains('Segment');
-  cy.contains('Cells');
-  cy.get('.MuiCircularProgress-svg').should('not.exist');
-});
+// Only attempt test if aws credentials are configured
+if (Cypress.env('AWS_ACCESS_KEY_ID') && Cypress.env('AWS_SECRET_ACCESS_KEY')) {
+  it('Create a project from an example file', () => {
+    cy.visit('/');
+    cy.get('.MuiNativeSelect-select').select('2D tissue segmentation');
+    cy.get('#submitExample').click();
+    cy.get('.MuiLinearProgress-root');
+    cy.url({ timeout: 30000 })
+      .should('include', '/project')
+      .and('include', 'projectId=')
+      .and('include', 'download=true');
+    cy.get('.MuiCircularProgress-svg');
+    cy.get('canvas', { timeout: 30000 });
+    cy.contains('DeepCell Label');
+    // cy.contains('Instructions');
+    cy.contains('Download');
+    cy.contains('Undo');
+    cy.contains('Redo');
+    cy.contains('Display');
+    cy.contains('Segment');
+    cy.contains('Cells');
+    cy.get('.MuiCircularProgress-svg').should('not.exist');
+  });
+}
 
 it('shows loading spinner', () => {
   cy.visit(`/project?projectId=${getUniqueId()}`);
