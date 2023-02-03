@@ -18,18 +18,18 @@ function RGBControls() {
         </Grid>
       ))}
       <Grid item>
-      {numChannels > 1 && (
-        <Button
-          onClick={() => raw.send('ADD_LAYER')}
-          fullWidth
-          variant='outlined'
-          sx={{ borderStyle: 'dashed', p: 0.5 }}
-          startIcon={<AddIcon />}
-          size='small'
-        >
-          Add Channel
-        </Button>
-      )}
+        {numChannels > 1 && (
+          <Button
+            onClick={() => raw.send('ADD_LAYER')}
+            fullWidth
+            variant='outlined'
+            sx={{ borderStyle: 'dashed', p: 0.5 }}
+            startIcon={<AddIcon />}
+            size='small'
+          >
+            Add Channel
+          </Button>
+        )}
       </Grid>
     </Grid>
   );

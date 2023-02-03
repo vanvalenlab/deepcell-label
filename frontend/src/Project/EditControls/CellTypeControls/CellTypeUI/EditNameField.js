@@ -3,58 +3,61 @@ import { useRef, useState } from 'react';
 import { useEditCellTypes } from '../../../ProjectContext';
 
 const textStyle = {
-    marginTop: 3,
-    marginLeft: 15,
-    marginBottom: 10,
+  marginTop: 3,
+  marginLeft: 15,
+  marginBottom: 10,
 };
 
 function EditNameField(props) {
-    const { id, cellName, typing, toggleType } = props;
-    const [name, setName] = useState(cellName);
-    const editCellTypesRef = useEditCellTypes();
-    const focusRef = useRef(null)
+  const { id, cellName, typing, toggleType } = props;
+  const [name, setName] = useState(cellName);
+  const editCellTypesRef = useEditCellTypes();
+  const focusRef = useRef(null);
 
-    // Handler to ensure hotkeys don't get used + Enter to finish typing
-    const handleKeyDown = (event) => {
-        if (event.key === 'Enter') {
-            focusRef.current.blur();
-        }
-        event.stopPropagation();
-    };
+  // Handler to ensure hotkeys don't get used + Enter to finish typing
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      focusRef.current.blur();
+    }
+    event.stopPropagation();
+  };
 
-    // Handler for when text is being typed
-    const handleType = (event) => {
-        setName(event.target.value);
-    };
+  // Handler for when text is being typed
+  const handleType = (event) => {
+    setName(event.target.value);
+  };
 
-    // Handler for when text is finished being typed (hit enter or click away)
-    const handleBlur = (event) => {
-        if (name.length > 0) {
-            toggleType();
-            editCellTypesRef.send({ type: 'NAME', cellType: id, name: name });
-        }
-    };
+  // Handler for when text is finished being typed (hit enter or click away)
+  const handleBlur = (event) => {
+    if (name.length > 0) {
+      toggleType();
+      editCellTypesRef.send({ type: 'NAME', cellType: id, name: name });
+    }
+  };
 
-    return (
-        <div style={textStyle}> 
-            {typing ? <TextField 
-                        sx={{width: '80%'}}
-                        error={name.length === 0}
-                        inputProps={{ maxLength: 20 }}
-                        id="standard-basic"
-                        defaultValue={name}
-                        label="Cell Type"
-                        autoFocus={true}
-                        inputRef={focusRef}
-                        onChange={handleType}
-                        onKeyDown={handleKeyDown}
-                        onClick={handleKeyDown}
-                        onBlur={handleBlur}
-                        size='small'
-                    />
-                    : name} 
-        </div>
-    );
-};
+  return (
+    <div style={textStyle}>
+      {typing ? (
+        <TextField
+          sx={{ width: '80%' }}
+          error={name.length === 0}
+          inputProps={{ maxLength: 20 }}
+          id='standard-basic'
+          defaultValue={name}
+          label='Cell Type'
+          autoFocus={true}
+          inputRef={focusRef}
+          onChange={handleType}
+          onKeyDown={handleKeyDown}
+          onClick={handleKeyDown}
+          onBlur={handleBlur}
+          size='small'
+        />
+      ) : (
+        name
+      )}
+    </div>
+  );
+}
 
 export default EditNameField;

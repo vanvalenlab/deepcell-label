@@ -11,9 +11,9 @@ export const RawControls = () => {
   const isGrayscale = useSelector(raw, (state) => state.context.isGrayscale);
   const canvasMachine = useCanvas();
   const [sh, scale] = useSelector(
-      canvasMachine,
-      (state) => [state.context.height, state.context.scale],
-      equal
+    canvasMachine,
+    (state) => [state.context.height, state.context.scale],
+    equal
   );
   const menuHeight = scale * sh - 250;
 
@@ -24,17 +24,24 @@ export const RawControls = () => {
     '&::-webkit-scrollbar': {
       width: 5,
       borderRadius: 10,
-      backgroundColor: 'rgba(0,0,0,0.1)'
+      backgroundColor: 'rgba(0,0,0,0.1)',
     },
     '&::-webkit-scrollbar-thumb': {
-        borderRadius: 10,
-        backgroundColor: 'rgba(100,100,100,0.5)',
+      borderRadius: 10,
+      backgroundColor: 'rgba(100,100,100,0.5)',
     },
   };
 
   return (
-    <Box sx={isGrayscale ? {} : overflowStyle} display='flex' flexDirection='column' alignItems='flex-start'>
-      <div style={{marginBottom: 10}}><ColorModeToggle /></div>
+    <Box
+      sx={isGrayscale ? {} : overflowStyle}
+      display='flex'
+      flexDirection='column'
+      alignItems='flex-start'
+    >
+      <div style={{ marginBottom: 10 }}>
+        <ColorModeToggle />
+      </div>
       {isGrayscale ? <GrayscaleControls /> : <RGBControls />}
     </Box>
   );

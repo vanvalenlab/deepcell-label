@@ -3,7 +3,7 @@ import { useSelector } from '@xstate/react';
 import Canvas from './Canvas';
 import ChannelExpressionPlot from './EditControls/CellTypeControls/ChannelExpressionPlot';
 import DisplayControls from './DisplayControls';
-import DisplayControlsTop from './DisplayControls/DisplayControlsTop'
+import DisplayControlsTop from './DisplayControls/DisplayControlsTop';
 import EditControls from './EditControls';
 import ForceLoadOutputModal from './ForceLoadOutputModal';
 import Instructions from './Instructions';

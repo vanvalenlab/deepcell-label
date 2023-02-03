@@ -10,12 +10,12 @@ import re
 import tarfile
 import tempfile
 import zipfile
+from xml.etree import ElementTree as ET
 
 import magic
 import numpy as np
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
-from xml.etree import ElementTree as ET
 
 from deepcell_label.utils import convert_lineage, reshape
 
@@ -91,7 +91,11 @@ class Loader:
             for i in range(len(self.channels)):
                 channels.append({'Name': self.channels[i]})
             with TiffWriter(images, ome=True) as tif:
-                tif.write(X, compression='zlib', metadata={'axes': 'ZCYX', 'Pixels': {'Channel': channels}})
+                tif.write(
+                    X,
+                    compression='zlib',
+                    metadata={'axes': 'ZCYX', 'Pixels': {'Channel': channels}},
+                )
             images.seek(0)
             self.zip.writestr('X.ome.tiff', images.read())
         # else:
