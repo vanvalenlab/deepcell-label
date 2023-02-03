@@ -14,7 +14,7 @@ function LayerSelector({ layer, typing, toggleType }) {
   const raw = useRaw();
   const names = useSelector(raw, (state) => state.context.channelNames);
   const [name, setName] = useState(names[channel]);
-  const focusRef = useRef(null)
+  const focusRef = useRef(null);
 
   const onChange = (e) => {
     layer.send({ type: 'SET_CHANNEL', channel: Number(e.target.value) });
@@ -22,49 +22,48 @@ function LayerSelector({ layer, typing, toggleType }) {
 
   // Handler to ensure hotkeys don't get used + Enter to finish typing
   const handleKeyDown = (event) => {
-      if (event.key === 'Enter') {
-          focusRef.current.blur();
-      }
-      event.stopPropagation();
+    if (event.key === 'Enter') {
+      focusRef.current.blur();
+    }
+    event.stopPropagation();
   };
 
   // Handler for when text is being typed
   const handleType = (event) => {
-      setName(event.target.value);
+    setName(event.target.value);
   };
 
   // Handler for when text is finished being typed (hit enter or click away)
   const handleBlur = (event) => {
-      if (name.length > 0) {
-          toggleType();
-          raw.send({ type: 'EDIT_NAME', channel: channel, name: name });
-      }
+    if (name.length > 0) {
+      toggleType();
+      raw.send({ type: 'EDIT_NAME', channel: channel, name: name });
+    }
   };
 
-  return (
-    typing
-    ? <TextField
-        error={name.length === 0}
-        helperText={name.length === 0 ? 'Min 1 character' : ''}
-        inputProps={{ maxLength: 20 }}
-        id="standard-basic"
-        defaultValue={name}
-        label="Channel Name"
-        autoFocus={true}
-        inputRef={focusRef}
-        size='small'
-        onChange={handleType}
-        onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
-      />
-    : <TextField select size='small' value={channel} onChange={onChange}
-        sx={{width: 130}}>
-        {names.map((opt, index) => (
-          <MenuItem key={index} value={index}>
-            {opt}
-          </MenuItem>
-        ))}
-      </TextField>
+  return typing ? (
+    <TextField
+      error={name.length === 0}
+      helperText={name.length === 0 ? 'Min 1 character' : ''}
+      inputProps={{ maxLength: 20 }}
+      id='standard-basic'
+      defaultValue={name}
+      label='Channel Name'
+      autoFocus={true}
+      inputRef={focusRef}
+      size='small'
+      onChange={handleType}
+      onKeyDown={handleKeyDown}
+      onBlur={handleBlur}
+    />
+  ) : (
+    <TextField select size='small' value={channel} onChange={onChange} sx={{ width: 130 }}>
+      {names.map((opt, index) => (
+        <MenuItem key={index} value={index}>
+          {opt}
+        </MenuItem>
+      ))}
+    </TextField>
   );
 }
 
@@ -129,7 +128,9 @@ function LayerController({ layer }) {
         <>
           <Grid container direction='row'>
             <Grid item xs={12}>
-              {numChannels > 1 && <LayerSelector layer={layer} typing={typing} toggleType={toggleType} />}
+              {numChannels > 1 && (
+                <LayerSelector layer={layer} typing={typing} toggleType={toggleType} />
+              )}
             </Grid>
           </Grid>
         </>

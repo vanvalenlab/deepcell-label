@@ -12,15 +12,15 @@ export const RawControlsTop = () => {
 
   return (
     <>
-        <Grid sx={{width: 150, marginLeft: 2}} container direction='column' spacing={3}>
-            <Grid item>
-                <FormLabel sx={{fontSize: 18}}> Image </FormLabel>
-            </Grid>
-            <Grid item>
-                <ColorModeToggle />
-            </Grid>
+      <Grid sx={{ width: 150, marginLeft: 2 }} container direction='column' spacing={3}>
+        <Grid item>
+          <FormLabel sx={{ fontSize: 18 }}> Image </FormLabel>
         </Grid>
-        {isGrayscale ? <GrayscaleControlsTop /> : <RGBControlsTop />}
+        <Grid item>
+          <ColorModeToggle />
+        </Grid>
+      </Grid>
+      {isGrayscale ? <GrayscaleControlsTop /> : <RGBControlsTop />}
     </>
   );
 };

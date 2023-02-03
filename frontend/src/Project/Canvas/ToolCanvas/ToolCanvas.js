@@ -1,5 +1,11 @@
 import { useSelector } from '@xstate/react';
-import { useEditCells, useEditCellTypes, useEditDivisions, useEditSegment, useLabelMode } from '../../ProjectContext';
+import {
+  useEditCells,
+  useEditCellTypes,
+  useEditDivisions,
+  useEditSegment,
+  useLabelMode,
+} from '../../ProjectContext';
 import AddDaughterCanvas from './AddDaughterCanvas';
 import AddCellTypeCanvas from './AddCellTypeCanvas';
 import BrushCanvas from './BrushCanvas';
@@ -70,20 +76,20 @@ function ToolCanvas({ setBitmaps }) {
     case 'cellTypes':
       if (addingCell || removingCell) {
         return (
-                <>
-                  <CellTypeCanvas setBitmaps={setBitmaps} />
-                  <CellTypeHovering/>
-                  <AddCellTypeCanvas setBitmaps={setBitmaps} />
-                </>
-               );
+          <>
+            <CellTypeCanvas setBitmaps={setBitmaps} />
+            <CellTypeHovering />
+            <AddCellTypeCanvas setBitmaps={setBitmaps} />
+          </>
+        );
       }
       return (
         <>
           <CellTypeCanvas setBitmaps={setBitmaps} />
-          <CellTypeHovering/>
-          <CellSelectionCanvas setBitmaps={setBitmaps}/>
+          <CellTypeHovering />
+          <CellSelectionCanvas setBitmaps={setBitmaps} />
         </>
-      )
+      );
     default:
       return null;
   }
