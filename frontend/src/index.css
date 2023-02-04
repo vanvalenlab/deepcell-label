@@ -12,11 +12,11 @@ code {
 
 ::-webkit-scrollbar {
   width: 16px;
-  background-color: rgba(0,0,0,0.05);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: rgba(100,100,100,0.25);
+  background-color: rgba(100, 100, 100, 0.25);
 }
 
 /* From https://developer.mozilla.org/en-US/docs/Web/HTML/Element/kbd */

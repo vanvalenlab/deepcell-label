@@ -4,14 +4,16 @@ import RawControlsTop from './RawControls/RawControlsTop';
 
 const DisplayControlsTop = () => {
   return (
-    <Box sx={{
+    <Box
+      sx={{
         display: 'flex',
         marginLeft: 2.5,
         marginTop: 1,
         marginBottom: 1,
-      }}>
-        <LabeledControlsTop />
-        <RawControlsTop />
+      }}
+    >
+      <LabeledControlsTop />
+      <RawControlsTop />
     </Box>
   );
 };

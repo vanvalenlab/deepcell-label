@@ -86,23 +86,22 @@ function CellSelectionCanvas({ setBitmaps }) {
   useEffect(() => {
     const kernel = kernelRef.current;
     const numSelected = selected.length;
-    
+
     if (numSelected > 0) {
-        if (labeledArray && cellMatrix) {
+      if (labeledArray && cellMatrix) {
         const numValues = cellMatrix.length;
         kernel(labeledArray, cellMatrix, numValues, numSelected, selected);
         // Rerender the parent canvas
         createImageBitmap(kernel.canvas).then((bitmap) => {
-            setBitmaps((bitmaps) => ({ ...bitmaps, selections: bitmap }));
+          setBitmaps((bitmaps) => ({ ...bitmaps, selections: bitmap }));
         });
-        }
-    }
-    else {
-        // Remove the tool canvas
-        setBitmaps((bitmaps) => {
+      }
+    } else {
+      // Remove the tool canvas
+      setBitmaps((bitmaps) => {
         const { selections, ...rest } = bitmaps;
         return rest;
-        });
+      });
     }
   }, [labeledArray, cellMatrix, selected, setBitmaps, width, height]);
 

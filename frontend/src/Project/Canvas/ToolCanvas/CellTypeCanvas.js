@@ -125,17 +125,38 @@ function CellTypeCanvas({ setBitmaps }) {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    
+
     if (labeledArray && cellMatrix && cellsList.length > 0) {
       const numLabels = cellsList.length;
       const numValues = cellMatrix.length;
-      kernel(labeledArray, cell, cellMatrix, minCell, minValue, cellsList, numLabels, numValues, colorMap);
+      kernel(
+        labeledArray,
+        cell,
+        cellMatrix,
+        minCell,
+        minValue,
+        cellsList,
+        numLabels,
+        numValues,
+        colorMap
+      );
       // Rerender the parent canvas
       createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, types: bitmap }));
       });
     }
-  }, [labeledArray, cell, cellMatrix, cellsList, minCell, minValue, colorMap, setBitmaps, width, height]);
+  }, [
+    labeledArray,
+    cell,
+    cellMatrix,
+    cellsList,
+    minCell,
+    minValue,
+    colorMap,
+    setBitmaps,
+    width,
+    height,
+  ]);
 
   useEffect(
     () => () =>

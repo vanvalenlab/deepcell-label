@@ -60,7 +60,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
               sr = sa * sr / 255;
               sg = sa * sg / 255;
               sb = sa * sb / 255;
-              
+
               r = r + sr - r * sr;
               g = g + sg - g * sg;
               b = b + sb - b * sb;
