@@ -13,7 +13,7 @@ function LearnTab() {
     if (quantities[embedding] === 'Position') {
       channelExpression.send({ type: 'CALCULATE', stat: quantities[embedding] });
     } else {
-      channelExpression.send({ type: 'CALCULATE_UMAP', stat: quantities[embedding] });
+      channelExpression.send({ type: 'CALCULATE_UMAP', stat: quantities[embedding], whole: true });
     }
   };
 

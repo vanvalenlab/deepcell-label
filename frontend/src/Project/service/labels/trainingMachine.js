@@ -3,7 +3,6 @@
 
 import * as tf from '@tensorflow/tfjs';
 import { actions, assign, Machine, send } from 'xstate';
-import Cells from '../../cells';
 import { fromEventBus } from '../eventBus';
 
 const { choose } = actions;
@@ -517,8 +516,10 @@ const createTrainingMachine = ({ eventBuses }) =>
         }),
         setCalculation: assign({ calculations: (_, evt) => evt.calculations }),
         setConfusionMatrix: assign({ confusionMatrix: (_, evt) => evt.confusionMatrix }),
-        toggleWhole: assign({ whole: (ctx) => !ctx.whole }),
-        getMean: send({ type: 'CALCULATE', stat: 'Mean' }, { to: 'channelExpression' }),
+        getMean: send(
+          { type: 'CALCULATE', stat: 'Mean', whole: true },
+          { to: 'channelExpression' }
+        ),
         getTotal: send({ type: 'CALCULATE', stat: 'Total' }, { to: 'channelExpression' }),
         resetLogs: assign({
           valLogs: [],
