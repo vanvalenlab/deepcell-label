@@ -81,9 +81,16 @@ const createArraysMachine = (context) =>
             SET_CHANNEL: { actions: ['setChannel', 'sendRawFrame'] },
             GET_ARRAYS: { actions: 'sendArrays' },
             EDITED_SEGMENT: {
-              actions: ['setLabeledFrame', 'sendLabeledFrame', forwardTo('eventBus')],
+              actions: [
+                'setLabeledFrame',
+                'sendLabeledFrame',
+                'sendLabeledFull',
+                forwardTo('eventBus'),
+              ],
             },
-            RESTORE: { actions: ['setLabeledFrame', 'sendLabeledFrame', 'sendRestored'] },
+            RESTORE: {
+              actions: ['setLabeledFrame', 'sendLabeledFrame', 'sendLabeledFull', 'sendRestored'],
+            },
           },
         },
         editing: {
@@ -138,6 +145,13 @@ const createArraysMachine = (context) =>
           (ctx, evt) => ({
             type: 'LABELED',
             labeled: ctx.labeled[ctx.feature][ctx.t],
+          }),
+          { to: 'eventBus' }
+        ),
+        sendLabeledFull: send(
+          (ctx) => ({
+            type: 'LABELED_FULL',
+            labeled: ctx.labeled,
           }),
           { to: 'eventBus' }
         ),

@@ -9,7 +9,7 @@ function Calculate() {
   const [stat, setStat] = useState(0);
 
   const handleCalculation = () => {
-    channelExpression.send({ type: 'CALCULATE', stat: quantities[stat] });
+    channelExpression.send({ type: 'CALCULATE', stat: quantities[stat], whole: true });
   };
 
   return (

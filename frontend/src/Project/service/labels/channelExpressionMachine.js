@@ -47,6 +47,50 @@ export function calculateMean(ctx) {
   return channelMeans;
 }
 
+export function calculateMeanWhole(ctx) {
+  const { feature, labeledFull, raw, cells, numCells } = ctx;
+  const width = labeledFull[0][0][0].length;
+  const height = labeledFull[0][0].length;
+  const numFrames = raw[0].length;
+  const numChannels = raw.length;
+  const cellStructure = new Cells(cells);
+  let valueMappings = [];
+  for (let t = 0; t < numFrames; t++) {
+    let mapping = {};
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const value = labeledFull[feature][t][i][j];
+        if (mapping[value] === undefined) {
+          mapping[value] = cellStructure.getCellsForValue(value, t, feature);
+        }
+      }
+    }
+    valueMappings.push(mapping);
+  }
+  let totalValues = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  let cellSizes = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  let channelMeans = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  for (let c = 0; c < numChannels; c++) {
+    for (let t = 0; t < numFrames; t++) {
+      for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+          const cellList = valueMappings[t][labeledFull[feature][t][i][j]];
+          for (const cell of cellList) {
+            totalValues[c][cell] = totalValues[c][cell] + raw[c][t][i][j];
+            cellSizes[c][cell] = cellSizes[c][cell] + 1;
+          }
+        }
+      }
+    }
+  }
+  for (let c = 0; c < numChannels; c++) {
+    for (let i = 0; i < numCells; i++) {
+      channelMeans[c][i] = totalValues[c][i] / cellSizes[c][i];
+    }
+  }
+  return channelMeans;
+}
+
 export function calculateTotal(ctx) {
   const { t, feature, labeled, raw, cells, numCells } = ctx;
   const width = labeled[0].length;
@@ -71,6 +115,51 @@ export function calculateTotal(ctx) {
         for (const cell of cellList) {
           totalValues[c][cell] = totalValues[c][cell] + raw[c][t][i][j];
           cellSizes[c][cell] = cellSizes[c][cell] + 1;
+        }
+      }
+    }
+  }
+  for (let i = 0; i < numCells; i++) {
+    if (cellSizes[0][i] === 0) {
+      for (let c = 0; c < numChannels; c++) {
+        totalValues[c][i] = NaN;
+      }
+    }
+  }
+  return totalValues;
+}
+
+export function calculateTotalWhole(ctx) {
+  const { feature, labeledFull, raw, cells, numCells } = ctx;
+  const width = labeledFull[0][0][0].length;
+  const height = labeledFull[0][0].length;
+  const numFrames = raw[0].length;
+  const numChannels = raw.length;
+  const cellStructure = new Cells(cells);
+  let valueMappings = [];
+  for (let t = 0; t < numFrames; t++) {
+    let mapping = {};
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const value = labeledFull[feature][t][i][j];
+        if (mapping[value] === undefined) {
+          mapping[value] = cellStructure.getCellsForValue(value, t, feature);
+        }
+      }
+    }
+    valueMappings.push(mapping);
+  }
+  let totalValues = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  let cellSizes = Array.from({ length: numChannels }, () => new Array(numCells).fill(0));
+  for (let c = 0; c < numChannels; c++) {
+    for (let t = 0; t < numFrames; t++) {
+      for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+          const cellList = valueMappings[t][labeledFull[feature][t][i][j]];
+          for (const cell of cellList) {
+            totalValues[c][cell] = totalValues[c][cell] + raw[c][t][i][j];
+            cellSizes[c][cell] = cellSizes[c][cell] + 1;
+          }
         }
       }
     }
@@ -136,7 +225,10 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         },
         {
           id: 'arrays',
-          src: fromEventBus('channelExpression', () => eventBuses.arrays, 'LABELED'),
+          src: fromEventBus('channelExpression', () => eventBuses.arrays, [
+            'LABELED',
+            'LABELED_FULL',
+          ]),
         },
         { id: 'cells', src: fromEventBus('channelExpression', () => eventBuses.cells, 'CELLS') },
         { id: 'load', src: fromEventBus('channelExpression', () => eventBuses.load, 'LOADED') },
@@ -147,6 +239,8 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         t: 0,
         feature: 0,
         labeled: null, // currently displayed labeled frame (Int32Array[][])
+        labeledFull: null,
+        whole: null,
         raw: null, // current displayed raw frame (?Array[][])
         cells: null,
         numCells: null,
@@ -157,6 +251,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
       initial: 'loading',
       on: {
         LABELED: { actions: 'setLabeled' },
+        LABELED_FULL: { actions: 'setLabeledFull' },
         CELLS: { actions: ['setCells', 'setNumCells'] },
         SET_T: { actions: 'setT' },
         SET_FEATURE: { actions: 'setFeature' },
@@ -170,7 +265,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
               states: {
                 waiting: {
                   on: {
-                    LOADED: { actions: 'setRaw', target: 'done' },
+                    LOADED: { actions: ['setRaw', 'setLabeledFull'], target: 'done' },
                   },
                 },
                 done: { type: 'final' },
@@ -202,12 +297,20 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
             calculating: {
               entry: choose([
                 {
-                  cond: (_, evt) => evt.stat === 'Mean',
+                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === false,
                   actions: ['setStat', 'calculateMean'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Total',
+                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === false,
                   actions: ['setStat', 'calculateTotal'],
+                },
+                {
+                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === true,
+                  actions: ['setStat', 'calculateMeanWhole'],
+                },
+                {
+                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === true,
+                  actions: ['setStat', 'calculateTotalWhole'],
                 },
                 {
                   cond: (_, evt) => evt.stat === 'Position',
@@ -219,12 +322,20 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
             visualizing: {
               entry: choose([
                 {
-                  cond: (_, evt) => evt.stat === 'Mean',
+                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === false,
                   actions: ['setStat', 'calculateMean'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Total',
+                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === false,
                   actions: ['setStat', 'calculateTotal'],
+                },
+                {
+                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === true,
+                  actions: ['setStat', 'calculateMeanWhole'],
+                },
+                {
+                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === true,
+                  actions: ['setStat', 'calculateTotalWhole'],
                 },
               ]),
               on: {
@@ -240,8 +351,9 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
     },
     {
       actions: {
-        setRaw: assign({ raw: (_, evt) => evt.rawOriginal }),
+        setRaw: assign({ raw: (_, evt) => evt.raw }),
         setLabeled: assign({ labeled: (_, evt) => evt.labeled }),
+        setLabeledFull: assign({ labeledFull: (_, evt) => evt.labeled }),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         setNumCells: assign({ numCells: (_, evt) => new Cells(evt.cells).getNewCell() }),
         setT: assign({ t: (_, evt) => evt.t }),
@@ -254,8 +366,22 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
             send({ type: 'CALCULATION', calculations: channelMeans }, { to: 'eventBus' }),
           ];
         }),
+        calculateMeanWhole: pure((ctx) => {
+          const channelMeans = calculateMeanWhole(ctx);
+          return [
+            assign({ calculations: channelMeans }),
+            send({ type: 'CALCULATION', calculations: channelMeans }, { to: 'eventBus' }),
+          ];
+        }),
         calculateTotal: pure((ctx) => {
           const totalValues = calculateTotal(ctx);
+          return [
+            assign({ calculations: totalValues }),
+            send({ type: 'CALCULATION', calculations: totalValues }, { to: 'eventBus' }),
+          ];
+        }),
+        calculateTotalWhole: pure((ctx) => {
+          const totalValues = calculateTotalWhole(ctx);
           return [
             assign({ calculations: totalValues }),
             send({ type: 'CALCULATION', calculations: totalValues }, { to: 'eventBus' }),
