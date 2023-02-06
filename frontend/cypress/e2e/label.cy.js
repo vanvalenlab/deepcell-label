@@ -18,7 +18,7 @@ it('finds DeepCell Label homepage text', () => {
 });
 
 // Only attempt test if aws credentials are configured
-if (Cypress.env('AWS_ACCESS_KEY_ID') && Cypress.env('AWS_SECRETE_ACCESS_KEY')) {
+if (Cypress.env('AWS_ACCESS_KEY_ID') && Cypress.env('AWS_SECRET_ACCESS_KEY')) {
   it('Create a project from an example file', () => {
     cy.visit('/');
     cy.get('.MuiNativeSelect-select').select('2D tissue segmentation');
