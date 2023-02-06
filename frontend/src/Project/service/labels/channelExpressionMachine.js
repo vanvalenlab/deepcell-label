@@ -240,7 +240,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         feature: 0,
         labeled: null, // currently displayed labeled frame (Int32Array[][])
         labeledFull: null,
-        whole: null,
+        whole: false,
         raw: null, // current displayed raw frame (?Array[][])
         cells: null,
         numCells: null,
@@ -298,19 +298,19 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
             calculating: {
               entry: choose([
                 {
-                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === false,
+                  cond: (ctx, evt) => evt.stat === 'Mean' && !ctx.whole,
                   actions: ['setStat', 'calculateMean'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === false,
+                  cond: (ctx, evt) => evt.stat === 'Total' && !ctx.whole,
                   actions: ['setStat', 'calculateTotal'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === true,
+                  cond: (ctx, evt) => evt.stat === 'Mean' && ctx.whole,
                   actions: ['setStat', 'calculateMeanWhole'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === true,
+                  cond: (ctx, evt) => evt.stat === 'Total' && ctx.whole,
                   actions: ['setStat', 'calculateTotalWhole'],
                 },
                 {
@@ -323,19 +323,19 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
             visualizing: {
               entry: choose([
                 {
-                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === false,
+                  cond: (ctx, evt) => evt.stat === 'Mean' && !ctx.whole,
                   actions: ['setStat', 'calculateMean'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === false,
+                  cond: (ctx, evt) => evt.stat === 'Total' && !ctx.whole,
                   actions: ['setStat', 'calculateTotal'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Mean' && evt.whole === true,
+                  cond: (ctx, evt) => evt.stat === 'Mean' && ctx.whole,
                   actions: ['setStat', 'calculateMeanWhole'],
                 },
                 {
-                  cond: (_, evt) => evt.stat === 'Total' && evt.whole === true,
+                  cond: (ctx, evt) => evt.stat === 'Total' && ctx.whole,
                   actions: ['setStat', 'calculateTotalWhole'],
                 },
               ]),

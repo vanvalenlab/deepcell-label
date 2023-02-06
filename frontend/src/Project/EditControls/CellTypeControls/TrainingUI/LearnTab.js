@@ -2,6 +2,7 @@ import { Box, Button, MenuItem, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useState } from 'react';
 import { useChannelExpression } from '../../../ProjectContext';
+import CalculateWholeToggle from '../ChannelExpressionUI/CalculateWholeToggle';
 import TrainingButtons from './TrainingButtons';
 
 function LearnTab() {
@@ -19,14 +20,14 @@ function LearnTab() {
 
   return (
     <>
-      <Grid item display='flex' alignItems='center' sx={{ marginLeft: 1.4, marginTop: 1 }}>
+      <Grid item display='flex'>
         <TextField
           select
           size='small'
           value={embedding}
           label='Embedding'
           onChange={(evt) => setEmbedding(evt.target.value)}
-          sx={{ width: 154.6 }}
+          sx={{ width: '47%' }}
         >
           {quantities.map((opt, index) => (
             <MenuItem key={index} value={index}>
@@ -34,11 +35,12 @@ function LearnTab() {
             </MenuItem>
           ))}
         </TextField>
-        <Button
-          sx={{ marginLeft: 2, width: 154.6, height: 35 }}
-          variant='contained'
-          onClick={handleVisualize}
-        >
+        <Box sx={{ marginLeft: '1%' }}>
+          <CalculateWholeToggle />
+        </Box>
+      </Grid>
+      <Grid item>
+        <Button sx={{ width: '97%' }} variant='contained' onClick={handleVisualize}>
           Visualize
         </Button>
       </Grid>
