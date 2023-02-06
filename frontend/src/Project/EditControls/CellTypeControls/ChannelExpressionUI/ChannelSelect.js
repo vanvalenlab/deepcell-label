@@ -10,6 +10,7 @@ import { useRaw } from '../../../ProjectContext';
 function ChannelSelect(props) {
   const { channelX, setChannelX, channelY, setChannelY, plot, setPlot } = props;
   const raw = useRaw();
+  const numChannels = useSelector(raw, (state) => state.context.numChannels);
   const names = useSelector(raw, (state) => state.context.channelNames);
 
   const handleChangePlot = (evt) => {
@@ -32,7 +33,7 @@ function ChannelSelect(props) {
           size='small'
           value={channelX}
           label='X Channel'
-          sx={{ width: 130 }}
+          sx={{ width: '47%' }}
           onChange={handleChangeX}
         >
           {names.map((opt, index) => (
@@ -47,7 +48,7 @@ function ChannelSelect(props) {
           value={channelY}
           label='Y Channel'
           disabled={plot === 'histogram'}
-          sx={{ width: 130, marginLeft: 2 }}
+          sx={{ width: '47%', marginLeft: '3%' }}
           onChange={handleChangeY}
         >
           {names.map((opt, index) => (
@@ -57,15 +58,16 @@ function ChannelSelect(props) {
           ))}
         </TextField>
       </Grid>
-      <Grid item sx={{ marginLeft: 1.5 }}>
+      <Grid item sx={{ marginLeft: 0.5 }}>
         <FormControl>
           <RadioGroup row value={plot} onChange={handleChangePlot}>
-            <FormControlLabel value='scatter' control={<Radio />} label='Scatter' />
+            <FormControlLabel value='histogram' control={<Radio />} label='Histogram' />
             <FormControlLabel
-              value='histogram'
-              sx={{ marginLeft: 4 }}
+              sx={{ marginLeft: 5 }}
+              disabled={numChannels === 1}
+              value='scatter'
               control={<Radio />}
-              label='Histogram'
+              label='Scatter'
             />
           </RadioGroup>
         </FormControl>
