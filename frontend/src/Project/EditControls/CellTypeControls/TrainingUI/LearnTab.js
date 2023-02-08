@@ -1,5 +1,7 @@
+import LoadingButton from '@mui/lab/LoadingButton';
 import { Box, Button, MenuItem, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useChannelExpression } from '../../../ProjectContext';
 import CalculateWholeToggle from '../ChannelExpressionUI/CalculateWholeToggle';
@@ -9,12 +11,15 @@ function LearnTab() {
   const quantities = ['Position', 'Mean', 'Total'];
   const [embedding, setEmbedding] = useState(0);
   const channelExpression = useChannelExpression();
+  const calculating = useSelector(channelExpression, (state) =>
+    state.matches('loaded.visualizing')
+  );
 
   const handleVisualize = () => {
     if (quantities[embedding] === 'Position') {
       channelExpression.send({ type: 'CALCULATE', stat: quantities[embedding] });
     } else {
-      channelExpression.send({ type: 'CALCULATE_UMAP', stat: quantities[embedding], whole: true });
+      channelExpression.send({ type: 'CALCULATE_UMAP', stat: quantities[embedding] });
     }
   };
 
@@ -40,9 +45,13 @@ function LearnTab() {
         </Box>
       </Grid>
       <Grid item>
-        <Button sx={{ width: '97%' }} variant='contained' onClick={handleVisualize}>
-          Visualize
-        </Button>
+        {!calculating ? (
+          <Button sx={{ width: '97%' }} variant='contained' onClick={handleVisualize}>
+            Visualize
+          </Button>
+        ) : (
+          <LoadingButton>Hi</LoadingButton>
+        )}
       </Grid>
       <TrainingButtons />
     </>

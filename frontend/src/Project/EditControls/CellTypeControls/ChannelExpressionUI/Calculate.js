@@ -1,16 +1,19 @@
+import { LoadingButton } from '@mui/lab';
 import { Box, Button, MenuItem, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useChannelExpression } from '../../../ProjectContext';
 import CalculateWholeToggle from './CalculateWholeToggle';
 
 function Calculate() {
   const channelExpression = useChannelExpression();
+  const calculating = useSelector(channelExpression, (state) => state.matches('loaded.mean'));
   const quantities = ['Mean', 'Total'];
   const [stat, setStat] = useState(0);
 
   const handleCalculation = () => {
-    channelExpression.send({ type: 'CALCULATE', stat: quantities[stat], whole: true });
+    channelExpression.send({ type: 'CALCULATE', stat: quantities[stat] });
   };
 
   return (
@@ -35,9 +38,15 @@ function Calculate() {
         </Box>
       </Grid>
       <Grid item>
-        <Button sx={{ width: '97%' }} variant='contained' onClick={handleCalculation}>
-          Calculate
-        </Button>
+        {!calculating ? (
+          <Button sx={{ width: '97%' }} variant='contained' onClick={handleCalculation}>
+            Calculate
+          </Button>
+        ) : (
+          <LoadingButton sx={{ width: '97%' }} loading loadingPosition='start' variant='outlined'>
+            Calculate
+          </LoadingButton>
+        )}
       </Grid>
     </>
   );

@@ -10,7 +10,7 @@ import { fromEventBus } from '../eventBus';
 
 const { choose } = actions;
 
-export function calculateMean(ctx) {
+export async function calculateMean(ctx) {
   const { t, feature, labeled, raw, cells, numCells } = ctx;
   const width = labeled[0].length;
   const height = labeled.length;
@@ -47,8 +47,17 @@ export function calculateMean(ctx) {
   return channelMeans;
 }
 
-export function calculateMeanWhole(ctx) {
+function resolveQuickly() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve('fast');
+    }, 1);
+  });
+}
+
+export async function calculateMeanWhole(ctx) {
   const { feature, labeledFull, raw, cells, numCells } = ctx;
+  const slow = await resolveQuickly();
   const width = labeledFull[0][0][0].length;
   const height = labeledFull[0][0].length;
   const numFrames = raw[0].length;
@@ -299,7 +308,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
               entry: choose([
                 {
                   cond: (ctx, evt) => evt.stat === 'Mean' && !ctx.whole,
-                  actions: ['setStat', 'calculateMean'],
+                  actions: 'setStat',
                 },
                 {
                   cond: (ctx, evt) => evt.stat === 'Total' && !ctx.whole,
@@ -318,7 +327,18 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                   actions: 'calculatePosition',
                 },
               ]),
-              always: 'idle',
+              always: 'mean',
+            },
+            mean: {
+              invoke: {
+                id: 'mean',
+                src: calculateMeanWhole,
+                onDone: {
+                  target: 'idle',
+                  actions: 'setMean',
+                },
+                // onError: { target: 'idle', actions: (c, e) => console.log(c, e) },
+              },
             },
             visualizing: {
               entry: choose([
@@ -366,6 +386,12 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
           return [
             assign({ calculations: channelMeans }),
             send({ type: 'CALCULATION', calculations: channelMeans }, { to: 'eventBus' }),
+          ];
+        }),
+        setMean: pure((_, evt) => {
+          return [
+            assign({ calculations: evt.data }),
+            send({ type: 'CALCULATION', calculations: evt.data }, { to: 'eventBus' }),
           ];
         }),
         calculateMeanWhole: pure((ctx) => {
