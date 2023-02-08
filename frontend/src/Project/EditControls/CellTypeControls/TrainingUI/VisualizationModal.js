@@ -1,17 +1,26 @@
-import Box from '@mui/material/Box';
-import { Button } from '@mui/material';
 import CancelIcon from '@mui/icons-material/Cancel';
+import NotStartedIcon from '@mui/icons-material/NotStarted';
+import { Button } from '@mui/material';
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 import Modal from '@mui/material/Modal';
-import NotStartedIcon from '@mui/icons-material/NotStarted';
 import Typography from '@mui/material/Typography';
 import { useSelector } from '@xstate/react';
+import { useCellsAtTime, useTraining } from '../../../ProjectContext';
+import { getCellList, getCellListAtTime } from '../../../service/labels/trainingMachine';
 import ConfusionMatrix from './ConfusionMatrix';
-import { getCellList } from '../../../service/labels/trainingMachine';
 import Hyperparameters from './Hyperparameters';
 import TrainingPlot from './TrainingPlot';
-import { useTraining } from '../../../ProjectContext';
+
+const calculateSplit = (whole, cellTypes, cellsAtTime, valSplit) => {
+  const totalSize = whole
+    ? getCellList(cellTypes).length
+    : getCellListAtTime(cellTypes, cellsAtTime).length;
+  const trainSize = Math.ceil((totalSize * valSplit) / 100);
+  const valSize = totalSize - trainSize;
+  return { trainSize, valSize };
+};
 
 function VisualizationModal({ open, setOpen }) {
   const trainingRef = useTraining();
@@ -22,8 +31,10 @@ function VisualizationModal({ open, setOpen }) {
   const numEpochs = useSelector(trainingRef, (state) => state.context.numEpochs);
   const training = useSelector(trainingRef, (state) => state.matches('loaded.training.train'));
   const valSplit = useSelector(trainingRef, (state) => state.context.valSplit) * 100;
-  const trainSize = Math.ceil((getCellList(cellTypes).length * valSplit) / 100);
   const batchSize = useSelector(trainingRef, (state) => state.context.batchSize);
+  const whole = useSelector(trainingRef, (state) => state.context.whole);
+  const cellList = useCellsAtTime();
+  const { trainSize, valSize } = calculateSplit(whole, cellTypes, cellList, valSplit);
   const badBatch = batchSize > trainSize;
 
   const style = {
@@ -59,7 +70,7 @@ function VisualizationModal({ open, setOpen }) {
             </Typography>
           </Grid>
           <Grid item>
-            <Hyperparameters badBatch={badBatch} />
+            <Hyperparameters badBatch={badBatch} trainSize={trainSize} valSize={valSize} />
           </Grid>
           <Grid item display='flex'>
             <Button

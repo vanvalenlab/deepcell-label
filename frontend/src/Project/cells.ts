@@ -85,9 +85,9 @@ class Cells {
 
   /** Returns the cells that are present in a frame at time t.
    * @param {number} t Time to get cells in.
-   * @returns List of cells
+   * @returns List of cell ids
    */
-  getCellsAtTime(t: number, c: number) {
+  getCellsListAtTime(t: number, c: number) {
     let cells = this.cells.filter((cell) => cell.t === t && cell.c === c).map((cell) => cell.cell);
     cells = [...new Set(cells)];
     cells.sort((a, b) => a - b);

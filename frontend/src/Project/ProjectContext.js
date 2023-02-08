@@ -468,7 +468,7 @@ export function useCellsAtTime() {
   const labeled = useLabeled();
   const c = useSelector(labeled, (state) => state.context.feature);
   const cells = useCells();
-  const cellList = useMemo(() => cells.getCellsAtTime(t, c), [cells, t, c]);
+  const cellList = useMemo(() => cells.getCellsListAtTime(t, c), [cells, t, c]);
   return cellList;
 }
 
