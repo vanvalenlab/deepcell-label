@@ -4,7 +4,7 @@ import { styled } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import Tooltip, { tooltipClasses } from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
-import { useChannelExpression } from '../../../ProjectContext';
+import { useChannelExpression, useTraining } from '../../../ProjectContext';
 
 const CustomWidthTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -16,10 +16,12 @@ const CustomWidthTooltip = styled(({ className, ...props }) => (
 
 function CalculateWholeToggle() {
   const channelExpression = useChannelExpression();
+  const training = useTraining();
   const checked = useSelector(channelExpression, (state) => state.context.whole);
 
   const handleToggle = () => {
     channelExpression.send({ type: 'TOGGLE_WHOLE' });
+    training.send({ type: 'TOGGLE_WHOLE' });
   };
 
   return (

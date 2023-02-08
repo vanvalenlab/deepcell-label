@@ -3,6 +3,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import { actions, assign, Machine, send } from 'xstate';
+import Cells from '../../cells';
 import { fromEventBus } from '../eventBus';
 
 const { choose } = actions;
@@ -220,9 +221,9 @@ function calculateConfusion(model, valInputs, valLabels) {
 
 /** Starts training a model using the currently labeled cell type data
  * @param {number} batchSize Size of each batch used in training
- * @param {array} calculations (X, Y) where X is embedding size, Y is number of cells
- * @param {array} cells List of cell objects that are being considered
- * @param {array} cellTypes List of cell type objects
+ * @param {list} calculations (X, Y) where X is embedding size, Y is number of cells
+ * @param {list} cells List of cell objects that are being considered
+ * @param {list} cellTypes List of cell type objects
  * @param {number} feature Current segmentation mask
  * @param {number} learningRate LR parameter used for optimizer
  * @param {number} numChannels Number of channels / embedding size
@@ -304,9 +305,9 @@ async function train(ctx, evt, sendBack) {
 
 /** Using the last saved trained model, predicts cell type labels
  * for all unlabeled cells in either the current frame or all frames
- * @param {array} calculations (X, Y) where X is embedding size, Y is number of cells
- * @param {array} cells List of cell objects that are being considered
- * @param {array} cellTypes List of cell type objects
+ * @param {list} calculations (X, Y) where X is embedding size, Y is number of cells
+ * @param {list} cells List of cell objects that are being considered
+ * @param {list} cellTypes List of cell type objects
  * @param {number} feature Current segmentation mask
  * @param {model} model Last saved model trained by tfjs
  * @param {number} numChannels Number of channels / embedding size
@@ -516,10 +517,8 @@ const createTrainingMachine = ({ eventBuses }) =>
         }),
         setCalculation: assign({ calculations: (_, evt) => evt.calculations }),
         setConfusionMatrix: assign({ confusionMatrix: (_, evt) => evt.confusionMatrix }),
-        getMean: send(
-          { type: 'CALCULATE', stat: 'Mean', whole: true },
-          { to: 'channelExpression' }
-        ),
+        toggleWhole: assign({ whole: (ctx) => !ctx.whole }),
+        getMean: send({ type: 'CALCULATE', stat: 'Mean' }, { to: 'channelExpression' }),
         getTotal: send({ type: 'CALCULATE', stat: 'Total' }, { to: 'channelExpression' }),
         resetLogs: assign({
           valLogs: [],
