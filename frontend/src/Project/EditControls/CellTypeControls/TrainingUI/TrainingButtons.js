@@ -1,6 +1,6 @@
 import InsightsIcon from '@mui/icons-material/Insights';
 import MiscellaneousServicesIcon from '@mui/icons-material/MiscellaneousServices';
-import { Box, Button } from '@mui/material';
+import { Button } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
@@ -21,13 +21,11 @@ function TrainingButtons() {
   };
 
   return (
-    <Box sx={{ marginTop: 2, marginLeft: 1.8 }}>
-      <Grid item display='flex' sx={{ marginTop: 1 }}>
+    <>
+      <Grid item display='flex'>
         <Button
           sx={{
-            marginLeft: 1.55,
-            width: 154.6,
-            height: 35,
+            width: '47%',
             backgroundColor: 'rgba(245, 20, 87, 1)',
             '&:hover': { backgroundColor: 'rgba(224, 0, 67, 1)' },
           }}
@@ -40,9 +38,8 @@ function TrainingButtons() {
         <Button
           disabled={model ? false : true}
           sx={{
-            marginLeft: 2,
-            width: 154.6,
-            height: 35,
+            marginLeft: '3%',
+            width: '47%',
             backgroundColor: 'rgba(20, 200, 83, 1)',
             '&:hover': { backgroundColor: 'rgba(0, 180, 63, 1)' },
           }}
@@ -54,7 +51,7 @@ function TrainingButtons() {
         </Button>
       </Grid>
       <VisualizationModal open={open} setOpen={setOpen} />
-    </Box>
+    </>
   );
 }
 

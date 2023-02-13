@@ -7,12 +7,11 @@ import Grid from '@mui/material/Grid';
 import InputAdornment from '@mui/material/InputAdornment';
 import Slider from '@mui/material/Slider';
 import { useTheme } from '@mui/material/styles';
-import Switch from '@mui/material/Switch';
 import { useSelector } from '@xstate/react';
 import { useTraining } from '../../../ProjectContext';
-import { getCellList } from '../../../service/labels/trainingMachine';
+import CalculateWholeToggle from '../ChannelExpressionUI/CalculateWholeToggle';
 
-function Hyperparameters({ badBatch }) {
+function Hyperparameters({ badBatch, trainSize, valSize }) {
   const batches = [1, 2, 4, 8, 16, 32, 64, 128, 256];
   const epochs = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   const lrs = [0.001, 0.01, 0.1, 1.0];
@@ -23,9 +22,6 @@ function Hyperparameters({ badBatch }) {
   const learningRate = lrs.indexOf(useSelector(training, (state) => state.context.learningRate));
   const embedding = embeddings.indexOf(useSelector(training, (state) => state.context.embedding));
   const valSplit = useSelector(training, (state) => state.context.valSplit) * 100;
-  const cellTypes = useSelector(training, (state) => state.context.cellTypes);
-  const trainSize = Math.ceil((getCellList(cellTypes).length * valSplit) / 100);
-  const valSize = getCellList(cellTypes).length - trainSize;
   const theme = useTheme();
 
   const marks = [
@@ -204,10 +200,9 @@ function Hyperparameters({ badBatch }) {
           <Chip label={valSize} />
         </Grid>
         <Grid item>
-          <FormLabel sx={{ display: 'inline-block', paddingRight: '0.5em' }}>
-            Train on all frames?
-          </FormLabel>
-          <Switch defaultChecked />
+          <Box sx={{ marginLeft: '-0.9em' }}>
+            <CalculateWholeToggle />
+          </Box>
         </Grid>
       </Grid>
     </Box>

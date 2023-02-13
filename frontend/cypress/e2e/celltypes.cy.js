@@ -9,6 +9,7 @@ after(() => {
 
 describe('Cell Type Editing', () => {
   beforeEach(() => {
+    cy.viewport(1280, 720);
     const id = getUniqueId();
     cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
     cy.visit(`/project?projectId=${id}`);

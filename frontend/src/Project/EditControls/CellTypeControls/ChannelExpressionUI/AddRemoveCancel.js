@@ -46,7 +46,7 @@ function AddRemoveCancel() {
           size='small'
           value={cellType}
           onChange={handleCellType}
-          sx={{ width: 325.5, marginLeft: 1.45 }}
+          sx={{ width: '97%' }}
         >
           {cellTypeIds.map((opt, index) => (
             <MenuItem key={index} value={index}>
@@ -55,9 +55,9 @@ function AddRemoveCancel() {
           ))}
         </TextField>
       </Grid>
-      <Grid item sx={{ marginLeft: 0.5, marginBottom: 1 }}>
+      <Grid item sx={{ marginBottom: 1 }}>
         <Button
-          sx={{ marginLeft: 1, width: 95 }}
+          sx={{ width: '31%' }}
           disabled={!selecting}
           variant='contained'
           onClick={addCellTypes}
@@ -66,8 +66,8 @@ function AddRemoveCancel() {
         </Button>
         <Button
           sx={{
-            marginLeft: 1,
-            width: 107,
+            marginLeft: '2%',
+            width: '31%',
             backgroundColor: 'rgba(244,67,54,1)',
             '&:hover': { backgroundColor: 'rgba(224,47,34,1)' },
           }}
@@ -79,8 +79,8 @@ function AddRemoveCancel() {
         </Button>
         <Button
           sx={{
-            marginLeft: 1,
-            width: 105,
+            marginLeft: '2%',
+            width: '31%',
             backgroundColor: 'rgba(0,0,0,0.1)',
             color: 'rgba(0,0,0,0.65)',
             '&:hover': { backgroundColor: 'rgba(0,0,0,0.2)' },
