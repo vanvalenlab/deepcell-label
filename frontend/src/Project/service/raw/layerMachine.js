@@ -19,6 +19,7 @@ const createLayerMachine = (layer, numChannels) =>
         SET_LAYER: { actions: 'setLayer' },
         SET_CHANNEL: { actions: 'setChannel' },
         SET_COLOR: { actions: 'setColor' },
+        RESET_COLORS: { actions: 'resetColors' },
         TOGGLE_ON: { actions: 'toggleOn' },
         SET_RANGE: { actions: 'setRange' },
       },
@@ -28,6 +29,9 @@ const createLayerMachine = (layer, numChannels) =>
         setLayer: assign({ layer: (_, event) => event.layer }),
         setChannel: assign({ channel: (_, { channel }) => channel }),
         setColor: assign({ color: (_, { color }) => color }),
+        resetColors: assign({
+          color: (_, evt) => CHANNEL_COLORS[evt.layer] || '#FF0000',
+        }),
         toggleOn: assign({ on: ({ on }) => !on }),
         setRange: assign({
           range: (_, { range }) => [

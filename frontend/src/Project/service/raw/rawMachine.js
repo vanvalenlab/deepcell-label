@@ -74,6 +74,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
                 TOGGLE_COLOR_MODE: 'grayscale',
                 // Need propagate event to root actor to rerender canvas
                 ADD_LAYER: { actions: ['addLayer', sendParent((c, e) => e)] },
+                FETCH_LAYERS: { actions: ['fetchLayers', 'resetColors', sendParent((c, e) => e)] },
                 REMOVE_LAYER: { actions: ['removeLayer', sendParent((c, e) => e), 'setLayers'] },
                 EDIT_NAME: { actions: 'editChannelName' },
               },
@@ -151,11 +152,24 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
             spawn(createLayerMachine(layers.length, numChannels), `layer ${layers.length}`),
           ],
         }),
+        fetchLayers: assign({
+          layers: ({ numChannels }, evt) => {
+            const layers = [];
+            for (let i = 0; i < evt.channels.length; i++) {
+              const layer = spawn(createLayerMachine(evt.channels[i], numChannels), `layer ${i}`);
+              layers.push(layer);
+            }
+            return layers;
+          },
+        }),
         removeLayer: assign({
           layers: ({ layers }, { layer }) => [...layers.filter((val) => val !== layer)],
         }),
         setLayers: pure((context) =>
           context.layers.map((layer, i) => send({ type: 'SET_LAYER', layer: i }, { to: layer }))
+        ),
+        resetColors: pure((context) =>
+          context.layers.map((layer, i) => send({ type: 'RESET_COLORS', layer: i }, { to: layer }))
         ),
         save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', isGrayscale, channel })),
         restore: pure((context, event) =>

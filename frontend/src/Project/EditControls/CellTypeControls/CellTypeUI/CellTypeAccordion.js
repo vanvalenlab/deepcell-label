@@ -79,9 +79,9 @@ function CellTypeAccordion(props) {
           setToggleArray={setToggleArray}
         />
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails sx={{ marginTop: '-1em' }}>
         {/* Grid of cells to add and remove from cell type */}
-        <CellGrid id={cellType.id} name={cellType.name} />
+        <CellGrid id={cellType.id} name={cellType.name} color={cellType.color} />
       </AccordionDetails>
     </Accordion>
   );
