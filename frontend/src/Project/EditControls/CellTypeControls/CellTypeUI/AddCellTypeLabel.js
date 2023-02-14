@@ -21,7 +21,7 @@ function AddCellTypeLabel(props) {
   };
 
   return (
-    <Box sx={{ position: 'relative', boxShadow: 3 }}>
+    <Box sx={{ position: 'relative' }}>
       <Button
         variant='contained'
         startIcon={

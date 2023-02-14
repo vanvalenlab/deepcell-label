@@ -1,5 +1,5 @@
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+import { Box } from '@mui/material';
+import Chip from '@mui/material/Chip';
 import { useSelector } from '@xstate/react';
 import { useCellTypes } from '../../../ProjectContext';
 
@@ -9,25 +9,18 @@ function CellCountIndicator({ id }) {
   const cellTypeList = useSelector(cellTypes, (state) => state.context.cellTypes);
   const cellType = cellTypeList.filter((cellType) => cellType.id === id)[0];
   const numCells = cellType.cells.length;
+  const width = numCells > 999 ? '4em' : '3em';
 
   let paperStyle = {
     position: 'absolute',
-    height: 23,
-    width: 23,
-    backgroundColor: 'rgba(0,0,50,0.05)',
-    marginLeft: 27,
-    marginTop: 0.6,
-    display: 'flex',
+    marginLeft: '12.5em',
+    marginTop: '0.15em',
   };
 
-  if (numCells > 999) {
-    paperStyle.width = 30;
-  }
-
   return (
-    <Paper sx={paperStyle}>
-      <Typography sx={{ margin: 'auto', fontSize: 12 }}>{numCells}</Typography>
-    </Paper>
+    <Box sx={paperStyle}>
+      <Chip size='small' label={numCells} sx={{ width: width }} />
+    </Box>
   );
 }
 

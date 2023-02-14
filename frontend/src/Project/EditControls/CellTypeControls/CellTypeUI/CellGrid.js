@@ -1,85 +1,61 @@
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Box, IconButton } from '@mui/material';
-import { useSelector } from '@xstate/react';
-import { useEditCellTypes } from '../../../ProjectContext';
-
-const buttonStyle = {
-  borderRadius: 5,
-  boxShadow: 1,
-  marginTop: -2,
-  marginBottom: 2,
-  width: '100%',
-};
-
-const addButtonStyle = {
-  borderRadius: 5,
-  boxShadow: 1,
-  marginTop: -2,
-  marginBottom: 2,
-  width: '95%',
-};
-
-const buttonBoxStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-  fontSize: 13,
-};
+import { Grid } from '@mui/material';
+import Chip from '@mui/material/Chip';
+import FormLabel from '@mui/material/FormLabel';
+import { useState } from 'react';
+import AddCellsButton from './AddCellsButton';
+import ChannelChip from './ChannelChip';
+import MatchMarkersButton from './MatchMarkersButton';
+import RemoveCellsButton from './RemoveCellsButton';
+import ViewChannelsButton from './ViewChannelsButton';
 
 function CellGrid(props) {
-  const { id, name } = props;
-  const editCellTypesRef = useEditCellTypes();
-  const addingCell = useSelector(editCellTypesRef, (state) => state.matches('addingCell'));
-  const removingCell = useSelector(editCellTypesRef, (state) => state.matches('removingCell'));
-
-  // Handle logic for resetting add/remove or starting add mode
-  const handleAdd = () => {
-    if (addingCell || removingCell) {
-      setTimeout(() => editCellTypesRef.send({ type: 'RESET' }), 100);
-    } else {
-      setTimeout(() => editCellTypesRef.send({ type: 'ADD', cellType: id, name: name }), 100);
-    }
-  };
-
-  // Handle starting the remove mode
-  const handleRemove = () => {
-    setTimeout(() => editCellTypesRef.send({ type: 'REMOVE_MODE', cellType: id, name: name }), 100);
-  };
+  const { id, name, color } = props;
+  const [matchedName, setMatchedName] = useState(null);
+  const [matchedChannels, setMatchedChannels] = useState(null);
 
   return (
-    <Box display='grid' gridTemplateColumns='repeat(6, 1fr)' gap={1}>
-      {!addingCell && !removingCell ? (
-        <>
-          <Box gridColumn='span 3'>
-            <IconButton onClick={handleAdd} sx={addButtonStyle}>
-              <Box sx={buttonBoxStyle}>
-                <AddCircleOutlineIcon sx={{ marginRight: 0.5, fontSize: 18 }} />
-                Add Cells
-              </Box>
-            </IconButton>
-          </Box>
-          <Box gridColumn='span 3'>
-            <IconButton onClick={handleRemove} sx={buttonStyle}>
-              <Box sx={buttonBoxStyle}>
-                <RemoveCircleOutlineIcon sx={{ marginRight: 0.5, fontSize: 18 }} />
-                Remove Cells
-              </Box>
-            </IconButton>
-          </Box>
-        </>
-      ) : (
-        <Box gridColumn='span 6'>
-          <IconButton onClick={handleAdd} sx={buttonStyle}>
-            <Box sx={buttonBoxStyle}>
-              <CheckCircleOutlineIcon sx={{ marginLeft: -1, marginRight: 0.5, fontSize: 18 }} />
-              Done
-            </Box>
-          </IconButton>
-        </Box>
-      )}
-    </Box>
+    <Grid container spacing={1}>
+      <Grid item xs={3} align='center'>
+        <AddCellsButton id={id} name={name} />
+      </Grid>
+      <Grid item xs={3} align='center'>
+        <RemoveCellsButton id={id} name={name} />
+      </Grid>
+      <Grid item xs={3} align='center'>
+        <MatchMarkersButton
+          name={name}
+          setMatchedName={setMatchedName}
+          setMatchedChannels={setMatchedChannels}
+        />
+      </Grid>
+      <Grid item xs={3} align='center'>
+        <ViewChannelsButton name={name} matchedChannels={matchedChannels} />
+      </Grid>
+      <Grid item xs={12}>
+        <FormLabel sx={{ fontSize: 14 }}>Matched Name: </FormLabel>
+      </Grid>
+      {matchedName ? (
+        <Grid item xs={12}>
+          <Chip
+            label={matchedName}
+            variant='outlined'
+            size='small'
+            style={{ minWidth: '4.6em' }}
+            sx={{ color: color, borderColor: color }}
+          />
+        </Grid>
+      ) : null}
+      <Grid item xs={12}>
+        <FormLabel sx={{ fontSize: 14 }}>Matched Channels: </FormLabel>
+      </Grid>
+      {matchedChannels
+        ? matchedChannels.map((channel) => (
+            <Grid item xs={3}>
+              <ChannelChip channel={channel} />
+            </Grid>
+          ))
+        : null}
+    </Grid>
   );
 }
 
