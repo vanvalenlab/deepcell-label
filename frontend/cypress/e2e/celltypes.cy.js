@@ -31,7 +31,7 @@ describe('Cell Type Editing', () => {
 
   it('adds and removes cells', () => {
     cy.contains('Untitled 1').click();
-    cy.contains('Add Cells').click();
+    cy.get('[aria-label="Add Cells"]').click();
     cy.contains('Click a cell to add to cell type Untitled 1.');
     cy.get('canvas').then(($canvas) => {
       const canvasWidth = $canvas.width();
@@ -55,8 +55,8 @@ describe('Cell Type Editing', () => {
         cy.contains('2');
       });
     });
-    cy.contains('Done').click();
-    cy.contains('Remove Cells').click();
+    cy.get('[data-testid="CheckCircleOutlineIcon"]').click();
+    cy.get('[aria-label="Remove Cells"]').click();
     cy.contains('Click a cell to remove from cell type Untitled 1.');
     cy.get('canvas').then(($canvas) => {
       const canvasWidth = $canvas.width();
@@ -70,11 +70,11 @@ describe('Cell Type Editing', () => {
         .click();
       cy.contains('Untitled 1 (1)').should('not.exist');
     });
-    cy.contains('Done').click();
+    cy.get('[data-testid="CheckCircleOutlineIcon"]').click();
     cy.contains('Click a cell').should('not.exist');
   });
 
-  it('adds another cell and toggles properly', () => {
+  it('adds another cell type and toggles properly', () => {
     cy.contains('Add Cell Type').click();
     cy.get('[title="#58b5e1"]').click();
     cy.get('[data-testid="SquareRoundedIcon"]')
