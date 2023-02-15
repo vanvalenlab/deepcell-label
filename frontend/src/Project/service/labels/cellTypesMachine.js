@@ -11,7 +11,7 @@ import Cells from '../../cells';
 import { fromEventBus } from '../eventBus';
 
 // Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
-const hexToRgb = (hex) => {
+export const hexToRgb = (hex) => {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return [
     parseInt(result[1], 16) / 255,

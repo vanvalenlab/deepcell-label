@@ -3,13 +3,14 @@ import { MenuItem, TextField } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import Slider from '@mui/material/Slider';
-import { useReducer, useRef, useState } from 'react';
 import { useSelector } from '@xstate/react';
+import { useReducer, useRef, useState } from 'react';
 import { useMousetrapRef, useRaw } from '../../ProjectContext';
 import LayerOptions from './LayerOptions';
 
 function LayerSelector({ layer, typing, toggleType }) {
   const channel = useSelector(layer, (state) => state.context.channel);
+  const index = useSelector(layer, (state) => state.context.layer);
 
   const raw = useRaw();
   const names = useSelector(raw, (state) => state.context.channelNames);
@@ -18,6 +19,7 @@ function LayerSelector({ layer, typing, toggleType }) {
 
   const onChange = (e) => {
     layer.send({ type: 'SET_CHANNEL', channel: Number(e.target.value) });
+    raw.send({ type: 'EDIT_CHANNEL', channel: Number(e.target.value), index: index });
   };
 
   // Handler to ensure hotkeys don't get used + Enter to finish typing

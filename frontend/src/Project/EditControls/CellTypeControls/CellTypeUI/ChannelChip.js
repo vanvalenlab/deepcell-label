@@ -7,7 +7,14 @@ function ChannelChip({ channel }) {
   const channelNames = useSelector(raw, (state) => state.context.channelNames);
 
   return (
-    <Chip size='small' variant='outlined' label={channelNames[channel]} sx={{ width: '100%' }} />
+    <Chip
+      size='small'
+      label={channelNames[channel]}
+      sx={{
+        width: '100%',
+        fontWeight: 500,
+      }}
+    />
   );
 }
 

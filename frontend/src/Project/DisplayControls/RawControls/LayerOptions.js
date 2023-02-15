@@ -28,7 +28,7 @@ function LayerOptions({ layer, toggleType }) {
 
   const handleRemove = () => {
     toggle();
-    raw.send({ type: 'REMOVE_LAYER', layer });
+    raw.send({ type: 'REMOVE_LAYER', layer, index });
   };
 
   const handleEdit = () => {
