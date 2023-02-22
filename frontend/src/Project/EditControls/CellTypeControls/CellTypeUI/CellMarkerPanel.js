@@ -1,6 +1,7 @@
 export const markerPanel = [
   { names: ['antigen-presenting cell', 'APC'], channels: ['HLADR'] },
   { names: ['B cell', 'B'], channels: ['CD19', 'CD20', 'CD45', 'VIM', 'HLADR'] },
+  { names: ['T cell', 'T'], channels: ['CD3', 'CD4', 'CD45'] },
   { names: ['CD3 T cell', 'CD3T'], channels: ['CD3'] },
   { names: ['CD4 T cell', 'CD4T'], channels: ['CD3', 'CD4', 'VIM', 'CD45'] },
   { names: ['CD8 T cell', 'CD8T'], channels: ['CD8', 'CD3', 'VIM', 'CD45'] },

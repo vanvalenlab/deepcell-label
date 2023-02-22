@@ -1,14 +1,18 @@
 import { Box, Button, MenuItem, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useChannelExpression } from '../../../ProjectContext';
 import CalculateWholeToggle from '../ChannelExpressionUI/CalculateWholeToggle';
 import TrainingButtons from './TrainingButtons';
 
 function LearnTab() {
-  const quantities = ['Position', 'Mean', 'Total'];
   const [embedding, setEmbedding] = useState(0);
   const channelExpression = useChannelExpression();
+  const imported = useSelector(channelExpression, (state) => state.context.embeddings);
+  const quantities = imported
+    ? ['Position', 'Mean', 'Total', 'Imported']
+    : ['Position', 'Mean', 'Total'];
 
   const handleVisualize = () => {
     if (quantities[embedding] === 'Position') {

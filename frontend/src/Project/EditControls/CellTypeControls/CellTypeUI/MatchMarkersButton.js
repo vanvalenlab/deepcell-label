@@ -27,7 +27,9 @@ const findChannels = (fuse, matchedChannels, channelNames) => {
     const result = fuse.search(matchedChannels[i]);
     if (result.length > 0) {
       const index = channelNames.findIndex((e) => e === result[0].item);
-      foundChannels.push(index);
+      if (!foundChannels.includes(index)) {
+        foundChannels.push(index);
+      }
     }
   }
   return foundChannels;

@@ -86,9 +86,8 @@ function convertToTensor(cells, embedding, cellTypes, maxId, valSplit) {
     const labelTensor = unshuffledLabels.gather(indices);
 
     // Normalize input data
-    const inputMax = inputTensor.max();
-    const inputMin = inputTensor.min();
-
+    const inputMax = inputTensor.max(0, true);
+    const inputMin = inputTensor.min(0, true);
     const normalizedInputs = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
 
     // Split training data
@@ -156,7 +155,9 @@ function createModel(inputShape, units) {
   // Sequential model
   const model = tf.sequential();
   // Add input layer
-  model.add(tf.layers.dense({ inputShape: inputShape, units: 1, useBias: true }));
+  model.add(tf.layers.dense({ inputShape: inputShape, units: 32, useBias: true }));
+  // Dropout layer
+  model.add(tf.layers.dropout({ rate: 0.25 }));
   // Add output layer
   model.add(tf.layers.dense({ units: units, activation: 'softmax' }));
 
@@ -176,7 +177,8 @@ async function trainModel(
   sendBack,
   batchSize,
   epochs,
-  lr
+  lr,
+  classWeight
 ) {
   // Prepare the model for training.
   model.compile({
@@ -219,6 +221,21 @@ function calculateConfusion(model, valInputs, valLabels) {
   return normalized;
 }
 
+function calculateClassWeight(cellTypes, maxId) {
+  // Assume each sample belongs to one class
+  const sorted = [...cellTypes].sort((a, b) => (a.id > b.id ? 1 : -1));
+  let numExamples = new Array(maxId).fill(0);
+  for (const cellType of sorted) {
+    numExamples[cellType.id - 1] = cellType.cells.length;
+  }
+  const totalExamples = numExamples.reduce((acc, i) => acc + i, 0);
+  const classWeightArray = numExamples.map((num) => (num === 0 ? 0 : totalExamples / num));
+  const classWeights = classWeightArray.reduce((acc, weight, index) => {
+    return { ...acc, [index]: weight };
+  }, {});
+  return classWeights;
+}
+
 /** Starts training a model using the currently labeled cell type data
  * @param {number} batchSize Size of each batch used in training
  * @param {array} calculations (X, Y) where X is embedding size, Y is number of cells
@@ -249,14 +266,19 @@ async function train(ctx, evt, sendBack) {
   } = ctx;
   const cellsAtTime = new Cells(cells).getCellsListAtTime(t, feature);
 
-  // Reorder calculations into training set format
+  // Check if using imported embedding
   let vectors = [];
-  for (let i = 0; i < calculations[0].length; i++) {
-    let vector = [];
-    for (let c = 0; c < numChannels; c++) {
-      vector.push(calculations[c][i]);
+  if (evt.imported) {
+    vectors = ctx.embeddings;
+  } else {
+    // Otherwise, reorder calculations into training set format
+    for (let i = 0; i < calculations[0].length; i++) {
+      let vector = [];
+      for (let c = 0; c < numChannels; c++) {
+        vector.push(calculations[c][i]);
+      }
+      vectors.push(vector);
     }
-    vectors.push(vector);
   }
 
   // Get the list of labeled cells to train on and number of cell types
@@ -276,6 +298,9 @@ async function train(ctx, evt, sendBack) {
     valSplit
   );
 
+  // Get class weights for weighted loss function
+  const classWeight = calculateClassWeight(cellTypes, maxId);
+
   // Instantiate and train the model with the given parameters
   const model = createModel([trainInputs.shape[1]], trainLabels.shape[1]);
   await trainModel(
@@ -287,7 +312,8 @@ async function train(ctx, evt, sendBack) {
     sendBack,
     batchSize,
     numEpochs,
-    learningRate
+    learningRate,
+    classWeight
   );
 
   // Calculate final confusion matrix using the validation set
@@ -321,14 +347,19 @@ async function predict(ctx, evt, sendBack) {
   const cellsAtTime = new Cells(cells).getCellsListAtTime(t, feature);
   const [inputMin, inputMax] = range;
 
-  // Reorder calculations into training set format
+  // Check if using imported embedding
   let vectors = [];
-  for (let i = 0; i < calculations[0].length; i++) {
-    let vector = [];
-    for (let c = 0; c < numChannels; c++) {
-      vector.push(ctx.calculations[c][i]);
+  if (evt.imported) {
+    vectors = ctx.embeddings;
+  } else {
+    // Otherwise, reorder calculations into training set format
+    for (let i = 0; i < calculations[0].length; i++) {
+      let vector = [];
+      for (let c = 0; c < numChannels; c++) {
+        vector.push(calculations[c][i]);
+      }
+      vectors.push(vector);
     }
-    vectors.push(vector);
   }
 
   // Get the list of unlabeled cells to train on and consolidate into normalized Tensor
@@ -369,6 +400,7 @@ const createTrainingMachine = ({ eventBuses }) =>
         valSplit: 0.8,
         // "Input" context
         embedding: 'Mean',
+        embeddings: null,
         t: 0,
         feature: 0,
         cells: null,
@@ -396,7 +428,7 @@ const createTrainingMachine = ({ eventBuses }) =>
         loading: {
           on: {
             LOADED: {
-              actions: ['setCellTypes', 'setCells', 'setNumChannels'],
+              actions: ['setCellTypes', 'setCells', 'setNumChannels', 'setEmbeddings'],
               target: 'loaded',
             },
           },
@@ -429,9 +461,14 @@ const createTrainingMachine = ({ eventBuses }) =>
                       cond: (ctx) => ctx.embedding === 'Total',
                       actions: ['resetEpoch', 'resetLogs', 'getTotal'],
                     },
+                    {
+                      cond: (ctx) => ctx.embedding === 'Imported',
+                      actions: ['resetEpoch', 'resetLogs', send({ type: 'TRAIN', imported: true })],
+                    },
                   ]),
                   on: {
                     CALCULATION: { actions: 'setCalculation', target: 'train' },
+                    TRAIN: { target: 'train' },
                   },
                 },
                 train: {
@@ -469,9 +506,14 @@ const createTrainingMachine = ({ eventBuses }) =>
                       cond: (ctx) => ctx.embedding === 'Total',
                       actions: 'getTotal',
                     },
+                    {
+                      cond: (ctx) => ctx.embedding === 'Imported',
+                      actions: send({ type: 'PREDICT', imported: true }),
+                    },
                   ]),
                   on: {
                     CALCULATION: { actions: 'setCalculation', target: 'predict' },
+                    PREDICT: { target: 'predict' },
                   },
                 },
                 predict: {
@@ -503,6 +545,7 @@ const createTrainingMachine = ({ eventBuses }) =>
           cells: (ctx, evt) => evt.cells,
         }),
         setEmbedding: assign({ embedding: (_, evt) => evt.embedding }),
+        setEmbeddings: assign({ embeddings: (_, evt) => evt.embeddings }),
         setNumEpochs: assign({ numEpochs: (_, evt) => evt.numEpochs }),
         setLearningRate: assign({ learningRate: (_, evt) => evt.learningRate }),
         setValSplit: assign({ valSplit: (_, evt) => evt.valSplit }),

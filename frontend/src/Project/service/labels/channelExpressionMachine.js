@@ -245,6 +245,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         cells: null,
         numCells: null,
         calculations: null,
+        embeddings: null,
         reduction: null,
         calculation: null,
       },
@@ -265,7 +266,10 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
               states: {
                 waiting: {
                   on: {
-                    LOADED: { actions: ['setRaw', 'setLabeledFull'], target: 'done' },
+                    LOADED: {
+                      actions: ['setRaw', 'setLabeledFull', 'setEmbeddings'],
+                      target: 'done',
+                    },
                   },
                 },
                 done: { type: 'final' },
@@ -331,6 +335,10 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                   actions: ['setStat', 'calculateTotal'],
                 },
                 {
+                  cond: (ctx, evt) => evt.stat === 'Imported' && !ctx.whole,
+                  actions: send('VISUALIZE'),
+                },
+                {
                   cond: (ctx, evt) => evt.stat === 'Mean' && ctx.whole,
                   actions: ['setStat', 'calculateMeanWhole'],
                 },
@@ -342,6 +350,10 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
               on: {
                 CALCULATION: {
                   actions: 'calculateUmap',
+                  target: 'idle',
+                },
+                VISUALIZE: {
+                  actions: 'importUmap',
                   target: 'idle',
                 },
               },
@@ -360,6 +372,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         setT: assign({ t: (_, evt) => evt.t }),
         setFeature: assign({ feature: (_, evt) => evt.feature }),
         setStat: assign({ calculation: (_, evt) => evt.stat }),
+        setEmbeddings: assign({ embeddings: (_, evt) => evt.embeddings }),
         toggleWhole: assign({ whole: (ctx) => !ctx.whole }),
         calculateMean: pure((ctx) => {
           const channelMeans = calculateMean(ctx);
@@ -396,6 +409,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
             const numChannels = raw.length;
             let vectors = [];
             let maxes = Array(numChannels).fill(0);
+            let mins = Array(numChannels).fill(Infinity);
             for (let i = 0; i < calculations[0].length; i++) {
               let vector = [];
               for (let c = 0; c < numChannels; c++) {
@@ -406,6 +420,9 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                   if (calc > maxes[c]) {
                     maxes[c] = calc;
                   }
+                  if (calc < mins[c]) {
+                    mins[c] = calc;
+                  }
                   vector.push(calc);
                 }
               }
@@ -414,7 +431,9 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
               }
             }
             vectors = vectors.map((vector) =>
-              vector.map((calc, i) => (maxes[i] === 0 ? 0 : calc / maxes[i]))
+              vector.map((calc, i) =>
+                maxes[i] === 0 ? 0 : (calc - mins[i]) / (maxes[i] - mins[i])
+              )
             );
             const umap = new UMAP();
             const embeddings = umap.fit(vectors);
@@ -429,6 +448,28 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                 x.push(embeddings[embeddingCount][0]);
                 y.push(embeddings[embeddingCount][1]);
                 embeddingCount++;
+              }
+            }
+            return [x, y];
+          },
+        }),
+        importUmap: assign({
+          reduction: (ctx) => {
+            const { embeddings } = ctx;
+            const vectors = embeddings.filter((vector) => !vector.every((e) => e === 0));
+            const umap = new UMAP();
+            const fitted = umap.fit(vectors);
+            const x = [];
+            const y = [];
+            let vectorIndex = 0;
+            for (let i = 0; i < embeddings.length; i++) {
+              if (embeddings[i].every((e) => e === 0)) {
+                x.push(NaN);
+                y.push(NaN);
+              } else {
+                x.push(fitted[vectorIndex][0]);
+                y.push(fitted[vectorIndex][1]);
+                vectorIndex++;
               }
             }
             return [x, y];
