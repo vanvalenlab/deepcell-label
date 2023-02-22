@@ -1,5 +1,5 @@
+import BarChartIcon from '@mui/icons-material/BarChart';
 import PsychologyIcon from '@mui/icons-material/Psychology';
-import SsidChartIcon from '@mui/icons-material/SsidChart';
 import { Box } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import Tab from '@mui/material/Tab';
@@ -67,7 +67,7 @@ function ChannelExpressionPlot() {
           sx={{ width: 175, top: -12 }}
           value={0}
           label='Plot'
-          icon={<SsidChartIcon />}
+          icon={<BarChartIcon />}
           iconPosition='start'
         />
         <Tab

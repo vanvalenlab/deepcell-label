@@ -25,6 +25,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
         channel: 0,
         channels: [], // channel machines
         channelNames: ['channel 0'],
+        layersOpen: [],
         layers: [],
         isGrayscale: true,
       },
@@ -73,8 +74,18 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
               on: {
                 TOGGLE_COLOR_MODE: 'grayscale',
                 // Need propagate event to root actor to rerender canvas
-                ADD_LAYER: { actions: ['addLayer', sendParent((c, e) => e)] },
-                REMOVE_LAYER: { actions: ['removeLayer', sendParent((c, e) => e), 'setLayers'] },
+                ADD_LAYER: {
+                  actions: ['addLayer', sendParent((c, e) => e)],
+                },
+                FETCH_LAYERS: {
+                  actions: ['fetchLayers', 'resetColors', 'setLayers', sendParent((c, e) => e)],
+                },
+                REMOVE_LAYER: {
+                  actions: ['removeLayer', sendParent((c, e) => e), 'setLayers'],
+                },
+                EDIT_CHANNEL: {
+                  actions: ['editLayer'],
+                },
                 EDIT_NAME: { actions: 'editChannelName' },
               },
             },
@@ -114,11 +125,23 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
             return channelNames;
           },
         }),
+        editLayer: assign({
+          layersOpen: ({ channelNames, layersOpen }, { channel, index }) => [
+            ...layersOpen.map((c, i) => (i === index ? channelNames[channel] : c)),
+          ],
+        }),
         checkChannels: assign({
           channelNames: (ctx) => {
             let channelNames = ctx.channelNames;
             channelNames = channelNames.map((name, i) => (name ? name : `channel ${i}`));
             return channelNames;
+          },
+          layersOpen: ({ numChannels, channelNames }) => {
+            const layers = [];
+            for (let i = 0; i < Math.min(6, numChannels); i++) {
+              layers.push(channelNames[i]);
+            }
+            return layers;
           },
         }),
         sendToEventBus: send((c, e) => e, { to: 'eventBus' }),
@@ -150,12 +173,37 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
             ...layers,
             spawn(createLayerMachine(layers.length, numChannels), `layer ${layers.length}`),
           ],
+          layersOpen: ({ layersOpen, channelNames }) => [
+            ...layersOpen,
+            channelNames[layersOpen.length],
+          ],
+        }),
+        fetchLayers: assign({
+          layers: ({ numChannels }, evt) => {
+            const layers = [];
+            for (let i = 0; i < evt.channels.length; i++) {
+              const layer = spawn(createLayerMachine(evt.channels[i], numChannels), `layer ${i}`);
+              layers.push(layer);
+            }
+            return layers;
+          },
+          layersOpen: ({ channelNames }, evt) => {
+            const layers = [];
+            for (let i = 0; i < evt.channels.length; i++) {
+              layers.push(channelNames[evt.channels[i]]);
+            }
+            return layers;
+          },
         }),
         removeLayer: assign({
           layers: ({ layers }, { layer }) => [...layers.filter((val) => val !== layer)],
+          layersOpen: ({ layersOpen }, { index }) => [...layersOpen.filter((_, i) => i !== index)],
         }),
         setLayers: pure((context) =>
           context.layers.map((layer, i) => send({ type: 'SET_LAYER', layer: i }, { to: layer }))
+        ),
+        resetColors: pure((context) =>
+          context.layers.map((layer, i) => send({ type: 'RESET_COLORS', layer: i }, { to: layer }))
         ),
         save: respond(({ channel, isGrayscale }) => ({ type: 'RESTORE', isGrayscale, channel })),
         restore: pure((context, event) =>

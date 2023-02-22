@@ -1,85 +1,80 @@
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
-import { Box, IconButton } from '@mui/material';
+import { Grid } from '@mui/material';
+import Chip from '@mui/material/Chip';
+import FormLabel from '@mui/material/FormLabel';
 import { useSelector } from '@xstate/react';
-import { useEditCellTypes } from '../../../ProjectContext';
-
-const buttonStyle = {
-  borderRadius: 5,
-  boxShadow: 1,
-  marginTop: -2,
-  marginBottom: 2,
-  width: '100%',
-};
-
-const addButtonStyle = {
-  borderRadius: 5,
-  boxShadow: 1,
-  marginTop: -2,
-  marginBottom: 2,
-  width: '95%',
-};
-
-const buttonBoxStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  flexWrap: 'wrap',
-  fontSize: 13,
-};
+import equal from 'fast-deep-equal';
+import { useState } from 'react';
+import { useLayers, useRaw } from '../../../ProjectContext';
+import { hexToRgb } from '../../../service/labels/cellTypesMachine';
+import AddCellsButton from './AddCellsButton';
+import ChannelChip from './ChannelChip';
+import ColoredChannelChip from './ColoredChannelChip';
+import MatchMarkersButton from './MatchMarkersButton';
+import RemoveCellsButton from './RemoveCellsButton';
+import ViewChannelsButton from './ViewChannelsButton';
 
 function CellGrid(props) {
-  const { id, name } = props;
-  const editCellTypesRef = useEditCellTypes();
-  const addingCell = useSelector(editCellTypesRef, (state) => state.matches('addingCell'));
-  const removingCell = useSelector(editCellTypesRef, (state) => state.matches('removingCell'));
-
-  // Handle logic for resetting add/remove or starting add mode
-  const handleAdd = () => {
-    if (addingCell || removingCell) {
-      setTimeout(() => editCellTypesRef.send({ type: 'RESET' }), 100);
-    } else {
-      setTimeout(() => editCellTypesRef.send({ type: 'ADD', cellType: id, name: name }), 100);
-    }
-  };
-
-  // Handle starting the remove mode
-  const handleRemove = () => {
-    setTimeout(() => editCellTypesRef.send({ type: 'REMOVE_MODE', cellType: id, name: name }), 100);
-  };
+  const { id, name, color } = props;
+  const raw = useRaw();
+  const layers = useLayers();
+  const openChannels = useSelector(raw, (state) => state.context.layersOpen, equal);
+  const channelNames = useSelector(raw, (state) => state.context.channelNames);
+  const [matchedName, setMatchedName] = useState(null);
+  const [matchedChannels, setMatchedChannels] = useState([]);
+  const matchedClosed = matchedChannels.filter(
+    (channel) => !openChannels.includes(channelNames[channel])
+  );
+  const rgb = hexToRgb(color);
+  const backgroundColor = `rgba(${rgb[0] * 255},${rgb[1] * 255},${rgb[2] * 255},0.2)`;
+  const textColor = `rgba(${rgb[0] * 200},${rgb[1] * 200},${rgb[2] * 200}, 1)`;
 
   return (
-    <Box display='grid' gridTemplateColumns='repeat(6, 1fr)' gap={1}>
-      {!addingCell && !removingCell ? (
-        <>
-          <Box gridColumn='span 3'>
-            <IconButton onClick={handleAdd} sx={addButtonStyle}>
-              <Box sx={buttonBoxStyle}>
-                <AddCircleOutlineIcon sx={{ marginRight: 0.5, fontSize: 18 }} />
-                Add Cells
-              </Box>
-            </IconButton>
-          </Box>
-          <Box gridColumn='span 3'>
-            <IconButton onClick={handleRemove} sx={buttonStyle}>
-              <Box sx={buttonBoxStyle}>
-                <RemoveCircleOutlineIcon sx={{ marginRight: 0.5, fontSize: 18 }} />
-                Remove Cells
-              </Box>
-            </IconButton>
-          </Box>
-        </>
-      ) : (
-        <Box gridColumn='span 6'>
-          <IconButton onClick={handleAdd} sx={buttonStyle}>
-            <Box sx={buttonBoxStyle}>
-              <CheckCircleOutlineIcon sx={{ marginLeft: -1, marginRight: 0.5, fontSize: 18 }} />
-              Done
-            </Box>
-          </IconButton>
-        </Box>
-      )}
-    </Box>
+    <Grid container spacing={1}>
+      <Grid item xs={3} align='center'>
+        <AddCellsButton id={id} name={name} />
+      </Grid>
+      <Grid item xs={3} align='center'>
+        <RemoveCellsButton id={id} name={name} />
+      </Grid>
+      <Grid item xs={3} align='center'>
+        <MatchMarkersButton
+          name={name}
+          setMatchedName={setMatchedName}
+          setMatchedChannels={setMatchedChannels}
+        />
+      </Grid>
+      <Grid item xs={3} align='center'>
+        <ViewChannelsButton name={name} matchedChannels={matchedChannels} />
+      </Grid>
+      <Grid item xs={12}>
+        <FormLabel sx={{ fontSize: 14 }}>Matched Name: </FormLabel>
+      </Grid>
+      {matchedName ? (
+        <Grid item xs={12}>
+          <Chip
+            label={matchedName}
+            size='small'
+            style={{ minWidth: '4.6em' }}
+            sx={{
+              color: textColor,
+              backgroundColor: backgroundColor,
+              fontWeight: 500,
+            }}
+          />
+        </Grid>
+      ) : null}
+      <Grid item xs={12}>
+        <FormLabel sx={{ fontSize: 14 }}>Matched Channels: </FormLabel>
+      </Grid>
+      {layers.map((layer, i) => (
+        <ColoredChannelChip layer={layer} matchedChannels={matchedChannels} key={i} />
+      ))}
+      {matchedClosed.map((channel, i) => (
+        <Grid item xs={3} key={i}>
+          <ChannelChip channel={channel} />
+        </Grid>
+      ))}
+    </Grid>
   );
 }
 

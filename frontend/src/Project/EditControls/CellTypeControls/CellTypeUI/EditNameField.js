@@ -1,4 +1,5 @@
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useRef, useState } from 'react';
 import { useEditCellTypes } from '../../../ProjectContext';
 
@@ -54,7 +55,7 @@ function EditNameField(props) {
           size='small'
         />
       ) : (
-        name
+        <Typography>{name}</Typography>
       )}
     </div>
   );

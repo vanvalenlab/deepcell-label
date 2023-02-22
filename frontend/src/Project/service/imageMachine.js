@@ -37,6 +37,7 @@ const createImageMachine = ({ projectId, eventBuses, undoRef }) =>
         RESTORE: { actions: 'restore' },
         // Needed to rerender canvas
         ADD_LAYER: { actions: sendParent((c, e) => e) },
+        FETCH_LAYERS: { actions: sendParent((c, e) => e) },
         REMOVE_LAYER: { actions: sendParent((c, e) => e) },
       },
     },
