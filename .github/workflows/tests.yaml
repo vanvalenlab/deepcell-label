@@ -19,7 +19,6 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          working-directory: backend
           python-version: 3.8
 
       - name: Cache pip
@@ -134,7 +133,6 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          working-directory: backend
           python-version: ${{ matrix.python-version }}
 
       - name: Cache pip
