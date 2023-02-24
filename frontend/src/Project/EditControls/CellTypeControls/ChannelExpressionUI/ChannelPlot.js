@@ -70,8 +70,8 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
             },
           ]}
           layout={{
-            width: 350,
-            height: 370,
+            width: 345,
+            height: 350,
             margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
             title: { text: stat },
             xaxis: { automargin: true, title: names[channelX] },
@@ -98,7 +98,7 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
           ]}
           layout={{
             bargap: 0.1,
-            width: 350,
+            width: 345,
             height: 350,
             margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
             title: { text: stat },

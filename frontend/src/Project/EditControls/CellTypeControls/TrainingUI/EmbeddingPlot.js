@@ -1,6 +1,6 @@
 import Grid from '@mui/material/Grid';
-import Plot from 'react-plotly.js';
 import { useSelector } from '@xstate/react';
+import Plot from 'react-plotly.js';
 import { useCellTypes, useEditCellTypes } from '../../../ProjectContext';
 
 function EmbeddingPlot({ embedding }) {
@@ -60,7 +60,7 @@ function EmbeddingPlot({ embedding }) {
           },
         ]}
         layout={{
-          width: 350,
+          width: 345,
           height: 350,
           margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
         }}
