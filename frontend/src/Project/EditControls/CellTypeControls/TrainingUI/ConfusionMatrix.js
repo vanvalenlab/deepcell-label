@@ -8,24 +8,28 @@ function ConfusionMatrix({ confusionMatrix }) {
   const feature = useSelector(training, (state) => state.context.feature);
   const getCellTypeNames = (cellTypes, feature) => {
     const currCellTypes = cellTypes.filter((cellType) => cellType.feature === feature);
+    const ids = currCellTypes.map((cellType) => cellType.id);
     const names = currCellTypes.map((cellType) => cellType.name);
-    return names;
+    return { ids, names };
   };
-  const names = getCellTypeNames(cellTypes, feature);
+  const { ids, names } = getCellTypeNames(cellTypes, feature);
+  const filteredConfusionMatrix = confusionMatrix
+    .map((row) => row.filter((_, i) => ids.includes(i + 1)))
+    .filter((_, i) => ids.includes(i + 1));
 
   let annotations = [];
-  for (let i = 0; i < confusionMatrix.length; i++) {
-    for (let j = 0; j < confusionMatrix[0].length; j++) {
-      const value = confusionMatrix[i][j];
+  for (let i = 0; i < filteredConfusionMatrix.length; i++) {
+    for (let j = 0; j < filteredConfusionMatrix[0].length; j++) {
+      const value = filteredConfusionMatrix[i][j];
       const result = {
         xref: 'x1',
         yref: 'y1',
         x: names[j],
         y: names[i],
-        text: value,
+        text: isNaN(value) || value === 0 ? '' : Math.round((value + Number.EPSILON) * 100) / 100,
         font: {
           family: 'Arial',
-          size: 12,
+          size: 10,
           color: value > 0.5 ? 'white' : 'black',
         },
         showarrow: false,
@@ -44,18 +48,18 @@ function ConfusionMatrix({ confusionMatrix }) {
         {
           x: names,
           y: names,
-          z: confusionMatrix,
+          z: filteredConfusionMatrix,
           type: 'heatmap',
           colorscale: colorscaleValue,
         },
       ]}
       layout={{
         annotations: annotations,
-        width: 550,
-        height: 270,
+        width: window.innerWidth * 0.4,
+        height: window.innerHeight * 0.65,
         margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
         xaxis: { automargin: true, title: 'Predicted' },
-        yaxis: { automargin: true, title: 'Actual', autorange: 'reversed', tickangle: -90 },
+        yaxis: { automargin: true, title: 'Actual', autorange: 'reversed' },
         hovermode: false,
       }}
       config={{

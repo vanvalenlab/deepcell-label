@@ -9,9 +9,8 @@ import Typography from '@mui/material/Typography';
 import { useSelector } from '@xstate/react';
 import { useCellsAtTime, useTraining } from '../../../ProjectContext';
 import { getCellList, getCellListAtTime } from '../../../service/labels/trainingMachine';
-import ConfusionMatrix from './ConfusionMatrix';
 import Hyperparameters from './Hyperparameters';
-import TrainingPlot from './TrainingPlot';
+import VisualizationTabs from './VisualizationTabs';
 
 const calculateSplit = (whole, cellTypes, cellsAtTime, valSplit) => {
   const totalSize = whole
@@ -25,8 +24,6 @@ const calculateSplit = (whole, cellTypes, cellsAtTime, valSplit) => {
 function VisualizationModal({ open, setOpen }) {
   const trainingRef = useTraining();
   const cellTypes = useSelector(trainingRef, (state) => state.context.cellTypes);
-  const logs = useSelector(trainingRef, (state) => state.context.trainLogs);
-  const confusionMatrix = useSelector(trainingRef, (state) => state.context.confusionMatrix);
   const progress = useSelector(trainingRef, (state) => state.context.epoch);
   const numEpochs = useSelector(trainingRef, (state) => state.context.numEpochs);
   const training = useSelector(trainingRef, (state) => state.matches('loaded.training.train'));
@@ -121,17 +118,7 @@ function VisualizationModal({ open, setOpen }) {
             />
           </Grid>
         </Grid>
-        <Grid container item direction='column' spacing={'2vh'}>
-          <Grid item>
-            <Typography variant='h6' component='h2'>
-              Training Visualizations
-            </Typography>
-          </Grid>
-          <Grid item>{logs.length > 0 ? <TrainingPlot /> : null}</Grid>
-          <Grid item>
-            {confusionMatrix ? <ConfusionMatrix confusionMatrix={confusionMatrix} /> : null}
-          </Grid>
-        </Grid>
+        <VisualizationTabs />
       </Box>
     </Modal>
   );

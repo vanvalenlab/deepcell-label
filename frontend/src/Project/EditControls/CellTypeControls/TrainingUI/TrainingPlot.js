@@ -1,7 +1,7 @@
-import equal from 'fast-deep-equal';
 import Grid from '@mui/material/Grid';
-import Plot from 'react-plotly.js';
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
+import Plot from 'react-plotly.js';
 import { useTraining } from '../../../ProjectContext';
 
 function TrainingPlot() {
@@ -34,8 +34,8 @@ function TrainingPlot() {
           },
         ]}
         layout={{
-          width: 550,
-          height: 270,
+          width: window.innerWidth * 0.4,
+          height: window.innerHeight * 0.65,
           margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
           xaxis: { range: [0, epochs.length], automargin: true, title: 'Epoch' },
           yaxis: {
