@@ -10,6 +10,9 @@ function TrainingPlot() {
   const valLogs = useSelector(training, (state) => state.context.valLogs, equal);
   const epochs = trainLogs.map((_, i) => i);
 
+  const width = window.innerWidth * 0.4;
+  const height = window.innerHeight * 0.62;
+
   return (
     <Grid item>
       <Plot
@@ -34,8 +37,8 @@ function TrainingPlot() {
           },
         ]}
         layout={{
-          width: window.innerWidth * 0.4,
-          height: window.innerHeight * 0.65,
+          width: width,
+          height: height,
           margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
           xaxis: { range: [0, epochs.length], automargin: true, title: 'Epoch' },
           yaxis: {

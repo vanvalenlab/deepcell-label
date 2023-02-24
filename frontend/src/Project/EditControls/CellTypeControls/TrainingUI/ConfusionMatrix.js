@@ -42,6 +42,9 @@ function ConfusionMatrix({ confusionMatrix }) {
     [1, 'rgba(0, 130, 230, 1)'],
   ];
 
+  const width = window.innerWidth * 0.4;
+  const height = window.innerHeight * 0.62;
+
   return (
     <Plot
       data={[
@@ -55,8 +58,8 @@ function ConfusionMatrix({ confusionMatrix }) {
       ]}
       layout={{
         annotations: annotations,
-        width: window.innerWidth * 0.4,
-        height: window.innerHeight * 0.65,
+        width: width,
+        height: height,
         margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
         xaxis: { automargin: true, title: 'Predicted' },
         yaxis: { automargin: true, title: 'Actual', autorange: 'reversed' },
