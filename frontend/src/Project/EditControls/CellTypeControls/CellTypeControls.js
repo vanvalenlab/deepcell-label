@@ -1,7 +1,7 @@
 // Controls for cell types menu, including button for adding cell type,
 // the list of cell types, and an editing prompt when adding cells
 
-import { Box, Button, FormLabel } from '@mui/material';
+import { Box, Chip, FormLabel } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useCellTypes } from '../../ProjectContext';
@@ -19,16 +19,16 @@ function CellTypeControls() {
     <Box id='cell-type-controls' display='flex' flexDirection='column'>
       <FormLabel sx={{ marginBottom: 2 }}>
         Cell Type Labels
-        <Button
-          variant='contained'
-          disableElevation
-          disableRipple
-          style={{ borderRadius: 100 }}
-          color='secondary'
-          sx={{ width: 5, height: 20, top: -1, marginLeft: 1 }}
-        >
-          Alpha
-        </Button>
+        <Chip
+          label={'ALPHA'}
+          size='small'
+          sx={{
+            marginLeft: 1,
+            fontWeight: 500,
+            backgroundColor: 'rgba(150,30,190,1)',
+            color: 'rgba(255,255,255,1)',
+          }}
+        />
       </FormLabel>
       <AddCellTypeLabel toggleArray={toggleArray} setToggleArray={setToggleArray} />
       <ToggleAll toggleArray={toggleArray} setToggleArray={setToggleArray} />
