@@ -57,27 +57,31 @@ function ChannelExpressionPlot() {
 
   return cellTypesEditing ? (
     <Box>
-      <Tabs
-        sx={{ position: 'relative', right: window.innerWidth - 860 - sw * scale, height: 10 }}
-        value={tab}
-        onChange={handleTab}
-        variant='fullWidth'
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          position: 'relative',
+          right: window.innerWidth - 860 - sw * scale,
+        }}
       >
-        <Tab
-          sx={{ width: 175, top: -12 }}
-          value={0}
-          label='Plot'
-          icon={<BarChartIcon />}
-          iconPosition='start'
-        />
-        <Tab
-          sx={{ width: 175, top: -12 }}
-          value={1}
-          label='Learn'
-          icon={<PsychologyIcon />}
-          iconPosition='start'
-        />
-      </Tabs>
+        <Tabs sx={{ height: 0 }} value={tab} onChange={handleTab} variant='fullWidth'>
+          <Tab
+            sx={{ width: 175, top: -12 }}
+            value={0}
+            label='Plot'
+            icon={<BarChartIcon />}
+            iconPosition='start'
+          />
+          <Tab
+            sx={{ width: 175, top: -12 }}
+            value={1}
+            label='Learn'
+            icon={<PsychologyIcon />}
+            iconPosition='start'
+          />
+        </Tabs>
+      </Box>
       <Box sx={panelStyle}>
         <Grid container direction='column' spacing={2}>
           <TabPanel value={tab} index={0}>
