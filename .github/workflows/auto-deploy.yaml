@@ -12,42 +12,42 @@ on:
 jobs:
   eb-deploy:
     if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
-        - name: Generate deployment package
-          run: zip -r deploy.zip ./backend -x '*.git'
+      - name: Generate deployment package
+        run: zip -r deploy.zip ./backend -x '*.git'
 
-        - name: Deploy to EB
-          uses: einaregilsson/beanstalk-deploy@v21
-          with:
-            aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            application_name: caliban-test-with-db
-            environment_name: deepcell-label-dev
-            version_label: $(git rev-parse --short "$GITHUB_SHA")
-            region: us-east-2
-            deployment_package: deploy.zip
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: caliban-test-with-db
+          environment_name: deepcell-label-dev
+          version_label: $(git rev-parse --short "$GITHUB_SHA")
+          region: us-east-2
+          deployment_package: deploy.zip
   s3-sync:
     if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
-        - name: Generate production build
-          working-directory: ./frontend
-          run: yarn build
+      - name: Generate production build
+        working-directory: ./frontend
+        run: yarn build
 
-        - name: Deploy to S3
-          uses: jakejarvis/s3-sync-action@master
-          with:
-            args: --acl public-read --follow-symlinks --delete
-          env:
-            AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_REGION: "us-east-2"
-            SOURCE_DIR: "./frontend/build"
+      - name: Deploy to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: "us-east-2"
+          SOURCE_DIR: "./frontend/build"
