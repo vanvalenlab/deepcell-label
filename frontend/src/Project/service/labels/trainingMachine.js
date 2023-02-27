@@ -221,6 +221,28 @@ function calculateConfusion(model, valInputs, valLabels) {
   return normalized;
 }
 
+/** Calculate histogram distribution for training/val sets
+ * @param {tensor} trainLabels The training label data
+ * @param {tensor} valLabels The validation labels
+ * @returns Counts of each label in train and val
+ */
+function calculateHistograms(trainLabels, valLabels) {
+  const decodedTrain = trainLabels.argMax(1).arraySync();
+  const decodedVal = valLabels.argMax(1).arraySync();
+  const trainCounts = {};
+  const valCounts = {};
+
+  for (const label of decodedTrain) {
+    trainCounts[label + 1] = trainCounts[label + 1] ? trainCounts[label + 1] + 1 : 1;
+  }
+
+  for (const label of decodedVal) {
+    valCounts[label + 1] = valCounts[label + 1] ? valCounts[label + 1] + 1 : 1;
+  }
+
+  return { trainCounts, valCounts };
+}
+
 function calculateClassWeight(cellTypes, maxId) {
   // Assume each sample belongs to one class
   const sorted = [...cellTypes].sort((a, b) => (a.id > b.id ? 1 : -1));
@@ -318,6 +340,8 @@ async function train(ctx, evt, sendBack) {
 
   // Calculate final confusion matrix using the validation set
   const confusionMatrix = calculateConfusion(model, valInputs, valLabels);
+  // Calculate distribution of training and validation sets
+  const { trainCounts, valCounts } = calculateHistograms(trainLabels, valLabels);
 
   // Finish by sending the trained model back to machine
   sendBack({
@@ -326,6 +350,8 @@ async function train(ctx, evt, sendBack) {
     confusionMatrix: confusionMatrix,
     inputMax: inputMax,
     inputMin: inputMin,
+    trainCounts: trainCounts,
+    valCounts: valCounts,
   });
 }
 
@@ -411,6 +437,8 @@ const createTrainingMachine = ({ eventBuses }) =>
         whole: false,
         // "Output" context
         confusionMatrix: null,
+        trainCounts: null,
+        valCounts: null,
         range: null,
         model: null,
         valLogs: [],
@@ -489,7 +517,13 @@ const createTrainingMachine = ({ eventBuses }) =>
                 CANCEL: { target: 'idle' },
                 DONE: {
                   target: 'idle',
-                  actions: ['saveModel', 'setConfusionMatrix', 'setRange'],
+                  actions: [
+                    'saveModel',
+                    'setConfusionMatrix',
+                    'setTrainHistogram',
+                    'setValHistogram',
+                    'setRange',
+                  ],
                 },
               },
             },
@@ -560,6 +594,8 @@ const createTrainingMachine = ({ eventBuses }) =>
         }),
         setCalculation: assign({ calculations: (_, evt) => evt.calculations }),
         setConfusionMatrix: assign({ confusionMatrix: (_, evt) => evt.confusionMatrix }),
+        setTrainHistogram: assign({ trainCounts: (_, evt) => evt.trainCounts }),
+        setValHistogram: assign({ valCounts: (_, evt) => evt.valCounts }),
         toggleWhole: assign({ whole: (ctx) => !ctx.whole }),
         getMean: send({ type: 'CALCULATE', stat: 'Mean' }, { to: 'channelExpression' }),
         getTotal: send({ type: 'CALCULATE', stat: 'Total' }, { to: 'channelExpression' }),

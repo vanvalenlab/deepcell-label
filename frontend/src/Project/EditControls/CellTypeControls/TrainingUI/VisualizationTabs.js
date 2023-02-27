@@ -10,6 +10,7 @@ import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useTraining } from '../../../ProjectContext';
 import ConfusionMatrix from './ConfusionMatrix';
+import DistributionHistogram from './DistributionHistogram';
 import TrainingPlot from './TrainingPlot';
 
 function TabPanel({ children, value, index }) {
@@ -20,6 +21,7 @@ function VisualizationTabs() {
   const training = useTraining();
   const logs = useSelector(training, (state) => state.context.trainLogs);
   const confusionMatrix = useSelector(training, (state) => state.context.confusionMatrix);
+  const trainCounts = useSelector(training, (state) => state.context.trainCounts);
   const [tab, setTab] = useState(0);
 
   const handleTab = (_, newValue) => {
@@ -69,6 +71,11 @@ function VisualizationTabs() {
         <TabPanel value={tab} index={1}>
           <Grid item>
             {confusionMatrix ? <ConfusionMatrix confusionMatrix={confusionMatrix} /> : null}
+          </Grid>
+        </TabPanel>
+        <TabPanel value={tab} index={2}>
+          <Grid item>
+            {trainCounts ? <DistributionHistogram trainCounts={trainCounts} /> : null}
           </Grid>
         </TabPanel>
       </Grid>

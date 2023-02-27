@@ -68,7 +68,7 @@ function ConfusionMatrix({ confusionMatrix }) {
       config={{
         // staticPlot: true,
         displaylogo: false,
-        modeBarButtonsToRemove: ['autoScale2d', 'zoomIn2d', 'zoomOut2d', 'pan2d', 'zoom2d'],
+        modeBarButtonsToRemove: ['autoScale2d', 'zoomIn2d', 'zoomOut2d', 'pan2d'],
         toImageButtonOptions: {
           format: 'svg',
         },
