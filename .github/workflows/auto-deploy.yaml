@@ -1,0 +1,77 @@
+# TODO: Want to get this working, but need to refactor backend to use environment variables
+# instead of decouple so that we can deploy locally and with Github actions. On the frontend
+# side, need to resolve the permission issue regarding the bucket being public
+
+name: deploy
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  eb-deploy:
+    if: false
+    # if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Generate deployment package
+        working-directory: ./backend
+        run: zip -r deploy.zip . -x '*.git'
+
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v21
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: caliban-test-with-db
+          environment_name: deepcell-label-dev
+          version_label: ${{ github.sha }}
+          region: us-east-2
+          deployment_package: ./backend/deploy.zip
+  s3-sync:
+    if: false
+    # if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: "frontend/**/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('frontend/**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-
+
+      - name: Yarn Install
+        working-directory: frontend
+        run: yarn install --update-checksums
+
+      - name: Generate production build
+        env:
+          CI: false
+        working-directory: ./frontend
+        run: yarn build
+
+      - name: Deploy to S3
+        uses: jakejarvis/s3-sync-action@master
+        with:
+          args: --acl public-read --follow-symlinks --delete
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_LABEL_DEV }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: "us-east-2"
+          SOURCE_DIR: "./frontend/build"
