@@ -1,5 +1,6 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# TODO: Want to get this working, but need to refactor backend to use environment variables
+# instead of decouple so that we can deploy locally and with Github actions. On the frontend
+# side, need to resolve the permission issue regarding the bucket being public
 
 name: deploy
 
@@ -11,7 +12,8 @@ on:
 
 jobs:
   eb-deploy:
-    if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
+    if: false
+    # if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,11 +30,12 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: caliban-test-with-db
           environment_name: deepcell-label-dev
-          version_label: $${{ github.sha }}
+          version_label: ${{ github.sha }}
           region: us-east-2
           deployment_package: ./backend/deploy.zip
   s3-sync:
-    if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
+    if: false
+    # if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
