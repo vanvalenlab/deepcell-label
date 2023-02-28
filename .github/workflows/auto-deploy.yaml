@@ -30,7 +30,7 @@ jobs:
           environment_name: deepcell-label-dev
           version_label: $${{ github.sha }}
           region: us-east-2
-          deployment_package: deploy.zip
+          deployment_package: ./backend/deploy.zip
   s3-sync:
     if: github.ref == 'refs/heads/main' && github.repository_owner == 'vanvalenlab'
     runs-on: ubuntu-latest
@@ -57,6 +57,8 @@ jobs:
         run: yarn install --update-checksums
 
       - name: Generate production build
+        env:
+          CI: false
         working-directory: ./frontend
         run: yarn build
 
