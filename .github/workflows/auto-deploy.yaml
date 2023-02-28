@@ -18,7 +18,8 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Generate deployment package
-        run: zip -r deploy.zip ./backend -x '*.git'
+        working-directory: ./backend
+        run: zip -r deploy.zip . -x '*.git'
 
       - name: Deploy to EB
         uses: einaregilsson/beanstalk-deploy@v21
@@ -27,7 +28,7 @@ jobs:
           aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           application_name: caliban-test-with-db
           environment_name: deepcell-label-dev
-          version_label: $(git rev-parse --short "$GITHUB_SHA")
+          version_label: $${{ github.sha }}
           region: us-east-2
           deployment_package: deploy.zip
   s3-sync:
@@ -36,6 +37,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: "frontend/**/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('frontend/**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-
+
+      - name: Yarn Install
+        working-directory: frontend
+        run: yarn install --update-checksums
 
       - name: Generate production build
         working-directory: ./frontend
