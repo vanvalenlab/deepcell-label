@@ -1,12 +1,11 @@
 import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
 import Canvas from './Canvas';
-import ChannelExpressionPlot from './EditControls/CellTypeControls/ChannelExpressionPlot';
 import DisplayControls from './DisplayControls';
 import DisplayControlsTop from './DisplayControls/DisplayControlsTop';
 import EditControls from './EditControls';
+import ChannelExpressionPlot from './EditControls/CellTypeControls/ChannelExpressionPlot';
 import ForceLoadOutputModal from './ForceLoadOutputModal';
-import Instructions from './Instructions';
 import MissingProject from './MissingProject';
 import { useProject } from './ProjectContext';
 import ReviewControls from './ReviewControls';
