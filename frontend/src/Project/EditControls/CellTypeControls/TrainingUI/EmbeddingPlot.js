@@ -1,14 +1,35 @@
 import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
+import { useState } from 'react';
 import Plot from 'react-plotly.js';
-import { useCellTypes, useEditCellTypes } from '../../../ProjectContext';
+import {
+  useCellTypes,
+  useChannelExpression,
+  useEditCellTypes,
+  useTraining,
+} from '../../../ProjectContext';
 
 function EmbeddingPlot({ embedding }) {
   const cellTypes = useCellTypes();
+  const channelExpression = useChannelExpression();
   const editCellTypes = useEditCellTypes();
+  const training = useTraining();
   const selection = useSelector(editCellTypes, (state) => state.context.multiSelected);
+  const predUncertainties = useSelector(training, (state) => state.context.predUncertainties);
+  const embeddingColorType = useSelector(
+    channelExpression,
+    (state) => state.context.embeddingColorType
+  );
+
+  // Save the layout state so that zooming does not get reset on other changes
+  const [layout, setLayout] = useState({
+    width: 345,
+    height: 350,
+    margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
+  });
+
+  // Create color map based on cell types and which cells are selected
   let colorMap = useSelector(cellTypes, (state) => state.context.colorMap);
-  let widthMap = [...colorMap];
   if (colorMap) {
     colorMap = colorMap.map((color, i) =>
       selection.includes(i)
@@ -17,8 +38,22 @@ function EmbeddingPlot({ embedding }) {
         ? 'rgba(33,150,243,0.15)'
         : `rgba(${color[0]},${color[1]},${color[2]},1)`
     );
-    widthMap = widthMap.map((color, i) => (selection.includes(i) ? 1.3 : 0.5));
   }
+  // Cells that are selected will have thicker markers
+  const widthMap = [...colorMap].map((_, i) => (selection.includes(i) ? 1.3 : 0.5));
+  // Color scale for uncertainty mapping
+  const colorScale = [
+    ['0', 'rgb(49,54,149)'],
+    ['0.111111111111', 'rgb(69,117,180)'],
+    ['0.222222222222', 'rgb(116,173,209)'],
+    ['0.333333333333', 'rgb(171,217,233)'],
+    ['0.444444444444', 'rgb(224,243,248)'],
+    ['0.555555555556', 'rgb(254,224,144)'],
+    ['0.666666666667', 'rgb(253,174,97)'],
+    ['0.777777777778', 'rgb(244,109,67)'],
+    ['0.888888888889', 'rgb(215,48,39)'],
+    ['1.0', 'rgb(165,0,38)'],
+  ];
 
   const handleSelection = (evt) => {
     if (evt.points.length > 0) {
@@ -50,7 +85,8 @@ function EmbeddingPlot({ embedding }) {
             type: 'scatter',
             mode: 'markers',
             marker: {
-              color: colorMap,
+              color: embeddingColorType === 'uncertainty' ? predUncertainties : colorMap,
+              colorscale: colorScale,
               size: 6,
               line: {
                 color: 'rgba(0,0,0,1)',
@@ -59,11 +95,7 @@ function EmbeddingPlot({ embedding }) {
             },
           },
         ]}
-        layout={{
-          width: 345,
-          height: 350,
-          margin: { l: 30, r: 20, b: 30, t: 20, pad: 5 },
-        }}
+        layout={layout}
         config={{
           displaylogo: false,
           modeBarButtonsToRemove: ['toImage', 'autoScale2d', 'zoomIn2d', 'zoomOut2d'],
@@ -71,6 +103,7 @@ function EmbeddingPlot({ embedding }) {
         onSelected={handleSelection}
         onClick={handleClick}
         onDoubleClick={handleDeselect}
+        onUpdate={({ layout }) => setLayout(layout)}
       />
     </Grid>
   );

@@ -238,16 +238,17 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
       context: {
         t: 0,
         feature: 0,
-        labeled: null, // currently displayed labeled frame (Int32Array[][])
+        labeled: null,
         labeledFull: null,
         whole: false,
-        raw: null, // current displayed raw frame (?Array[][])
+        raw: null,
         cells: null,
         numCells: null,
-        calculations: null,
-        embeddings: null,
-        reduction: null,
-        calculation: null,
+        calculations: null, // Calculations made across all frames
+        embeddings: null, // Imported calculations / embeddings
+        reduction: null, // The actual data calculated by the request
+        calculation: null, // The type of calculation made (eg. Mean, Total)
+        embeddingColorType: 'label', // Whether to use labels or uncertainty for the embedding plot
       },
       initial: 'loading',
       on: {
@@ -297,6 +298,9 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                 TOGGLE_WHOLE: { actions: 'toggleWhole' },
                 CALCULATE: { target: 'calculating' },
                 CALCULATE_UMAP: { target: 'visualizing' },
+                CHANGE_COLORMAP: {
+                  actions: 'setColorMap',
+                },
               },
             },
             calculating: {
@@ -374,6 +378,7 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         setStat: assign({ calculation: (_, evt) => evt.stat }),
         setEmbeddings: assign({ embeddings: (_, evt) => evt.embeddings }),
         toggleWhole: assign({ whole: (ctx) => !ctx.whole }),
+        setColorMap: assign({ embeddingColorType: (_, evt) => evt.colorMap }),
         calculateMean: pure((ctx) => {
           const channelMeans = calculateMean(ctx);
           return [

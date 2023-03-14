@@ -3,13 +3,17 @@ import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useChannelExpression } from '../../../ProjectContext';
+import AddRemoveCancel from '../ChannelExpressionUI/AddRemoveCancel';
 import CalculateWholeToggle from '../ChannelExpressionUI/CalculateWholeToggle';
+import EmbeddingColorMapToggle from './EmbeddingColorMapToggle';
+import EmbeddingPlot from './EmbeddingPlot';
 import TrainingButtons from './TrainingButtons';
 
 function LearnTab() {
   const [embedding, setEmbedding] = useState(0);
   const channelExpression = useChannelExpression();
   const imported = useSelector(channelExpression, (state) => state.context.embeddings);
+  const embeddingPlotted = useSelector(channelExpression, (state) => state.context.reduction);
   const quantities = imported
     ? ['Position', 'Mean', 'Total', 'Imported']
     : ['Position', 'Mean', 'Total'];
@@ -49,6 +53,13 @@ function LearnTab() {
         </Button>
       </Grid>
       <TrainingButtons />
+      {embeddingPlotted ? (
+        <>
+          <EmbeddingColorMapToggle />
+          <EmbeddingPlot embedding={embeddingPlotted} />
+          <AddRemoveCancel />
+        </>
+      ) : null}
     </>
   );
 }
