@@ -11,20 +11,18 @@ import AddRemoveCancel from './ChannelExpressionUI/AddRemoveCancel';
 import Calculate from './ChannelExpressionUI/Calculate';
 import ChannelPlot from './ChannelExpressionUI/ChannelPlot';
 import ChannelSelect from './ChannelExpressionUI/ChannelSelect';
-import EmbeddingPlot from './TrainingUI/EmbeddingPlot';
 import LearnTab from './TrainingUI/LearnTab';
 
 function TabPanel({ children, value, index }) {
   return value === index && children;
 }
 
-function ChannelExpressionPlot() {
+function PlotAndLearnTabs() {
   const channelExpression = useChannelExpression();
   const labelMode = useLabelMode();
   const canvas = useCanvas();
   const cellTypesEditing = useSelector(labelMode, (state) => state.matches('editCellTypes'));
   const calculations = useSelector(channelExpression, (state) => state.context.calculations);
-  const embedding = useSelector(channelExpression, (state) => state.context.reduction);
   const sw = useSelector(canvas, (state) => state.context.width);
   const sh = useSelector(canvas, (state) => state.context.height);
   const scale = useSelector(canvas, (state) => state.context.scale);
@@ -108,12 +106,6 @@ function ChannelExpressionPlot() {
           </TabPanel>
           <TabPanel value={tab} index={1}>
             <LearnTab />
-            {embedding ? (
-              <>
-                <EmbeddingPlot embedding={embedding} />
-                <AddRemoveCancel />
-              </>
-            ) : null}
           </TabPanel>
         </Grid>
       </Box>
@@ -121,4 +113,4 @@ function ChannelExpressionPlot() {
   ) : null;
 }
 
-export default ChannelExpressionPlot;
+export default PlotAndLearnTabs;

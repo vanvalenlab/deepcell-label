@@ -4,7 +4,7 @@ import Canvas from './Canvas';
 import DisplayControls from './DisplayControls';
 import DisplayControlsTop from './DisplayControls/DisplayControlsTop';
 import EditControls from './EditControls';
-import ChannelExpressionPlot from './EditControls/CellTypeControls/ChannelExpressionPlot';
+import PlotAndLearnTabs from './EditControls/CellTypeControls/PlotAndLearnTabs';
 import ForceLoadOutputModal from './ForceLoadOutputModal';
 import MissingProject from './MissingProject';
 import { useProject } from './ProjectContext';
@@ -44,7 +44,7 @@ function Project({ review }) {
         </Box>
         <EditControls />
         <Canvas />
-        <ChannelExpressionPlot />
+        <PlotAndLearnTabs />
       </Box>
       {/* <Instructions /> */}
     </>

@@ -8,7 +8,7 @@ import Modal from '@mui/material/Modal';
 import Typography from '@mui/material/Typography';
 import { useSelector } from '@xstate/react';
 import { useCellsAtTime, useTraining } from '../../../ProjectContext';
-import { getCellList, getCellListAtTime } from '../../../service/labels/trainingMachine';
+import { getCellList, getCellListAtTime } from '../../../service/labels/trainingMachineUtils';
 import Hyperparameters from './Hyperparameters';
 import VisualizationTabs from './VisualizationTabs';
 
