@@ -20,6 +20,7 @@ function EmbeddingPlot({ embedding }) {
     channelExpression,
     (state) => state.context.embeddingColorType
   );
+  const uncertainty = embeddingColorType === 'uncertainty';
 
   // Save the layout state so that zooming does not get reset on other changes
   const [layout, setLayout] = useState({
@@ -30,6 +31,7 @@ function EmbeddingPlot({ embedding }) {
 
   // Create color map based on cell types and which cells are selected
   let colorMap = useSelector(cellTypes, (state) => state.context.colorMap);
+  let uncertaintyColors = undefined;
   if (colorMap) {
     colorMap = colorMap.map((color, i) =>
       selection.includes(i)
@@ -37,6 +39,11 @@ function EmbeddingPlot({ embedding }) {
         : color[3] === 0
         ? 'rgba(33,150,243,0.15)'
         : `rgba(${color[0]},${color[1]},${color[2]},1)`
+    );
+  }
+  if (predUncertainties) {
+    uncertaintyColors = predUncertainties.map((uncertainty) =>
+      isNaN(uncertainty) ? 'rgb(230,230,230)' : uncertainty
     );
   }
   // Cells that are selected will have thicker markers
@@ -84,10 +91,14 @@ function EmbeddingPlot({ embedding }) {
             y: embedding[1],
             type: 'scatter',
             mode: 'markers',
+            hovertemplate: uncertainty ? '%{marker.color:.2f}<extra></extra>' : null,
+            hoverinfo: uncertainty ? null : 'skip',
             marker: {
-              color: embeddingColorType === 'uncertainty' ? predUncertainties : colorMap,
+              color: uncertainty ? uncertaintyColors : colorMap,
               colorscale: colorScale,
               size: 6,
+              colorbar: { thickness: 5, orientation: 'h', y: -0.18, ypad: 0 },
+              showscale: uncertainty,
               line: {
                 color: 'rgba(0,0,0,1)',
                 width: widthMap,

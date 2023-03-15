@@ -129,7 +129,7 @@ function getUnlabeledTensor(cells, embedding) {
 /** Calculate a prediction map giving predictions and unlabeled cell ids
  * @param {array} pred Array of predicted cell classes "probabilities"
  * @param {array} unlabeled Array of unlabeled cell ids
- * @returns Prediction map between cell id and cell type id prediction and uncertainties
+ * @returns Prediction map between cell id and cell type id prediction and array of uncertainties
  */
 function getPredictions(pred, unlabeled) {
   let j = 0;
@@ -141,7 +141,7 @@ function getPredictions(pred, unlabeled) {
       uncertainties.push(1 - Math.max(...pred[j]));
       j += 1;
     } else {
-      uncertainties.push(0);
+      uncertainties.push(NaN);
     }
   }
   return { predMap, uncertainties };
