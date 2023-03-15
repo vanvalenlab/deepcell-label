@@ -40,6 +40,8 @@ const createTrainingMachine = ({ eventBuses }) =>
         cellTypes: null,
         calculations: null,
         whole: false,
+        uncertaintyThreshold: 0.5,
+        predictionMode: 'over',
         // "Output" context
         confusionMatrix: null,
         trainCounts: null,
@@ -80,6 +82,8 @@ const createTrainingMachine = ({ eventBuses }) =>
                 NUM_EPOCHS: { actions: 'setNumEpochs' },
                 VAL_SPLIT: { actions: 'setValSplit' },
                 TOGGLE_WHOLE: { actions: 'toggleWhole' },
+                THRESHOLD: { actions: 'setThreshold' },
+                PREDICTION_MODE: { actions: 'setPredictionMode' },
               },
             },
             training: {
@@ -189,6 +193,8 @@ const createTrainingMachine = ({ eventBuses }) =>
         setNumEpochs: assign({ numEpochs: (_, evt) => evt.numEpochs }),
         setLearningRate: assign({ learningRate: (_, evt) => evt.learningRate }),
         setValSplit: assign({ valSplit: (_, evt) => evt.valSplit }),
+        setThreshold: assign({ uncertaintyThreshold: (_, evt) => evt.uncertaintyThreshold }),
+        setPredictionMode: assign({ predictionMode: (_, evt) => evt.predictionMode }),
         setNumChannels: assign({ numChannels: (_, evt) => evt.raw.length }),
         setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
         setT: assign({ t: (_, evt) => evt.t }),

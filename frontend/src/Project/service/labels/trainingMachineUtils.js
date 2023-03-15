@@ -131,17 +131,44 @@ function getUnlabeledTensor(cells, embedding) {
  * @param {array} unlabeled Array of unlabeled cell ids
  * @returns Prediction map between cell id and cell type id prediction and array of uncertainties
  */
-function getPredictions(pred, unlabeled) {
+function getPredictions(pred, unlabeled, threshold, mode) {
   let j = 0;
   let predMap = {};
   const uncertainties = [];
-  for (let i = 0; i < unlabeled.length; i++) {
-    if (unlabeled[i] === true) {
-      predMap[i] = argMax(pred[j]);
-      uncertainties.push(1 - Math.max(...pred[j]));
-      j += 1;
-    } else {
-      uncertainties.push(NaN);
+  if (mode === 'over') {
+    for (let i = 0; i < unlabeled.length; i++) {
+      if (unlabeled[i] === true) {
+        const prediction = Math.max(...pred[j]);
+        if (prediction + threshold < 1) {
+          predMap[i] = argMax(pred[j]);
+        }
+        uncertainties.push(1 - prediction);
+        j += 1;
+      } else {
+        uncertainties.push(NaN);
+      }
+    }
+  } else if (mode === 'under') {
+    for (let i = 0; i < unlabeled.length; i++) {
+      if (unlabeled[i] === true) {
+        const prediction = Math.max(...pred[j]);
+        if (prediction + threshold > 1) {
+          predMap[i] = argMax(pred[j]);
+        }
+        uncertainties.push(1 - prediction);
+        j += 1;
+      } else {
+        uncertainties.push(NaN);
+      }
+    }
+  } else {
+    for (let i = 0; i < unlabeled.length; i++) {
+      if (unlabeled[i] === true) {
+        uncertainties.push(1 - Math.max(...pred[j]));
+        j += 1;
+      } else {
+        uncertainties.push(NaN);
+      }
     }
   }
   return { predMap, uncertainties };
@@ -396,7 +423,19 @@ export async function train(ctx, evt, sendBack) {
  * @returns Sends message with object mapping cell ids to cell type id predictions
  */
 export function predict(ctx, evt, sendBack) {
-  const { calculations, cells, cellTypes, feature, model, numChannels, range, t, whole } = ctx;
+  const {
+    calculations,
+    cells,
+    cellTypes,
+    feature,
+    model,
+    numChannels,
+    range,
+    t,
+    whole,
+    uncertaintyThreshold,
+    predictionMode,
+  } = ctx;
   const cellsAtTime = new Cells(cells).getCellsListAtTime(t, feature);
   const [inputMin, inputMax] = range;
 
@@ -423,7 +462,12 @@ export function predict(ctx, evt, sendBack) {
   // Use saved model to predict on unlabeled cells and send to machine
   const [logits, covariance] = model.call(normalized);
   const pred = getProbabilities(logits, covariance);
-  const { predMap, uncertainties } = getPredictions(pred, unlabeled);
+  const { predMap, uncertainties } = getPredictions(
+    pred,
+    unlabeled,
+    uncertaintyThreshold,
+    predictionMode
+  );
   sendBack({
     type: 'DONE',
     predMap: predMap,

@@ -5,19 +5,21 @@ import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useTraining } from '../../../ProjectContext';
+import PredictionModal from './PredictionModal';
 import VisualizationModal from './VisualizationModal';
 
 function TrainingButtons() {
   const training = useTraining();
   const model = useSelector(training, (state) => state.context.model);
-  const [open, setOpen] = useState(false);
+  const [trainOpen, setTrainOpen] = useState(false);
+  const [predOpen, setPredOpen] = useState(false);
 
-  const handleTrain = () => {
-    setOpen(true);
+  const handleTrainModal = () => {
+    setTrainOpen(true);
   };
 
-  const handlePredict = () => {
-    training.send({ type: 'PREDICT' });
+  const handlePredictModal = () => {
+    setPredOpen(true);
   };
 
   return (
@@ -30,7 +32,7 @@ function TrainingButtons() {
             '&:hover': { backgroundColor: 'rgba(224, 0, 67, 1)' },
           }}
           variant='contained'
-          onClick={handleTrain}
+          onClick={handleTrainModal}
           startIcon={<MiscellaneousServicesIcon />}
         >
           Train
@@ -44,13 +46,14 @@ function TrainingButtons() {
             '&:hover': { backgroundColor: 'rgba(0, 180, 63, 1)' },
           }}
           variant='contained'
-          onClick={handlePredict}
+          onClick={handlePredictModal}
           startIcon={<InsightsIcon />}
         >
           Predict
         </Button>
       </Grid>
-      <VisualizationModal open={open} setOpen={setOpen} />
+      <VisualizationModal open={trainOpen} setOpen={setTrainOpen} />
+      <PredictionModal open={predOpen} setOpen={setPredOpen} />
     </>
   );
 }

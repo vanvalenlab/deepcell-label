@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import CellTypeHovering from '../../EditControls/CellTypeControls/CellTypeUI/CellTypeHovering';
 import {
   useEditCells,
   useEditCellTypes,
@@ -6,17 +7,16 @@ import {
   useEditSegment,
   useLabelMode,
 } from '../../ProjectContext';
-import AddDaughterCanvas from './AddDaughterCanvas';
 import AddCellTypeCanvas from './AddCellTypeCanvas';
+import AddDaughterCanvas from './AddDaughterCanvas';
 import BrushCanvas from './BrushCanvas';
+import CellSelectionCanvas from './CellSelectionCanvas';
 import CellTypeCanvas from './CellTypeCanvas';
-import CellTypeHovering from '../../EditControls/CellTypeControls/CellTypeUI/CellTypeHovering';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
-import CellSelectionCanvas from './CellSelectionCanvas';
 
 function ToolCanvas({ setBitmaps }) {
   const editSegment = useEditSegment();
@@ -86,7 +86,8 @@ function ToolCanvas({ setBitmaps }) {
       return (
         <>
           <CellTypeCanvas setBitmaps={setBitmaps} />
-          <CellTypeHovering />
+          {/* TODO: Allow user to toggle this on or off */}
+          {/* <CellTypeHovering /> */}
           <CellSelectionCanvas setBitmaps={setBitmaps} />
         </>
       );
