@@ -3,11 +3,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useArrays, useCanvas, useLabelMode } from '../ProjectContext';
+import { useArrays, useCanvas } from '../ProjectContext';
 import ComposeCanvas from './ComposeCanvas';
 import LabeledCanvas from './LabeledCanvas';
 import OutlineCanvas from './OutlineCanvas';
-import OutlineCanvasNoOverlap from './OutlineCanvasNoOverlap';
 import RawCanvas from './RawCanvas';
 import SpotsCanvas from './SpotsCanvas';
 import ToolCanvas from './ToolCanvas';
@@ -46,9 +45,6 @@ function Canvas() {
     }),
     [padding, topColor, bottomColor, leftColor, rightColor, cursor]
   );
-
-  const labelMode = useLabelMode();
-  const cellTypes = useSelector(labelMode, (state) => state.matches('editCellTypes'));
 
   // prevent scrolling page when over canvas
   useEffect(() => {
@@ -94,11 +90,7 @@ function Canvas() {
           <ComposeCanvas bitmaps={bitmaps} />
           <RawCanvas setBitmaps={setBitmaps} />
           <LabeledCanvas setBitmaps={setBitmaps} />
-          {cellTypes ? (
-            <OutlineCanvasNoOverlap setBitmaps={setBitmaps} />
-          ) : (
-            <OutlineCanvas setBitmaps={setBitmaps} />
-          )}
+          <OutlineCanvas setBitmaps={setBitmaps} />
           <SpotsCanvas setBitmaps={setBitmaps} />
           <ToolCanvas setBitmaps={setBitmaps} />
         </>
