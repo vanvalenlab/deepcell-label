@@ -51,13 +51,20 @@ function Project({ review }) {
         <Canvas />
         <ChannelExpressionPlot />
       </Box>
+      {/* TODO: Move this help button and instructions modal to the actual Navbar. 
+      Would require changing many of the instruction components to not rely on project state */}
       <IconButton
-        color='inherit'
         target='_blank'
-        sx={{ display: 'block', borderRadius: 1 }}
+        sx={{
+          display: 'block',
+          borderRadius: 1,
+          position: 'absolute',
+          marginLeft: 29,
+          marginTop: 1.4,
+        }}
         onClick={() => setOpen(true)}
       >
-        <HelpIcon sx={{ fontSize: 30 }} />
+        <HelpIcon sx={{ fontSize: 24, color: 'rgb(255,255,255)', marginTop: 0.5 }} />
       </IconButton>
       <InstructionsModal open={open} setOpen={setOpen} />
     </>
