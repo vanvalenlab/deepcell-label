@@ -50,7 +50,8 @@ describe('Cell Type Editing', () => {
         .trigger('mouseover', canvasWidth / 4, canvasHeight / 4)
         .click()
         .wait(100);
-      cy.contains('Untitled 1 (1)');
+      // Note: the hover UI has been removed temporarily and is thus not tested
+      // cy.contains('Untitled 1 (1)');
       cy.get('[class$=-MuiAccordionSummary-content]').within(() => {
         cy.contains('2');
       });
@@ -68,7 +69,8 @@ describe('Cell Type Editing', () => {
         .scrollIntoView()
         .trigger('mouseover', canvasWidth / 4, canvasHeight / 4)
         .click();
-      cy.contains('Untitled 1 (1)').should('not.exist');
+      // Note: the hover UI has been removed temporarily and is thus not tested
+      // cy.contains('Untitled 1 (1)').should('not.exist');
     });
     cy.get('[data-testid="CheckCircleOutlineIcon"]').click();
     cy.contains('Click a cell').should('not.exist');

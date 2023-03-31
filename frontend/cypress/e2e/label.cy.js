@@ -31,7 +31,7 @@ if (Cypress.env('AWS_ACCESS_KEY_ID') && Cypress.env('AWS_SECRET_ACCESS_KEY')) {
     cy.get('.MuiCircularProgress-svg');
     cy.get('canvas', { timeout: 30000 });
     cy.contains('DeepCell Label');
-    // cy.contains('Instructions');
+    cy.get('[data-testid="HelpIcon"]').should('exist');
     cy.contains('Download');
     cy.contains('Undo');
     cy.contains('Redo');
@@ -68,20 +68,22 @@ it('updates state with keybinds', () => {
   cy.contains('Threshold').should('have.attr', 'aria-pressed', 'true');
 });
 
-// it('opens instructions', () => {
-//   const id = getUniqueId();
-//   cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
+it('opens instructions', () => {
+  const id = getUniqueId();
+  cy.intercept('GET', `/api/project/${id}`, { fixture: 'rgb.zip' });
 
-//   cy.visit(`/project?projectId=${id}`);
-//   cy.contains('Instructions').click();
-//   cy.contains('Overview').click();
-//   cy.contains('Select').click();
-//   cy.contains('Canvas').click();
-//   cy.contains('Display').click();
-//   cy.contains('Segment').click();
-//   cy.contains('Cells').click();
-//   cy.contains('Divisions').click();
-// });
+  cy.visit(`/project?projectId=${id}`);
+  cy.get('[data-testid="HelpIcon"]').click();
+  cy.get('[id="instructions-modal"]').contains('Overview').click();
+  cy.get('[id="instructions-modal"]').contains('Select').click();
+  cy.get('[id="instructions-modal"]').contains('Canvas').click();
+  cy.get('[id="instructions-modal"]').contains('Display').click();
+  cy.get('[id="instructions-modal"]').contains('Segment').click();
+  cy.get('[id="instructions-modal"]').contains('Cells').click();
+  cy.get('[id="instructions-modal"]').contains('Divisions').click();
+  cy.get('[id="instructions-modal"]').contains('Cell Types Left').click();
+  cy.get('[id="instructions-modal"]').contains('Cell Types Right').click();
+});
 
 it('shows quality control interface', () => {
   const [id1, id2] = [getUniqueId(), getUniqueId()];

@@ -1,5 +1,4 @@
 import { useSelector } from '@xstate/react';
-import CellTypeHovering from '../../EditControls/CellTypeControls/CellTypeUI/CellTypeHovering';
 import {
   useEditCells,
   useEditCellTypes,
@@ -11,7 +10,7 @@ import AddCellTypeCanvas from './AddCellTypeCanvas';
 import AddDaughterCanvas from './AddDaughterCanvas';
 import BrushCanvas from './BrushCanvas';
 import CellSelectionCanvas from './CellSelectionCanvas';
-import CellTypeCanvas from './CellTypeCanvas';
+import CellTypeCanvasNoOverlap from './CellTypeCanvasNoOverlap';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
@@ -77,15 +76,16 @@ function ToolCanvas({ setBitmaps }) {
       if (addingCell || removingCell) {
         return (
           <>
-            <CellTypeCanvas setBitmaps={setBitmaps} />
-            <CellTypeHovering />
+            <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
+            {/* TODO: Allow user to toggle this on or off */}
+            {/* <CellTypeHovering /> */}
             <AddCellTypeCanvas setBitmaps={setBitmaps} />
           </>
         );
       }
       return (
         <>
-          <CellTypeCanvas setBitmaps={setBitmaps} />
+          <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
           {/* TODO: Allow user to toggle this on or off */}
           {/* <CellTypeHovering /> */}
           <CellSelectionCanvas setBitmaps={setBitmaps} />

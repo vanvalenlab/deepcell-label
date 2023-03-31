@@ -32,7 +32,7 @@ function RemoveCellsButton({ id, name }) {
       >
         <EggAltIcon sx={{ fontSize: 16 }} />
         <ClearIcon
-          sx={{ position: 'absolute', fontSize: 10, marginBottom: '-1.5em', marginRight: '-2.3em' }}
+          sx={{ position: 'absolute', fontSize: 10, marginBottom: '-1.5em', marginRight: '-2em' }}
         />
       </IconButton>
     </Tooltip>

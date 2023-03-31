@@ -8,6 +8,7 @@ import {
   useChannel,
   useImage,
   useLabeled,
+  useLabelMode,
   useRaw,
   useReducedCellMatrix,
   useSelectedCell,
@@ -42,12 +43,62 @@ const OutlineCanvas = ({ setBitmaps }) => {
   const cellsList = useCellsAtTime();
   const { cellMatrix, minCell, minValue } = useReducedCellMatrix();
 
+  const labelMode = useLabelMode();
+  const cellTypes = useSelector(labelMode, (state) => state.matches('editCellTypes'));
+
   const gpu = useAlphaGpu();
   const kernelRef = useRef();
 
   useEffect(() => {
-    const kernel = gpu.createKernel(
-      `function (data, cells, minCell, minValue, cellsList, numValues, numLabels, opacity, cell, invert) {
+    const kernel = cellTypes
+      ? // Assume no overlaps if editing cell types
+        gpu.createKernel(
+          `function (data, cells, minCell, minValue, cellsList, numValues, numLabels, opacity, cell, invert) {
+        const x = this.thread.x;
+        const y = this.constants.h - 1 - this.thread.y;
+        const value = data[y][x];
+        let north = value;
+        let south = value;
+        let east = value;
+        let west = value;
+        if (x !== 0) {
+          north = data[y][x - 1];
+        }
+        if (x !== this.constants.w - 1) {
+          south = data[y][x + 1];
+        }
+        if (y !== 0) {
+          west = data[y - 1][x];
+        }
+        if (y !== this.constants.h - 1) {
+          east = data[y + 1][x];
+        }
+        let outlineOpacity = 1;
+
+        if (north !== value || south !== value || east !== value || west !== value) {
+          if (value > 0) {
+            outlineOpacity = 1 - opacity;
+          }
+        }
+        let [r, g, b] = [1, 1, 1];
+        if (invert) {
+          r = 0;
+          r = 0;
+          b = 0;
+        }
+        this.color(r, g, b, 1 - outlineOpacity)
+      }`,
+          {
+            constants: { w: width, h: height },
+            output: [width, height],
+            graphical: true,
+            dynamicArguments: true,
+            loopMaxIterations: 5000, // Maximum number of outlines to render
+          }
+        )
+      : // Otherwise, must use overlap kernel
+        gpu.createKernel(
+          `function (data, cells, minCell, minValue, cellsList, numValues, numLabels, opacity, cell, invert) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -78,11 +129,7 @@ const OutlineCanvas = ({ setBitmaps }) => {
                   || north - minValue >= numValues || south - minValue >= numValues
                   || west - minValue >= numValues || east - minValue >= numValues)
               {
-                if (cell === currCell) {
-                  outlineOpacity = outlineOpacity * (1 - opacity[1]);
-                } else {
-                  outlineOpacity = outlineOpacity * (1 - opacity[0]);
-                }
+                outlineOpacity = outlineOpacity * (1 - opacity);
               }
             }
           }
@@ -95,16 +142,16 @@ const OutlineCanvas = ({ setBitmaps }) => {
         }
         this.color(r, g, b, 1 - outlineOpacity);
       }`,
-      {
-        constants: { w: width, h: height },
-        output: [width, height],
-        graphical: true,
-        dynamicArguments: true,
-        loopMaxIterations: 5000, // Maximum number of outlines to render
-      }
-    );
+          {
+            constants: { w: width, h: height },
+            output: [width, height],
+            graphical: true,
+            dynamicArguments: true,
+            loopMaxIterations: 5000, // Maximum number of outlines to render
+          }
+        );
     kernelRef.current = kernel;
-  }, [gpu, width, height]);
+  }, [gpu, cellTypes, width, height]);
 
   useEffect(() => {
     const kernel = kernelRef.current;
@@ -120,7 +167,7 @@ const OutlineCanvas = ({ setBitmaps }) => {
         cellsList,
         numValues,
         numLabels,
-        [opacity, opacity],
+        opacity,
         cell,
         invert
       );
@@ -139,6 +186,7 @@ const OutlineCanvas = ({ setBitmaps }) => {
     cell,
     invert,
     setBitmaps,
+    cellTypes,
     width,
     height,
   ]);

@@ -1,7 +1,5 @@
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
+import Modal from '@mui/material/Modal';
 import { styled } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -14,6 +12,7 @@ import CellTypeInstructions from './CellTypeInstructions';
 import DisplayInstructions from './DisplayInstructions';
 import DivisionsInstructions from './DivisionsInstructions';
 import OverviewInstructions from './OverviewInstructions';
+import PlottingTrainingInstructions from './PlottingTrainingInstructions';
 import SegmentInstructions from './SegmentInstructions';
 import SelectInstructions from './SelectInstructions';
 
@@ -90,51 +89,54 @@ TabPanel.propTypes = {
   value: PropTypes.any.isRequired,
 };
 
-export default function Instructions() {
-  const [expanded, setExpanded] = React.useState(false);
+const style = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: '80vw',
+  height: '80vh',
+  bgcolor: 'background.paper',
+  borderRadius: 2,
+  boxShadow: 24,
+  p: 4,
+  display: 'flex',
+  flexDirection: 'column',
+};
 
+const tabPanelStyle = {
+  height: '75vh',
+  overflow: 'hidden',
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': {
+    width: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    borderRadius: 10,
+    backgroundColor: 'rgba(100,100,100,0.5)',
+  },
+};
+
+export default function InstructionsModal({ open, setOpen }) {
   const [value, setValue] = React.useState(0);
 
   const handleTabChange = (event, newValue) => {
     setValue(newValue);
   };
 
-  const toggleExpanded = () => {
-    setExpanded(!expanded);
-  };
-
-  const stopExpansion = (event) => {
-    if (event.key === ' ') {
-      event.preventDefault();
-    }
-  };
-
   return (
-    <div>
-      <Accordion
-        square
-        expanded={expanded}
-        onChange={toggleExpanded}
-        TransitionProps={{ unmountOnExit: true }}
-        classes={{
-          root: classes.root,
-          expanded: classes.expanded,
-        }}
-      >
-        <AccordionSummary
-          aria-controls='panel1d-content'
-          id='panel1d-header'
-          onKeyUp={stopExpansion}
-          classes={{
-            root: classes.root2,
-            content: classes.content,
-            expanded: classes.expanded2,
+    <Modal id={'instructions-modal'} open={open} onClose={() => setOpen(false)}>
+      <Box sx={style}>
+        <Box
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            position: 'relative',
           }}
         >
-          <Typography>Instructions (Click to expand/collapse)</Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 0, display: 'flex', flexDirection: 'column' }}>
-          <Tabs value={value} onChange={handleTabChange}>
+          <Tabs variant='scrollable' scrollButtons='auto' value={value} onChange={handleTabChange}>
             <Tab label='Overview' />
             <Tab label='Select' />
             <Tab label='Canvas' />
@@ -142,34 +144,38 @@ export default function Instructions() {
             <Tab label='Segment' />
             <Tab label='Cells' />
             <Tab label='Divisions' />
-            <Tab label='Cell Types' />
+            <Tab label='Cell Types Left' />
+            <Tab label='Cell Types Right' />
           </Tabs>
-          <TabPanel value={value} index={0}>
-            <OverviewInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={1}>
-            <SelectInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={2}>
-            <CanvasInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={3}>
-            <DisplayInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={4}>
-            <SegmentInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={5}>
-            <CellsInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={6}>
-            <DivisionsInstructions />
-          </TabPanel>
-          <TabPanel value={value} index={7}>
-            <CellTypeInstructions />
-          </TabPanel>
-        </AccordionDetails>
-      </Accordion>
-    </div>
+        </Box>
+        <TabPanel value={value} index={0} sx={tabPanelStyle}>
+          <OverviewInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={1} sx={tabPanelStyle}>
+          <SelectInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={2} sx={tabPanelStyle}>
+          <CanvasInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={3} sx={tabPanelStyle}>
+          <DisplayInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={4} sx={tabPanelStyle}>
+          <SegmentInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={5} sx={tabPanelStyle}>
+          <CellsInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={6} sx={tabPanelStyle}>
+          <DivisionsInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={7} sx={tabPanelStyle}>
+          <CellTypeInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={8} sx={tabPanelStyle}>
+          <PlottingTrainingInstructions />
+        </TabPanel>
+      </Box>
+    </Modal>
   );
 }

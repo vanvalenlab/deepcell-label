@@ -7,6 +7,7 @@ import {
   useColormap,
   useLabeled,
   useLabeledArray,
+  useLabelMode,
   useReducedCellMatrix,
   useSelectedCell,
 } from '../ProjectContext';
@@ -28,12 +29,29 @@ export const LabeledCanvas = ({ setBitmaps }) => {
   const colormap = useColormap();
   const cell = useSelectedCell();
 
+  const labelMode = useLabelMode();
+  const cellTypes = useSelector(labelMode, (state) => state.matches('editCellTypes'));
+
   const gpu = useAlphaGpu();
   const kernelRef = useRef();
 
   useEffect(() => {
-    const kernel = gpu.createKernel(
-      `function (labelArray, cellMatrix, minCell, minValue, cellsList, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
+    const kernel = cellTypes
+      ? // Set entire layer to transparent if on cell types tab
+        gpu.createKernel(
+          `function (labelArray, cellMatrix, minCell, minValue, cellsList, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
+      this.color(1, 1, 1, 0);
+    }`,
+          {
+            constants: { w: width, h: height },
+            output: [width, height],
+            graphical: true,
+            dynamicArguments: true,
+          }
+        )
+      : // Otherwise, render the normal labeled layer
+        gpu.createKernel(
+          `function (labelArray, cellMatrix, minCell, minValue, cellsList, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
         const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
         let [r, g, b, a] = [0, 0, 0, 1];
         if (value - minValue < numValues && value >= minValue) {
@@ -69,16 +87,16 @@ export const LabeledCanvas = ({ setBitmaps }) => {
         }
         this.color(r, g, b, 1 - a);
       }`,
-      {
-        constants: { w: width, h: height },
-        output: [width, height],
-        graphical: true,
-        dynamicArguments: true,
-        loopMaxIterations: 5000, // Maximum number of cell labels to render
-      }
-    );
+          {
+            constants: { w: width, h: height },
+            output: [width, height],
+            graphical: true,
+            dynamicArguments: true,
+            loopMaxIterations: 5000, // Maximum number of cell labels to render
+          }
+        );
     kernelRef.current = kernel;
-  }, [gpu, width, height]);
+  }, [gpu, cellTypes, width, height]);
 
   useEffect(() => {
     const kernel = kernelRef.current;
@@ -116,6 +134,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
     cell,
     highlight,
     setBitmaps,
+    cellTypes,
     width,
     height,
   ]);
