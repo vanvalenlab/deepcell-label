@@ -6,17 +6,17 @@ import {
   useEditSegment,
   useLabelMode,
 } from '../../ProjectContext';
-import AddDaughterCanvas from './AddDaughterCanvas';
 import AddCellTypeCanvas from './AddCellTypeCanvas';
+import AddDaughterCanvas from './AddDaughterCanvas';
 import BrushCanvas from './BrushCanvas';
-import CellTypeCanvas from './CellTypeCanvas';
-import CellTypeHovering from '../../EditControls/CellTypeControls/CellTypeUI/CellTypeHovering';
+import CellSelectionCanvas from './CellSelectionCanvas';
+// import CellTypeCanvas from './CellTypeCanvas';
+import CellTypeCanvasNoOverlap from './CellTypeCanvasNoOverlap';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
-import CellSelectionCanvas from './CellSelectionCanvas';
 
 function ToolCanvas({ setBitmaps }) {
   const editSegment = useEditSegment();
@@ -77,16 +77,16 @@ function ToolCanvas({ setBitmaps }) {
       if (addingCell || removingCell) {
         return (
           <>
-            <CellTypeCanvas setBitmaps={setBitmaps} />
-            <CellTypeHovering />
+            <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
+            {/* <CellTypeHovering /> */}
             <AddCellTypeCanvas setBitmaps={setBitmaps} />
           </>
         );
       }
       return (
         <>
-          <CellTypeCanvas setBitmaps={setBitmaps} />
-          <CellTypeHovering />
+          <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
+          {/* <CellTypeHovering /> */}
           <CellSelectionCanvas setBitmaps={setBitmaps} />
         </>
       );
