@@ -6,13 +6,16 @@ function PlottingTrainingInstructions() {
     <Box>
       <Grid container spacing={3}>
         <Grid item xs={12}>
+          Use the panel to the right of the canvas to calculate, plot, and train on statistics /
+          data. <br />
+          Note that this is a set of features intended for more advanced users.
+        </Grid>
+        <Grid item xs={12}>
           <Typography variant='h5'>Calculations and Plotting</Typography>
         </Grid>
         <Grid item xs={12}>
           <Typography>
-            Channel marker count calculation and plotting can be done through the first tab on the
-            UI to the right of the canvas. <br /> Note that this is a set of features intended for
-            more advanced users.
+            Channel marker count calculation and plotting can be done through the first tab.
           </Typography>
         </Grid>
         <Grid item xs={12}>
