@@ -1,4 +1,6 @@
+import GitHubIcon from '@mui/icons-material/GitHub';
 import MoreIcon from '@mui/icons-material/MoreVert';
+import { Box } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -7,7 +9,6 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { styled } from '@mui/system';
 import React, { useState } from 'react';
-import { FaGithub } from 'react-icons/fa';
 
 const Div = styled('div')``;
 
@@ -32,14 +33,14 @@ export default function NavBar() {
         >
           DeepCell
         </Button>
-        <Button
+        <IconButton
           color='inherit'
           href='https://github.com/vanvalenlab'
           target='_blank'
-          sx={{ display: 'block' }}
+          sx={{ display: 'block', borderRadius: 1 }}
         >
-          <FaGithub size={28} />
-        </Button>
+          <GitHubIcon sx={{ fontSize: 28 }} />
+        </IconButton>
       </Menu>
     );
   };
@@ -49,7 +50,7 @@ export default function NavBar() {
       <AppBar position='static'>
         <Toolbar>
           <Typography variant='subtitle1' color='inherit' sx={{ flexGrow: 1 }}>
-            <IconButton color='inherit' href='/' size='large'>
+            <IconButton color='inherit' href='/' size='large' sx={{ borderRadius: 3 }}>
               DeepCell Label
             </IconButton>
           </Typography>
@@ -68,16 +69,16 @@ export default function NavBar() {
               target='_blank'
               sx={{ display: 'block' }}
             >
-              DeepCell
+              <Box sx={{ marginTop: 0.5 }}> DeepCell</Box>
             </Button>
-            <Button
+            <IconButton
               color='inherit'
               href='https://github.com/vanvalenlab'
               target='_blank'
-              sx={{ display: 'block' }}
+              sx={{ display: 'block', borderRadius: 1 }}
             >
-              <FaGithub size={28} />
-            </Button>
+              <GitHubIcon sx={{ fontSize: 28 }} />
+            </IconButton>
           </Div>
           <Div
             sx={{

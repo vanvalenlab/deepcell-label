@@ -9,12 +9,14 @@ function OverviewInstructions() {
         <li>segmenting cells</li>
         <li>assigning cells over time</li>
         <li>capturing cell divisions</li>
+        <li>classifying cell types</li>
       </ul>
-      Labeled data are shown on the canvas on the right, and controls are on the left.
+      Labeled data are shown on the canvas on the right, and controls are on the left (and for cell
+      types, right).
       <br />
-      On the far left, there is an export button, tabs to edit each label type, and controls to
-      display the labeled data. The tabs change which controls are shown in the next column to the
-      right.
+      On the far left, there is an export button and tabs to edit each label type. The tabs change
+      which controls are shown in the next column to the right.
+      <br /> On the top, there are controls for displaying the data.
     </Typography>
   );
 }
