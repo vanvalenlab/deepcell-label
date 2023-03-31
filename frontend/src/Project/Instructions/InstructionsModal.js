@@ -127,7 +127,7 @@ export default function InstructionsModal({ open, setOpen }) {
   };
 
   return (
-    <Modal open={open} onClose={() => setOpen(false)}>
+    <Modal id={'instructions-modal'} open={open} onClose={() => setOpen(false)}>
       <Box sx={style}>
         <Box
           sx={{
@@ -136,7 +136,7 @@ export default function InstructionsModal({ open, setOpen }) {
             position: 'relative',
           }}
         >
-          <Tabs value={value} onChange={handleTabChange}>
+          <Tabs variant='scrollable' scrollButtons='auto' value={value} onChange={handleTabChange}>
             <Tab label='Overview' />
             <Tab label='Select' />
             <Tab label='Canvas' />
