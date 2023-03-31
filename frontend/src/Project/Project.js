@@ -51,7 +51,7 @@ function Project({ review }) {
         <Canvas />
         <ChannelExpressionPlot />
       </Box>
-      {/* TODO: Move this help button and instructions modal to the actual Navbar. 
+      {/* TODO: Move this help button and instructions modal to the actual Navbar.
       Would require changing many of the instruction components to not rely on project state */}
       <IconButton
         target='_blank'
