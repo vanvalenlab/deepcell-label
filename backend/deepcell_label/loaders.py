@@ -270,6 +270,7 @@ def load_cellTypes(f):
         return []
     return cellTypes
 
+
 def load_embeddings(f):
     """
     Load embeddings from embeddings.json in project archive
@@ -286,6 +287,7 @@ def load_embeddings(f):
         zf = zipfile.ZipFile(f, 'r')
         embeddings = load_zip_json(zf, filename='embeddings.json')
     return embeddings
+
 
 def load_cells(f):
     """
