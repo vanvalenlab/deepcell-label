@@ -65,9 +65,7 @@ export class SpectralNormalization extends tf.layers.Layer {
   }
 
   call(inputs: Tensor | Tensor[], kwargs: Kwargs) {
-    // console.log(kwargs);
     const training = kwargs['training'];
-    // console.log(training);
     // const isTraining = training ? training : this.doPowerIteration;
     let output;
     if (training) {

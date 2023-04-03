@@ -68,39 +68,43 @@ export class LaplaceRandomFeatureCovariance extends tf.layers.Layer {
   }
 
   computePredictiveCovariance(gpFeature: Tensor | Tensor[]) {
-    // Computes the covariance matrix of the feature coefficient
-    // @ts-ignore
-    const featureCovMatrix = tf.tensor(inv(this.precisionMatrix.read().arraySync()));
-
-    // Computes the covariance matrix of the gp prediction
-    const covFeatureProduct = tf.mul(
+    return tf.tidy(() => {
+      // Computes the covariance matrix of the feature coefficient
       // @ts-ignore
-      tf.matMul(featureCovMatrix, gpFeature, undefined, true),
-      tf.scalar(this.ridgePenalty)
-    );
-    // @ts-ignore
-    const gpCovMatrix = tf.matMul(gpFeature, covFeatureProduct);
-    return gpCovMatrix;
+      const featureCovMatrix = tf.tensor(inv(this.precisionMatrix.read().arraySync()));
+
+      // Computes the covariance matrix of the gp prediction
+      const covFeatureProduct = tf.mul(
+        // @ts-ignore
+        tf.matMul(featureCovMatrix, gpFeature, undefined, true),
+        tf.scalar(this.ridgePenalty)
+      );
+      // @ts-ignore
+      const gpCovMatrix = tf.matMul(gpFeature, covFeatureProduct);
+      return gpCovMatrix;
+    });
   }
 
   call(inputs: Tensor | Tensor[], kwargs: Kwargs) {
-    const training = kwargs['training'];
-    // @ts-ignore
-    const batchSize = inputs.shape[0];
-    if (training) {
-      // Define and register update op for feature precision matrix
-      const precisionMatrixUpdateOp = this.makePrecisionMatrixUpdateOp(
-        inputs,
-        // @ts-ignore
-        this.precisionMatrix
-      );
-      precisionMatrixUpdateOp();
-      // Return null estimate during training
-      return tf.eye(batchSize, undefined, undefined, this.dtype);
-    } else {
-      // Return covariance estimate during inference
-      return this.computePredictiveCovariance(inputs);
-    }
+    return tf.tidy(() => {
+      const training = kwargs['training'];
+      // @ts-ignore
+      const batchSize = inputs.shape[0];
+      if (training) {
+        // Define and register update op for feature precision matrix
+        const precisionMatrixUpdateOp = this.makePrecisionMatrixUpdateOp(
+          inputs,
+          // @ts-ignore
+          this.precisionMatrix
+        );
+        precisionMatrixUpdateOp();
+        // Return null estimate during training
+        return tf.eye(batchSize, undefined, undefined, this.dtype);
+      } else {
+        // Return covariance estimate during inference
+        return this.computePredictiveCovariance(inputs);
+      }
+    });
   }
 
   /**

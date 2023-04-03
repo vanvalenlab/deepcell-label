@@ -188,52 +188,54 @@ export class RandomFeatureGaussianProcess extends tf.layers.Layer {
   }
 
   call(inputs: Tensor | Tensor[], kwargs: Kwargs) {
-    const training = kwargs['training'];
-    // Computes random features
-    let gpInputs = inputs;
-    if (this.normalizeInput) {
-      // @ts-ignore
-      gpInputs = this._inputNormLayer.call(gpInputs);
-    } else if (this.useCustomRandomFeatures) {
-      // Supports lengthscale for custom random feature layer by directly rescaling the input.\
-      // @ts-ignore
-      const gpInputScale = tf.scalar(this.gpInputScale, inputs[0].dtype);
-      // @ts-ignore
-      gpInputs = gpInputs.map((input) => input.mul(gpInputScale));
-    }
+    return tf.tidy(() => {
+      const training = kwargs['training'];
+      // Computes random features
+      let gpInputs = inputs;
+      if (this.normalizeInput) {
+        // @ts-ignore
+        gpInputs = this._inputNormLayer.call(gpInputs);
+      } else if (this.useCustomRandomFeatures) {
+        // Supports lengthscale for custom random feature layer by directly rescaling the input.\
+        // @ts-ignore
+        const gpInputScale = tf.scalar(this.gpInputScale, inputs[0].dtype);
+        // @ts-ignore
+        gpInputs = gpInputs.map((input) => input.mul(gpInputScale));
+      }
 
-    // @ts-ignore
-    let gpFeature = this._randomFeature.call(gpInputs, {});
+      // @ts-ignore
+      let gpFeature = this._randomFeature.call(gpInputs, {});
 
-    if (this.scaleRandomFeatures) {
-      // Scale random feature by 2. / sqrt(numInducing)
-      // @ts-ignore
-      const gpFeatureScale = tf.scalar(this.gpFeatureScale, inputs[0].dtype);
-      // @ts-ignore
-      gpFeature = gpFeature.mul(gpFeatureScale);
-    }
+      if (this.scaleRandomFeatures) {
+        // Scale random feature by 2. / sqrt(numInducing)
+        // @ts-ignore
+        const gpFeatureScale = tf.scalar(this.gpFeatureScale, inputs[0].dtype);
+        // @ts-ignore
+        gpFeature = gpFeature.mul(gpFeatureScale);
+      }
 
-    // Computes posterior center (ie MAP estimate) and variance
-    // @ts-ignore
-    const gpOutput = tf.add(this._gpOutputLayer.call(gpFeature), this._gpOutputBias.read());
+      // Computes posterior center (ie MAP estimate) and variance
+      // @ts-ignore
+      const gpOutput = tf.add(this._gpOutputLayer.call(gpFeature), this._gpOutputBias.read());
 
-    let gpCovmat;
-    if (this.returnGpCov) {
-      // @ts-ignore
-      gpCovmat = this._gpCovLayer.call(gpFeature, { gpOutput, training });
-    }
-    // Assembles model output
-    const modelOutput = [gpOutput];
-    if (this.returnGpCov && !training) {
-      // @ts-ignore
-      modelOutput.push(gpCovmat);
-    }
-    if (this.returnRandomFeatures) {
-      // @ts-ignore
-      modelOutput.push(gpFeature);
-    }
+      let gpCovmat;
+      if (this.returnGpCov) {
+        // @ts-ignore
+        gpCovmat = this._gpCovLayer.call(gpFeature, { gpOutput, training });
+      }
+      // Assembles model output
+      const modelOutput = [gpOutput];
+      if (this.returnGpCov && !training) {
+        // @ts-ignore
+        modelOutput.push(gpCovmat);
+      }
+      if (this.returnRandomFeatures) {
+        // @ts-ignore
+        modelOutput.push(gpFeature);
+      }
 
-    return modelOutput;
+      return modelOutput;
+    });
   }
 
   get trainableWeights(): LayerVariable[] {
@@ -291,18 +293,20 @@ export function meanFieldLogits(
   covarianceMatrix: Tensor,
   meanFieldFactor: number = 1
 ): Tensor {
-  if (!meanFieldFactor || meanFieldFactor < 0) {
-    return logits;
-  }
-  // Compute standard deviation
-  const variances = diagPart(covarianceMatrix);
+  return tf.tidy(() => {
+    if (!meanFieldFactor || meanFieldFactor < 0) {
+      return logits;
+    }
+    // Compute standard deviation
+    const variances = diagPart(covarianceMatrix);
 
-  // Compute scaling coefficient for mean-field approximation
-  let logitsScale = tf.sqrt(tf.add(tf.scalar(1), tf.mul(variances, tf.scalar(meanFieldFactor))));
+    // Compute scaling coefficient for mean-field approximation
+    let logitsScale = tf.sqrt(tf.add(tf.scalar(1), tf.mul(variances, tf.scalar(meanFieldFactor))));
 
-  if (logits.shape.length > 1) {
-    // Cast logitsScale to compatible dimension
-    logitsScale = tf.expandDims(logitsScale, -1);
-  }
-  return tf.div(logits, logitsScale);
+    if (logits.shape.length > 1) {
+      // Cast logitsScale to compatible dimension
+      logitsScale = tf.expandDims(logitsScale, -1);
+    }
+    return tf.div(logits, logitsScale);
+  });
 }
