@@ -1,3 +1,5 @@
+// Util functions, some grabbed from tfjs-core
+
 import { Tensor, TensorBuffer, tidy } from '@tensorflow/tfjs';
 import * as tfc from '@tensorflow/tfjs-core';
 
@@ -46,7 +48,7 @@ export function assert(expr: boolean, msg: string | (() => string)) {
 }
 
 /**
- * Given a Tensor, outputs the diagnal part as a Tensor
+ * Given a Tensor, outputs the diagonal part as a Tensor
  * @param x
  */
 export function diagPart(x: Tensor): Tensor {

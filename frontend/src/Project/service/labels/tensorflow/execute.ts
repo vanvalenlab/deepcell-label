@@ -1,3 +1,6 @@
+// Slightly modified version of https://github.com/tensorflow/tfjs/blob/tfjs-v4.2.0/tfjs-layers/src/engine/executor.ts
+// Changed to return multiple outputs for our SNGP model
+
 import { dispose, memory, SymbolicTensor, Tensor, util } from '@tensorflow/tfjs';
 import {
   cachedRecipientCounts,

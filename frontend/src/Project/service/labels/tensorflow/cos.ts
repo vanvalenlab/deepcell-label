@@ -1,3 +1,5 @@
+// Adapted from https://github.com/tensorflow/tfjs/blob/master/tfjs-layers/src/activations.ts
+
 import * as tfc from '@tensorflow/tfjs-core';
 import { serialization, Tensor, tidy } from '@tensorflow/tfjs-core';
 
