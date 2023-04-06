@@ -58,12 +58,12 @@ function ChannelSelect(props) {
           ))}
         </TextField>
       </Grid>
-      <Grid item sx={{ marginLeft: 0.5 }}>
+      <Grid item sx={{ marginLeft: '0.5em' }}>
         <FormControl>
           <RadioGroup row value={plot} onChange={handleChangePlot}>
             <FormControlLabel value='histogram' control={<Radio />} label='Histogram' />
             <FormControlLabel
-              sx={{ marginLeft: 5 }}
+              sx={{ marginLeft: '2.5em' }}
               disabled={numChannels === 1}
               value='scatter'
               control={<Radio />}

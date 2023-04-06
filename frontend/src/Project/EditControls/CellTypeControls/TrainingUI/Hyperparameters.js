@@ -15,8 +15,9 @@ function Hyperparameters({ badBatch, trainSize, valSize }) {
   const batches = [1, 2, 4, 8, 16, 32, 64, 128, 256];
   const epochs = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   const lrs = [0.001, 0.01, 0.1, 1.0];
-  const embeddings = ['Mean', 'Total'];
   const training = useTraining();
+  const imported = useSelector(training, (state) => state.context.embeddings);
+  const embeddings = imported ? ['Mean', 'Total', 'Imported'] : ['Mean', 'Total'];
   const batchSize = batches.indexOf(useSelector(training, (state) => state.context.batchSize));
   const numEpochs = epochs.indexOf(useSelector(training, (state) => state.context.numEpochs));
   const learningRate = lrs.indexOf(useSelector(training, (state) => state.context.learningRate));

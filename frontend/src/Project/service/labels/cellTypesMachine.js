@@ -323,7 +323,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
           const pred = evt.predictions;
           for (let cell in pred) {
             cellTypes = cellTypes.map((cellType) =>
-              cellType.id === pred[cell] + 1 && !cellType.cells.includes(cell)
+              cellType.id === pred[cell] + 1 && !cellType.cells.includes(cell) && cell > 0
                 ? {
                     ...cellType,
                     cells: [...cellType.cells, parseInt(cell)].sort(function (a, b) {

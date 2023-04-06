@@ -13,8 +13,9 @@ type Spots = [number, number][];
 type Divisions = { parent: number; daughters: number[]; t: number }[];
 type Cells = { value: number; cell: number; t: number }[];
 type CellTypes = { id: number; name: string; color: string; cells: number[] };
+type Embeddings = number[][];
 type Files = {
-  [filename: string]: OmeTiff | Spots | Cells | CellTypes | Divisions;
+  [filename: string]: OmeTiff | Spots | Cells | CellTypes | Embeddings | Divisions;
 };
 
 async function parseZip(response: Response) {
@@ -58,6 +59,12 @@ async function parseZip(response: Response) {
       const json = await entry.getData(new zip.TextWriter());
       const cellTypes: CellTypes = JSON.parse(json);
       files[entry.filename] = cellTypes;
+    }
+    if (entry.filename === 'embeddings.json') {
+      // @ts-ignore
+      const json = await entry.getData(new zip.TextWriter());
+      const embeddings: Embeddings = JSON.parse(json);
+      files[entry.filename] = embeddings;
     }
   }
   return { files };
@@ -231,6 +238,7 @@ interface Context {
   divisions: Divisions | null;
   cells: Cells | null;
   cellTypes: CellTypes | null;
+  embeddings: Embeddings | null;
 }
 
 const createLoadMachine = (projectId: string) =>
@@ -254,6 +262,7 @@ const createLoadMachine = (projectId: string) =>
         divisions: null,
         cells: null,
         cellTypes: null,
+        embeddings: null,
       },
       tsTypes: {} as import('./loadMachine.typegen').Typegen0,
       schema: {
@@ -281,7 +290,14 @@ const createLoadMachine = (projectId: string) =>
             src: 'fetch project zip',
             onDone: {
               target: 'splitArrays',
-              actions: ['set spots', 'set divisions', 'set cells', 'set cellTypes', 'set metadata'],
+              actions: [
+                'set spots',
+                'set divisions',
+                'set cells',
+                'set cellTypes',
+                'set embeddings',
+                'set metadata',
+              ],
             },
             onError: {
               actions: 'send project not in output bucket',
@@ -329,6 +345,10 @@ const createLoadMachine = (projectId: string) =>
             return [];
           },
         }),
+        'set embeddings': assign({
+          // @ts-ignore
+          embeddings: (context, event) => event.data.files['embeddings.json'] as Embeddings,
+        }),
         'set metadata': assign((ctx, evt) => {
           // @ts-ignore
           const { metadata } = evt.data.files['X.ome.tiff'];
@@ -362,6 +382,7 @@ const createLoadMachine = (projectId: string) =>
           cells: ctx.cells,
           cellTypes: ctx.cellTypes,
           channels: ctx.channels,
+          embeddings: ctx.embeddings,
         })),
       },
     }

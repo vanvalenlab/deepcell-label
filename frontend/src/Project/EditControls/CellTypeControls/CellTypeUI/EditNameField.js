@@ -42,7 +42,7 @@ function EditNameField(props) {
         <TextField
           sx={{ width: '80%' }}
           error={name.length === 0}
-          inputProps={{ maxLength: 20 }}
+          inputProps={{ maxLength: 15 }}
           id='standard-basic'
           defaultValue={name}
           label='Cell Type'

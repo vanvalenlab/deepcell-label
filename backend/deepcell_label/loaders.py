@@ -39,6 +39,7 @@ class Loader:
         self.cellTypes = None
         self.cells = None
         self.channels = []
+        self.embeddings = None
 
         self.image_file = image_file
         self.label_file = label_file if label_file else image_file
@@ -61,6 +62,7 @@ class Loader:
         self.cellTypes = load_cellTypes(self.label_file)
         self.cells = load_cells(self.label_file)
         self.channels = load_channels(self.image_file)
+        self.embeddings = load_embeddings(self.label_file)
 
         if self.y is None:
             shape = (*self.X.shape[:-1], 1)
@@ -74,6 +76,7 @@ class Loader:
         self.write_divisions()
         self.write_cellTypes()
         self.write_cells()
+        self.write_embeddings()
 
     def write_images(self):
         """
@@ -135,6 +138,10 @@ class Loader:
     def write_cellTypes(self):
         """Writes cell types to cellTypes.json in the output zip."""
         self.zip.writestr('cellTypes.json', json.dumps(self.cellTypes))
+
+    def write_embeddings(self):
+        """Writes embeddings to embeddings.json in the output zip."""
+        self.zip.writestr('embeddings.json', json.dumps(self.embeddings))
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
@@ -262,6 +269,24 @@ def load_cellTypes(f):
     if cellTypes is None:
         return []
     return cellTypes
+
+
+def load_embeddings(f):
+    """
+    Load embeddings from embeddings.json in project archive
+
+    Args:
+        f: zip file with embeddings.json
+
+    Returns:
+        dict or None if embeddings.json not found
+    """
+    f.seek(0)
+    embeddings = None
+    if zipfile.is_zipfile(f):
+        zf = zipfile.ZipFile(f, 'r')
+        embeddings = load_zip_json(zf, filename='embeddings.json')
+    return embeddings
 
 
 def load_cells(f):

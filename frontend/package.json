@@ -46,6 +46,7 @@
     "lint-staged": "^12.3.3",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
+    "mathjs": "^11.6.0",
     "mousetrap": "^1.6.5",
     "nyc": "^15.1.0",
     "plotly.js": "2.12.1",

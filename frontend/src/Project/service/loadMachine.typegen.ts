@@ -7,6 +7,7 @@ export interface Typegen0 {
     'set divisions': 'done.invoke.load.loading:invocation[0]';
     'set cells': 'done.invoke.load.loading:invocation[0]';
     'set cellTypes': 'done.invoke.load.loading:invocation[0]';
+    'set embeddings': 'done.invoke.load.loading:invocation[0]';
     'set metadata': 'done.invoke.load.loading:invocation[0]';
     'send project not in output bucket': 'error.platform.load.loading:invocation[0]';
     'set arrays': 'done.invoke.load.splitArrays:invocation[0]';

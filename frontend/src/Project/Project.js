@@ -7,7 +7,7 @@ import Canvas from './Canvas';
 import DisplayControls from './DisplayControls';
 import DisplayControlsTop from './DisplayControls/DisplayControlsTop';
 import EditControls from './EditControls';
-import ChannelExpressionPlot from './EditControls/CellTypeControls/ChannelExpressionPlot';
+import PlotAndLearnTabs from './EditControls/CellTypeControls/PlotAndLearnTabs';
 import ForceLoadOutputModal from './ForceLoadOutputModal';
 import InstructionsModal from './Instructions/InstructionsModal';
 import MissingProject from './MissingProject';
@@ -49,7 +49,7 @@ function Project({ review }) {
         </Box>
         <EditControls />
         <Canvas />
-        <ChannelExpressionPlot />
+        <PlotAndLearnTabs />
       </Box>
       {/* TODO: Move this help button and instructions modal to the actual Navbar.
       Would require changing many of the instruction components to not rely on project state */}
