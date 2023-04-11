@@ -108,6 +108,6 @@ it('removes channel', () => {
   cy.focused().clear().type('Test Name{enter}');
   cy.contains('channel 0').should('not.exist');
   cy.contains('Test Name');
-  cy.get('[data-testid="DeleteIcon"]').click();
+  cy.get('[data-testid="DeleteIcon"]').eq(0).click();
   cy.contains('Test Name').should('not.exist');
 });
