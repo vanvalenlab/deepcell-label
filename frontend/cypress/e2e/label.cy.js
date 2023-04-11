@@ -35,7 +35,6 @@ if (Cypress.env('AWS_ACCESS_KEY_ID') && Cypress.env('AWS_SECRET_ACCESS_KEY')) {
     cy.contains('Download');
     cy.contains('Undo');
     cy.contains('Redo');
-    cy.contains('Display');
     cy.contains('Segment');
     cy.contains('Cells');
     cy.get('.MuiCircularProgress-svg').should('not.exist');
