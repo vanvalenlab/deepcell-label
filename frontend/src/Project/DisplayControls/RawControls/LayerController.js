@@ -106,7 +106,7 @@ function LayerRemove({ layer }) {
 
   return (
     <IconButton sx={{ marginLeft: 1.3 }} onClick={handleRemove}>
-      <DeleteIcon sx={{ color: color }} />
+      <DeleteIcon sx={{ color: color, fontSize: 22 }} />
     </IconButton>
   );
 }
