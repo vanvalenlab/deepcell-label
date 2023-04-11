@@ -1,11 +1,9 @@
 import { Paper, Tab, Tabs } from '@mui/material';
 import { useSelector } from '@xstate/react';
-import { bind } from 'mousetrap';
 import { useEffect } from 'react';
 import { useLabelMode, useSpots } from '../ProjectContext';
 
 const tabKeybinds = {
-  display: ['c', 'f', 'y', 'i', '0', 'o'],
   segment: ['b', 'e', 'x', 'k', 'g', 't', 'w', 'm', 'q'],
   cells: ['Backspace', 'r', 's'],
 };
@@ -13,38 +11,33 @@ const tabKeybinds = {
 function EditTabs() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('display')
+    return state.matches('editSegment')
       ? 0
-      : state.matches('editSegment')
-      ? 1
       : state.matches('editCells')
-      ? 2
+      ? 1
       : state.matches('editDivisions')
-      ? 3
+      ? 2
       : state.matches('editCellTypes')
-      ? 4
+      ? 3
       : state.matches('editSpots')
-      ? 5
+      ? 4
       : false;
   });
   const handleChange = (event, newValue) => {
     switch (newValue) {
       case 0:
-        labelMode.send('DISPLAY');
-        break;
-      case 1:
         labelMode.send('EDIT_SEGMENT');
         break;
-      case 2:
+      case 1:
         labelMode.send('EDIT_CELLS');
         break;
-      case 3:
+      case 2:
         labelMode.send('EDIT_DIVISIONS');
         break;
-      case 4:
+      case 3:
         labelMode.send('EDIT_CELLTYPES');
         break;
-      case 5:
+      case 4:
         labelMode.send('EDIT_SPOTS');
         break;
       default:
@@ -54,16 +47,12 @@ function EditTabs() {
 
   useEffect(() => {
     const listener = (event) => {
-      if (tabKeybinds.display.includes(event.key)) {
-        labelMode.send('DISPLAY');
-      } else if (tabKeybinds.segment.includes(event.key)) {
+      if (tabKeybinds.segment.includes(event.key)) {
         labelMode.send('EDIT_SEGMENT');
       } else if (tabKeybinds.cells.includes(event.key)) {
         labelMode.send('EDIT_CELLS');
       }
     };
-    // Bind 'z' for edge case where Undo triggers DISPLAY
-    bind('z', () => labelMode.send('DISPLAY'));
     document.addEventListener('keydown', listener);
     return () => {
       document.removeEventListener('keydown', listener);
@@ -82,7 +71,6 @@ function EditTabs() {
         onChange={handleChange}
         variant='scrollable'
       >
-        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Display' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cells' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Divisions' />
