@@ -45,7 +45,7 @@ function LayerOptions({ layer, toggleType }) {
         onClick={toggle}
         ref={anchorRef}
       >
-        <MoreVertIcon fontSize='small' />
+        <MoreVertIcon />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <Paper sx={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}>
