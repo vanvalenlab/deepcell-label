@@ -56,8 +56,7 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
     width: 345,
     height: 350,
     margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
-    title: { text: stat },
-    xaxis: { automargin: true, title: names[channelX] },
+    xaxis: { automargin: true, title: stat },
     updatemenus: [
       {
         buttons: [
