@@ -9,7 +9,6 @@ import Popper from '@mui/material/Popper';
 import { styled } from '@mui/system';
 import { useSelector } from '@xstate/react';
 import React, { useReducer, useRef } from 'react';
-import { useRaw } from '../../ProjectContext';
 import ColorPalette from './ColorPalette';
 
 const Span = styled('span')``;
@@ -19,16 +18,9 @@ function LayerOptions({ layer, toggleType }) {
   const anchorRef = useRef(null);
   const index = useSelector(layer, (state) => state.context.layer);
 
-  const raw = useRaw();
-
   const handleColorSelect = (color) => {
     toggle();
     layer.send({ type: 'SET_COLOR', color });
-  };
-
-  const handleRemove = () => {
-    toggle();
-    raw.send({ type: 'REMOVE_LAYER', layer, index });
   };
 
   const handleEdit = () => {
@@ -45,7 +37,7 @@ function LayerOptions({ layer, toggleType }) {
         onClick={toggle}
         ref={anchorRef}
       >
-        <MoreVertIcon fontSize='small' />
+        <MoreVertIcon />
       </IconButton>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <Paper sx={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}>
@@ -61,18 +53,6 @@ function LayerOptions({ layer, toggleType }) {
                   }}
                 >
                   Edit Name
-                </Span>
-              </MenuItem>
-              <MenuItem dense disableGutters onClick={handleRemove}>
-                <Span
-                  sx={{
-                    width: '70px',
-                    textAlign: 'center',
-                    px: '2px',
-                    color: 'white',
-                  }}
-                >
-                  Remove
                 </Span>
               </MenuItem>
               <MenuItem

@@ -1,4 +1,4 @@
-import { Checkbox, FormLabel, MenuItem, TextField } from '@mui/material';
+import { Box, Checkbox, FormLabel, MenuItem, TextField } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
 import Grid from '@mui/material/Grid';
@@ -6,7 +6,7 @@ import Slider from '@mui/material/Slider';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import { bind } from 'mousetrap';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useMousetrapRef, useRaw } from '../../ProjectContext';
 
 const InvertToggle = ({ channel }) => {
@@ -64,7 +64,7 @@ const ChannelSelector = () => {
 
   return (
     <Tooltip title={tooltip} placement='right'>
-      <TextField select size='small' value={channel} onChange={onChange}>
+      <TextField sx={{ width: 130 }} select size='small' value={channel} onChange={onChange}>
         {names.map((opt, index) => (
           <MenuItem key={index} value={index}>
             {opt}
@@ -163,22 +163,22 @@ const GrayscaleControls = () => {
   }, [raw]);
 
   return (
-    <Grid container direction='column'>
-      {numChannels > 1 && (
-        <Grid item xs={12}>
-          <ChannelSelector />
-        </Grid>
-      )}
-      <Grid item xs={12} container direction='column'>
+    <Box display='flex'>
+      <Grid sx={{ marginRight: -16, marginLeft: 1, marginTop: 1 }} container direction='column'>
+        {numChannels > 1 && <ChannelSelector />}
         <InvertToggle channel={channel} />
+      </Grid>
+      <Grid sx={{ width: 200, marginRight: 5, marginTop: 3.2 }} container direction='column'>
         <FormLabel>Range</FormLabel>
         <RangeSlider channel={channel} />
+      </Grid>
+      <Grid sx={{ width: 200, marginBottom: -1 }} container direction='column'>
         <FormLabel>Brightness</FormLabel>
         <BrightnessSlider channel={channel} />
         <FormLabel>Contrast</FormLabel>
         <ContrastSlider channel={channel} />
       </Grid>
-    </Grid>
+    </Box>
   );
 };
 

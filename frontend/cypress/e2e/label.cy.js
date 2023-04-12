@@ -35,7 +35,6 @@ if (Cypress.env('AWS_ACCESS_KEY_ID') && Cypress.env('AWS_SECRET_ACCESS_KEY')) {
     cy.contains('Download');
     cy.contains('Undo');
     cy.contains('Redo');
-    cy.contains('Display');
     cy.contains('Segment');
     cy.contains('Cells');
     cy.get('.MuiCircularProgress-svg').should('not.exist');
@@ -104,6 +103,10 @@ it('removes channel', () => {
   cy.get('body').type('b');
   cy.contains('channel 0');
   cy.get('[data-testid="layer0-options"]').click();
-  cy.contains('Remove').click();
+  cy.contains('Edit').click();
+  cy.focused().clear().type('Test Name{enter}');
   cy.contains('channel 0').should('not.exist');
+  cy.contains('Test Name');
+  cy.get('[data-testid="DeleteIcon"]').eq(0).click();
+  cy.contains('Test Name').should('not.exist');
 });

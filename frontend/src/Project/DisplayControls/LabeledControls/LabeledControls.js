@@ -1,6 +1,5 @@
 import { FormLabel } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import React from 'react';
 import CellsOpacitySlider from './CellsOpacitySlider';
 import FeatureSelect from './FeatureSelect';
 import OutlineOpacitySlider from './OutlineOpacitySlider';
@@ -8,10 +7,15 @@ import OutlineOpacitySlider from './OutlineOpacitySlider';
 const LabeledControls = () => {
   return (
     <>
-      <Grid container direction='column' spacing={1}>
+      <Grid sx={{ width: 150 }} container direction='column' spacing={1}>
+        <Grid item>
+          <FormLabel sx={{ fontSize: 18 }}> Segmentation </FormLabel>
+        </Grid>
         <Grid item>
           <FeatureSelect />
         </Grid>
+      </Grid>
+      <Grid sx={{ marginLeft: 0.2, width: 145 }} container direction='column' spacing={1}>
         <Grid item>
           <FormLabel>Cells Opacity</FormLabel>
           <CellsOpacitySlider />

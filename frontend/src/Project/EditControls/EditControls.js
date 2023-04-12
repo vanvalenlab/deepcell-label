@@ -1,8 +1,5 @@
-import { FormLabel } from '@mui/material';
 import Box from '@mui/material/Box';
 import { useSelector } from '@xstate/react';
-import LabeledControls from '../DisplayControls/LabeledControls';
-import RawControls from '../DisplayControls/RawControls';
 import SpotsControls from '../DisplayControls/SpotsControls';
 import { useLabelMode } from '../ProjectContext';
 import CellControls from './CellControls';
@@ -29,18 +26,16 @@ function TabPanel(props) {
 function EditControls() {
   const labelMode = useLabelMode();
   const value = useSelector(labelMode, (state) => {
-    return state.matches('display')
+    return state.matches('editSegment')
       ? 0
-      : state.matches('editSegment')
-      ? 1
       : state.matches('editCells')
-      ? 2
+      ? 1
       : state.matches('editDivisions')
-      ? 3
+      ? 2
       : state.matches('editCellTypes')
-      ? 4
+      ? 3
       : state.matches('editSpots')
-      ? 5
+      ? 4
       : false;
   });
 
@@ -53,28 +48,18 @@ function EditControls() {
       }}
     >
       <TabPanel value={value} index={0}>
-        <div style={{ marginBottom: 15 }}>
-          <FormLabel sx={{ fontSize: 18 }}> Segmentation </FormLabel>
-        </div>
-        <LabeledControls />
-        <div style={{ marginTop: 25, marginBottom: 10 }}>
-          <FormLabel sx={{ fontSize: 18 }}> Image </FormLabel>
-        </div>
-        <RawControls />
-      </TabPanel>
-      <TabPanel value={value} index={1}>
         <SegmentControls />
       </TabPanel>
-      <TabPanel value={value} index={2}>
+      <TabPanel value={value} index={1}>
         <CellControls />
       </TabPanel>
-      <TabPanel value={value} index={3}>
+      <TabPanel value={value} index={2}>
         <TrackingControls />
       </TabPanel>
-      <TabPanel value={value} index={4}>
+      <TabPanel value={value} index={3}>
         <CellTypeControls />
       </TabPanel>
-      <TabPanel value={value} index={5}>
+      <TabPanel value={value} index={4}>
         <SpotsControls />
       </TabPanel>
     </Box>

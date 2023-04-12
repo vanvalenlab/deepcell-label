@@ -15,7 +15,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
     {
       id: 'tool',
       context: {
-        tool: 'display',
+        tool: 'editSegment',
         eventBuses,
         undoRef,
         editSegmentRef: null,
@@ -49,14 +49,8 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
             { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
             { cond: ({ tool }) => tool === 'editCellTypes', target: 'editCellTypes' },
             { cond: ({ tool }) => tool === 'editSpots', target: 'editSpots' },
-            { target: 'display' },
+            { target: 'editSegment' },
           ],
-        },
-        display: {
-          entry: [assign({ tool: 'display' }), send({ type: 'SET_PAN_ON_DRAG', panOnDrag: true })],
-          on: {
-            mouseup: { actions: send('SELECT', { to: 'select' }) },
-          },
         },
         editSegment: {
           entry: [assign({ tool: 'editSegment' }), send({ type: 'ENTER_TAB' })],
@@ -108,8 +102,6 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
       on: {
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
-
-        DISPLAY: 'display',
         EDIT_SEGMENT: 'editSegment',
         EDIT_DIVISIONS: 'editDivisions',
         EDIT_CELLS: 'editCells',

@@ -1,5 +1,6 @@
 /** Modified from https://github.com/hms-dbmi/viv */
-import { MenuItem, TextField } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { IconButton, MenuItem, TextField } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid';
 import Slider from '@mui/material/Slider';
@@ -91,6 +92,25 @@ function LayerCheckbox({ layer }) {
   );
 }
 
+function LayerRemove({ layer }) {
+  const color = useSelector(layer, (state) => {
+    const { color } = state.context;
+    return color === '#FFFFFF' ? '#000000' : color;
+  });
+  const raw = useRaw();
+  const index = useSelector(layer, (state) => state.context.layer);
+
+  const handleRemove = () => {
+    raw.send({ type: 'REMOVE_LAYER', layer, index });
+  };
+
+  return (
+    <IconButton sx={{ marginLeft: 1.3 }} onClick={handleRemove}>
+      <DeleteIcon sx={{ color: color, fontSize: 22 }} />
+    </IconButton>
+  );
+}
+
 function LayerSlider({ layer }) {
   const range = useSelector(layer, (state) => state.context.range);
   const color = useSelector(layer, (state) => {
@@ -129,10 +149,13 @@ function LayerController({ layer }) {
       {numChannels > 1 && (
         <>
           <Grid container direction='row'>
-            <Grid item xs={12}>
+            <Grid item xs={10.5}>
               {numChannels > 1 && (
                 <LayerSelector layer={layer} typing={typing} toggleType={toggleType} />
               )}
+            </Grid>
+            <Grid item xs={1.5}>
+              <LayerOptions layer={layer} toggleType={toggleType} />
             </Grid>
           </Grid>
         </>
@@ -141,11 +164,11 @@ function LayerController({ layer }) {
         <Grid item xs={3}>
           <LayerCheckbox layer={layer} />
         </Grid>
-        <Grid container item xs={6} alignItems='center'>
+        <Grid container item xs={6.5} alignItems='center'>
           <LayerSlider layer={layer} />
         </Grid>
-        <Grid container item xs={3} justifyContent='right'>
-          <LayerOptions layer={layer} toggleType={toggleType} />
+        <Grid container item xs={2.5}>
+          <LayerRemove layer={layer} />
         </Grid>
       </Grid>
     </Grid>

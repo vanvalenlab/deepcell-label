@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
-import LabeledControlsTop from './LabeledControls/LabeledControlsTop';
-import RawControlsTop from './RawControls/RawControlsTop';
+import LabeledControls from './LabeledControls/LabeledControls';
+import RawControls from './RawControls/RawControls';
 
 const DisplayControlsTop = () => {
   return (
@@ -12,8 +12,8 @@ const DisplayControlsTop = () => {
         marginBottom: 1,
       }}
     >
-      <LabeledControlsTop />
-      <RawControlsTop />
+      <LabeledControls />
+      <RawControls />
     </Box>
   );
 };
