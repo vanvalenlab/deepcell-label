@@ -1,5 +1,6 @@
 import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
+import { useState } from 'react';
 import Plot from 'react-plotly.js';
 import {
   useCellTypes,
@@ -49,6 +50,49 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
     editCellTypes.send({ type: 'MULTISELECTION', selected: [cell] });
   };
 
+  // Save the layout states so that zooming does not get reset on other changes, for example
+  const [histLayout, setHistLayout] = useState({
+    bargap: 0.1,
+    width: 345,
+    height: 350,
+    margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
+    title: { text: stat },
+    xaxis: { automargin: true, title: names[channelX] },
+    updatemenus: [
+      {
+        buttons: [
+          {
+            args: ['yaxis', {}],
+            label: 'Raw Y',
+            method: 'relayout',
+          },
+          {
+            args: ['yaxis', { type: 'log' }],
+            label: 'Log Y',
+            method: 'relayout',
+          },
+        ],
+        direction: 'left',
+        pad: { r: -10, t: -10 },
+        showactive: true,
+        type: 'buttons',
+        x: -0.1,
+        xanchor: 'left',
+        y: 1.24,
+        yanchor: 'top',
+      },
+    ],
+  });
+
+  const [scatterLayout, setScatterLayout] = useState({
+    width: 345,
+    height: 350,
+    margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
+    title: { text: stat },
+    xaxis: { automargin: true, title: names[channelX] },
+    yaxis: { automargin: true, title: names[channelY] },
+  });
+
   return (
     <Grid item>
       {plot === 'scatter' ? (
@@ -69,14 +113,7 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
               },
             },
           ]}
-          layout={{
-            width: 345,
-            height: 350,
-            margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
-            title: { text: stat },
-            xaxis: { automargin: true, title: names[channelX] },
-            yaxis: { automargin: true, title: names[channelY] },
-          }}
+          layout={scatterLayout}
           config={{
             displaylogo: false,
             modeBarButtonsToRemove: ['toImage', 'autoScale2d', 'zoomIn2d', 'zoomOut2d'],
@@ -84,6 +121,7 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
           onSelected={handleSelection}
           onDoubleClick={handleDeselect}
           onClick={handleClick}
+          onUpdate={({ layout }) => setScatterLayout(layout)}
         />
       ) : (
         <Plot
@@ -96,19 +134,13 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
               },
             },
           ]}
-          layout={{
-            bargap: 0.1,
-            width: 345,
-            height: 350,
-            margin: { l: 30, r: 20, b: 30, t: 30, pad: 5 },
-            title: { text: stat },
-            xaxis: { automargin: true, title: names[channelX] },
-          }}
+          layout={histLayout}
           config={{
             displaylogo: false,
             modeBarButtonsToRemove: ['toImage', 'autoScale2d', 'zoomIn2d', 'zoomOut2d'],
           }}
           onSelected={handleSelection}
+          onUpdate={({ layout }) => setHistLayout(layout)}
         />
       )}
     </Grid>
