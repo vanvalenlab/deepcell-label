@@ -5,24 +5,27 @@ import Grid from '@mui/material/Grid';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import { useSelector } from '@xstate/react';
-import { useRaw } from '../../../ProjectContext';
+import { useChannelExpression, useRaw } from '../../../ProjectContext';
 
 function ChannelSelect(props) {
-  const { channelX, setChannelX, channelY, setChannelY, plot, setPlot } = props;
+  const { plot, setPlot } = props;
   const raw = useRaw();
+  const channelExpression = useChannelExpression();
   const numChannels = useSelector(raw, (state) => state.context.numChannels);
   const names = useSelector(raw, (state) => state.context.channelNames);
+  const channelX = useSelector(channelExpression, (state) => state.context.channelX);
+  const channelY = useSelector(channelExpression, (state) => state.context.channelY);
 
   const handleChangePlot = (evt) => {
     setPlot(evt.target.value);
   };
 
   const handleChangeX = (evt) => {
-    setChannelX(evt.target.value);
+    channelExpression.send({ type: 'CHANNEL_X', channelX: evt.target.value });
   };
 
   const handleChangeY = (evt) => {
-    setChannelY(evt.target.value);
+    channelExpression.send({ type: 'CHANNEL_Y', channelY: evt.target.value });
   };
 
   return (

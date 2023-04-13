@@ -1,6 +1,6 @@
 import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 import {
   useCellTypes,
@@ -9,7 +9,7 @@ import {
   useRaw,
 } from '../../../ProjectContext';
 
-function ChannelPlot({ calculations, channelX, channelY, plot }) {
+function ChannelPlot({ calculations, plot }) {
   const cellTypes = useCellTypes();
   const editCellTypes = useEditCellTypes();
   const raw = useRaw();
@@ -17,6 +17,8 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
   const names = useSelector(raw, (state) => state.context.channelNames);
   const selection = useSelector(editCellTypes, (state) => state.context.multiSelected);
   const stat = useSelector(channelExpression, (state) => state.context.calculation);
+  const channelX = useSelector(channelExpression, (state) => state.context.channelX);
+  const channelY = useSelector(channelExpression, (state) => state.context.channelY);
   let colorMap = useSelector(cellTypes, (state) => state.context.colorMap);
   let widthMap = [...colorMap];
   if (colorMap) {
@@ -91,6 +93,13 @@ function ChannelPlot({ calculations, channelX, channelY, plot }) {
     xaxis: { automargin: true, title: names[channelX] },
     yaxis: { automargin: true, title: names[channelY] },
   });
+
+  useEffect(() => {
+    let modLayout = scatterLayout;
+    modLayout.xaxis = { automargin: true, title: names[channelX] };
+    modLayout.yaxis = { automargin: true, title: names[channelY] };
+    setScatterLayout(modLayout);
+  }, [channelX, channelY]);
 
   return (
     <Grid item>
