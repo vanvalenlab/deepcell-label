@@ -244,6 +244,8 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         raw: null,
         cells: null,
         numCells: null,
+        channelX: 0,
+        channelY: 1,
         calculations: null, // Calculations made across all frames
         embeddings: null, // Imported calculations / embeddings
         reduction: null, // The actual data calculated by the request
@@ -301,6 +303,8 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
                 CHANGE_COLORMAP: {
                   actions: 'setColorMap',
                 },
+                CHANNEL_X: { actions: 'setChannelX' },
+                CHANNEL_Y: { actions: 'setChannelY' },
               },
             },
             calculating: {
@@ -377,6 +381,8 @@ const createChannelExpressionMachine = ({ eventBuses }) =>
         setFeature: assign({ feature: (_, evt) => evt.feature }),
         setStat: assign({ calculation: (_, evt) => evt.stat }),
         setEmbeddings: assign({ embeddings: (_, evt) => evt.embeddings }),
+        setChannelX: assign({ channelX: (_, evt) => evt.channelX }),
+        setChannelY: assign({ channelY: (_, evt) => evt.channelY }),
         toggleWhole: assign({ whole: (ctx) => !ctx.whole }),
         setColorMap: assign({ embeddingColorType: (_, evt) => evt.colorMap }),
         calculateMean: pure((ctx) => {

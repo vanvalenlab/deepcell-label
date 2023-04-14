@@ -26,8 +26,6 @@ function PlotAndLearnTabs() {
   const sw = useSelector(canvas, (state) => state.context.width);
   const sh = useSelector(canvas, (state) => state.context.height);
   const scale = useSelector(canvas, (state) => state.context.scale);
-  const [channelX, setChannelX] = useState(0);
-  const [channelY, setChannelY] = useState(1);
   const [tab, setTab] = useState(0);
   const [plot, setPlot] = useState('histogram');
 
@@ -86,20 +84,8 @@ function PlotAndLearnTabs() {
             <Calculate />
             {calculations ? (
               <>
-                <ChannelSelect
-                  channelX={channelX}
-                  setChannelX={setChannelX}
-                  channelY={channelY}
-                  setChannelY={setChannelY}
-                  setPlot={setPlot}
-                  plot={plot}
-                />
-                <ChannelPlot
-                  channelX={channelX}
-                  channelY={channelY}
-                  calculations={calculations}
-                  plot={plot}
-                />
+                <ChannelSelect setPlot={setPlot} plot={plot} />
+                <ChannelPlot calculations={calculations} plot={plot} />
                 <AddRemoveCancel />
               </>
             ) : null}
