@@ -2,6 +2,7 @@ export const markerPanel = [
   { names: ['B cell', 'B'], channels: ['CD19', 'CD20'] },
   { names: ['dendritic cell', 'DC', 'dendritic'], channels: ['CD11c', 'CSF1R'] },
   { names: ['endothelial'], channels: ['CD31', 'VIM'] },
+  { names: ['epithelial'], channels: ['ECADHERIN'] },
   { names: ['fibroblast'], channels: ['FAP', 'VIM'] },
   {
     names: ['macrophage', 'macro', 'macs'],
@@ -18,5 +19,5 @@ export const markerPanel = [
     names: ['T cell', 'T', 'T regulatory', 'Treg', 'TCELL/TREG'],
     channels: ['CD3', 'CD4', 'CD8', 'FOXP3', 'CD103', 'ICOS', 'LAG3/CD223'],
   },
-  { names: ['tumor', 'malignant'], channels: ['PanCK', 'GALECTIN9', 'HER2'] },
+  { names: ['tumor'], channels: ['PanCK', 'GALECTIN9', 'HER2'] },
 ];
