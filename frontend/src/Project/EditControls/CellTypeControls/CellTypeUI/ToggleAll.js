@@ -19,7 +19,7 @@ function ToggleAll({ toggleArray, setToggleArray }) {
   };
 
   return (
-    <Box sx={{ position: 'relative', top: 50, marginLeft: 0.85 }} display='flex'>
+    <Box display='flex'>
       <Checkbox
         color='secondary'
         sx={{ color: color }}
