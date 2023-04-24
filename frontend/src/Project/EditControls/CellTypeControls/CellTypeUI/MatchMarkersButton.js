@@ -3,8 +3,7 @@ import { IconButton } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import Fuse from 'fuse.js';
-import { useRaw } from '../../../ProjectContext';
-import { markerPanel } from './CellMarkerPanel';
+import { useCellTypes, useRaw } from '../../../ProjectContext';
 
 const getClosestType = (name, markerPanel) => {
   const fuse = new Fuse(markerPanel, {
@@ -39,7 +38,9 @@ function MatchMarkersButton(props) {
   const { name, setMatchedName, setMatchedChannels } = props;
 
   const raw = useRaw();
+  const cellTypes = useCellTypes();
   const channelNames = useSelector(raw, (state) => state.context.channelNames);
+  const markerPanel = useSelector(cellTypes, (state) => state.context.markerPanel);
 
   const handleLookUp = (name, markerPanel, channelNames) => {
     const { closestName, closestChannels } = getClosestType(name, markerPanel);

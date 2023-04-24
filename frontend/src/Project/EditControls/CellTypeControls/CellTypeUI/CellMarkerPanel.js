@@ -1,5 +1,5 @@
 export const markerPanel = [
-  { id: 0, names: ['B cell', 'B'], channels: ['CD19', 'CD20'] },
+  { id: 0, names: ['B cell', 'B', 'BCELL'], channels: ['CD19', 'CD20'] },
   { id: 1, names: ['dendritic cell', 'DC', 'dendritic'], channels: ['CD11c', 'CSF1R'] },
   { id: 2, names: ['endothelial'], channels: ['CD31', 'VIM'] },
   { id: 3, names: ['epithelial'], channels: ['ECADHERIN'] },

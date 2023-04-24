@@ -8,6 +8,7 @@ import equal from 'fast-deep-equal';
 import { assign, Machine, send } from 'xstate';
 import { pure } from 'xstate/lib/actions';
 import Cells from '../../cells';
+import { markerPanel } from '../../EditControls/CellTypeControls/CellTypeUI/CellMarkerPanel';
 import { fromEventBus } from '../eventBus';
 
 // Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
@@ -58,6 +59,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
         feature: 0,
         numCells: null,
         colorMap: null,
+        markerPanel: markerPanel,
         isOn: [],
         opacities: [],
         undoRef: undoRef,
@@ -173,6 +175,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
                 TOGGLE_ALL_ON: { actions: ['toggleAll', 'updateColorMap'] },
                 TOGGLE_ALL_OFF: { actions: ['untoggleAll', 'updateColorMap'] },
                 EDIT_OPACITY: { actions: ['editOpacities', 'updateColorMap'] },
+                EDIT_MARKER_PANEL: { actions: ['editMarkerPanel'] },
                 CELLS: { actions: 'setCells' },
                 RESTORE: { actions: ['restore', 'updateColorMap'] },
                 SET_FEATURE: { actions: ['setFeature', 'updateColorMap'] },
@@ -409,6 +412,17 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
             let isOn = ctx.isOn;
             isOn[evt.cellType] = !isOn[evt.cellType];
             return isOn;
+          },
+        }),
+
+        // Make a specified edit to a row in the marker panel
+        editMarkerPanel: assign({
+          markerPanel: (ctx, evt) => {
+            const editedPanel = ctx.markerPanel.map((row) =>
+              row.id === evt.id ? { ...row, [evt.field]: evt.data } : row
+            );
+            console.log(editedPanel);
+            return editedPanel;
           },
         }),
 
