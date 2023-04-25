@@ -421,7 +421,6 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
             const editedPanel = ctx.markerPanel.map((row) =>
               row.id === evt.id ? { ...row, [evt.field]: evt.data } : row
             );
-            console.log(editedPanel);
             return editedPanel;
           },
         }),

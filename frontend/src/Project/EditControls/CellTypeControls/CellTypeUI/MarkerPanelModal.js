@@ -17,6 +17,7 @@ const columns = [
     width: 400,
     editable: true,
     renderCell: (params) => <CellTypes {...params} />,
+    renderEditCell: (params) => <EditCellTypes {...params} />,
   },
   {
     field: 'channels',
@@ -138,6 +139,43 @@ function EditChannels(props) {
   );
 }
 
+function EditCellTypes(props) {
+  const { id, value, field } = props;
+  const apiRef = useGridApiContext();
+  const focusRef = useRef(null);
+  const cellTypes = useCellTypes();
+
+  const handleValueChange = (event) => {
+    const newValue = event.target.value.split(',');
+    apiRef.current.setEditCellValue({ id, field, value: newValue });
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      focusRef.current.blur();
+    }
+    event.stopPropagation();
+  };
+
+  // Handler for when text is finished being typed (hit enter or click away)
+  const handleBlur = () => {
+    cellTypes.send({ type: 'EDIT_MARKER_PANEL', id: id, field: 'names', data: value });
+    apiRef.current.stopCellEditMode({ id, field });
+  };
+
+  return (
+    <TextField
+      sx={{ width: '100%' }}
+      value={value}
+      autoFocus={true}
+      inputRef={focusRef}
+      onBlur={handleBlur}
+      onChange={handleValueChange}
+      onKeyDown={handleKeyDown}
+    />
+  );
+}
+
 function MarkerPanelModal({ open, setOpen }) {
   const style = {
     position: 'absolute',
@@ -165,6 +203,14 @@ function MarkerPanelModal({ open, setOpen }) {
               </Typography>
             </Box>
           </Grid>
+          <Grid item>
+            <Typography>
+              This is the table used to match cell types with channels. Double click a cell to edit,
+              and your comma-delimited input will be parsed into cell types or channels. Note that
+              existing channels only match when matching exactly, but cell type names will be fuzzy
+              matched.
+            </Typography>
+          </Grid>
           <Grid item sx={{ height: '70%', width: '100%' }}>
             <DataGrid
               rows={markerPanel}
@@ -172,11 +218,11 @@ function MarkerPanelModal({ open, setOpen }) {
               initialState={{
                 pagination: {
                   paginationModel: {
-                    pageSize: 10,
+                    pageSize: 20,
                   },
                 },
               }}
-              pageSizeOptions={[10]}
+              pageSizeOptions={[10, 20, 30]}
             />
           </Grid>
         </Grid>

@@ -20,20 +20,6 @@ const getClosestType = (name, markerPanel) => {
   return { closestName, closestChannels };
 };
 
-const findChannels = (fuse, matchedChannels, channelNames) => {
-  let foundChannels = [];
-  for (let i = 0; i < matchedChannels.length; i++) {
-    const result = fuse.search(matchedChannels[i]);
-    if (result.length > 0) {
-      const index = channelNames.findIndex((e) => e === result[0].item);
-      if (!foundChannels.includes(index)) {
-        foundChannels.push(index);
-      }
-    }
-  }
-  return foundChannels;
-};
-
 function MatchMarkersButton(props) {
   const { name, setMatchedName, setMatchedChannels } = props;
 
@@ -44,8 +30,13 @@ function MatchMarkersButton(props) {
 
   const handleLookUp = (name, markerPanel, channelNames) => {
     const { closestName, closestChannels } = getClosestType(name, markerPanel);
-    const fuse = new Fuse(channelNames);
-    const foundChannels = findChannels(fuse, closestChannels, channelNames);
+    const foundChannels = [];
+    for (let i = 0; i < channelNames.length; i++) {
+      if (closestChannels.includes(channelNames[i])) {
+        foundChannels.push(i);
+      }
+    }
+    console.log({ closestChannels, channelNames, foundChannels });
     setMatchedName(closestName);
     setMatchedChannels(foundChannels);
   };
