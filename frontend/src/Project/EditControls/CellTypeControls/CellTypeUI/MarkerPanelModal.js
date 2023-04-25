@@ -29,6 +29,7 @@ const columns = [
   },
 ];
 
+// Component for rendering the channels column in the table
 function Channels(props) {
   const { value } = props;
   const raw = useRaw();
@@ -61,6 +62,7 @@ function Channels(props) {
   );
 }
 
+// Component for rendering the cell type names column
 function CellTypes(props) {
   const { value } = props;
   const cellTypes = useCellTypes();
@@ -102,6 +104,7 @@ function CellTypes(props) {
   ));
 }
 
+// Component for enabling text field editing for cells in the channels column
 function EditChannels(props) {
   const { id, value, field } = props;
   const apiRef = useGridApiContext();
@@ -139,6 +142,7 @@ function EditChannels(props) {
   );
 }
 
+// Component for enabling text field editing for cells in the cell types column
 function EditCellTypes(props) {
   const { id, value, field } = props;
   const apiRef = useGridApiContext();
@@ -176,6 +180,7 @@ function EditCellTypes(props) {
   );
 }
 
+// Overarching modal component
 function MarkerPanelModal({ open, setOpen }) {
   const style = {
     position: 'absolute',
