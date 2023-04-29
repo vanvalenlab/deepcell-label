@@ -8,6 +8,7 @@ import { useCellTypes } from '../../ProjectContext';
 import AddCellTypeLabel from './CellTypeUI/AddCellTypeLabel';
 import CellTypeAccordionList from './CellTypeUI/CellTypeAccordionList';
 import EditingPrompt from './CellTypeUI/EditingPrompt';
+import OpenMarkerPanel from './CellTypeUI/OpenMarkerPanel';
 import ToggleAll from './CellTypeUI/ToggleAll';
 
 function CellTypeControls() {
@@ -31,7 +32,14 @@ function CellTypeControls() {
         />
       </FormLabel>
       <AddCellTypeLabel toggleArray={toggleArray} setToggleArray={setToggleArray} />
-      <ToggleAll toggleArray={toggleArray} setToggleArray={setToggleArray} />
+      <Box
+        sx={{ position: 'relative', top: 50, marginLeft: 0.85 }}
+        display='flex'
+        flexDirection='row'
+      >
+        <ToggleAll toggleArray={toggleArray} setToggleArray={setToggleArray} />
+        <OpenMarkerPanel />
+      </Box>
       <CellTypeAccordionList toggleArray={toggleArray} setToggleArray={setToggleArray} />
       <EditingPrompt />
     </Box>
