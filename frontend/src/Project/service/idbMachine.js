@@ -62,10 +62,9 @@ function createIDBMachine({ projectId, eventBuses }) {
         loadProject: {
           on: {
             LOADED: {
-              // actions: send((ctx, evt) => {
-              //   const {rawOriginal, ...data} = evt;
-              //   return data;
-              // }, { to: 'idb' }),
+              // This sends the LOADED event forwarded from loadMachine
+              // Perhaps need to do some preprocessing so that rawOriginal is only sent in a loop of chunks to 'idb'
+              // And these are pieced together before being put in IDB
               actions: forwardTo('idb'),
               target: 'idle',
             },
