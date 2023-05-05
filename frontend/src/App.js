@@ -1,5 +1,6 @@
-import { createTheme, StyledEngineProvider, ThemeProvider } from '@mui/material';
+import { createTheme, CssBaseline, StyledEngineProvider, ThemeProvider } from '@mui/material';
 import { styled } from '@mui/system';
+import { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Footer from './Footer';
 import Load from './Load';
@@ -8,12 +9,13 @@ import NavBar from './Navbar';
 import Label from './Project';
 
 const Div = styled('div')``;
-const theme = createTheme();
 
 function App() {
+  const [theme, setTheme] = useState(createTheme({ palette: { mode: 'light' } }));
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={theme}>
+        <CssBaseline />
         <Div
           sx={{
             boxSizing: 'border-box',
@@ -22,7 +24,7 @@ function App() {
             flexDirection: 'column',
           }}
         >
-          <NavBar />
+          <NavBar theme={theme.palette.mode} setTheme={setTheme} />
           <Router>
             <Routes>
               <Route path='/' element={<Load />} />
