@@ -6,7 +6,7 @@ import MenuList from '@mui/material/MenuList';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import { useReducer, useRef } from 'react';
-import { useEditCellTypes } from '../../../ProjectContext';
+import { useEditCellTypes } from '../../../../ProjectContext';
 
 const editStyle = {
   position: 'absolute',

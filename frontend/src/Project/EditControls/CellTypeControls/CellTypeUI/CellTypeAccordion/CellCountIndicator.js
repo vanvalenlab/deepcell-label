@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import Chip from '@mui/material/Chip';
 import { useSelector } from '@xstate/react';
-import { useCellTypes } from '../../../ProjectContext';
+import { useCellTypes } from '../../../../ProjectContext';
 
 function CellCountIndicator({ id }) {
   const cellTypes = useCellTypes();

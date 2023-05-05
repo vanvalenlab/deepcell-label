@@ -5,7 +5,7 @@ import Popper from '@mui/material/Popper';
 import { useReducer, useRef } from 'react';
 import { CirclePicker } from 'react-color';
 import { useEditCellTypes } from '../../../ProjectContext';
-import { colors } from './ColorIndicator';
+import { colors } from './CellTypeAccordion/ColorIndicator';
 
 function AddCellTypeLabel(props) {
   const { toggleArray, setToggleArray } = props;

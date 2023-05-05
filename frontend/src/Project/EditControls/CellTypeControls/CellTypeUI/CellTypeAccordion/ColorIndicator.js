@@ -5,7 +5,7 @@ import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Popper from '@mui/material/Popper';
 import { useRef, useState } from 'react';
 import { CirclePicker } from 'react-color';
-import { useEditCellTypes } from '../../../ProjectContext';
+import { useEditCellTypes } from '../../../../ProjectContext';
 
 const colorStyle = {
   position: 'absolute',

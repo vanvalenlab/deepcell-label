@@ -1,6 +1,6 @@
 import Chip from '@mui/material/Chip';
 import { useSelector } from '@xstate/react';
-import { useRaw } from '../../../ProjectContext';
+import { useRaw } from '../../../../ProjectContext';
 
 function ChannelChip({ channel }) {
   const raw = useRaw();
