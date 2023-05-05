@@ -31,7 +31,7 @@ function CalculateWholeToggle() {
         placement='right'
       >
         <FormControlLabel
-          sx={{ paddingRight: 1, color: 'rgba(0, 0, 0, 0.6)' }}
+          sx={{ paddingRight: 1 }}
           control={<Switch checked={checked} onChange={handleToggle} />}
           label='All Frames'
           labelPlacement='start'

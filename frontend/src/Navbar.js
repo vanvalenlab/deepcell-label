@@ -1,6 +1,8 @@
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import MoreIcon from '@mui/icons-material/MoreVert';
-import { Box } from '@mui/material';
+import { Box, createTheme } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -12,7 +14,7 @@ import React, { useState } from 'react';
 
 const Div = styled('div')``;
 
-export default function NavBar() {
+export default function NavBar({ theme, setTheme }) {
   // const [anchorEl, setAnchorEl] = useState(null);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
 
@@ -78,6 +80,21 @@ export default function NavBar() {
               sx={{ display: 'block', borderRadius: 1 }}
             >
               <GitHubIcon sx={{ fontSize: 28 }} />
+            </IconButton>
+            <IconButton
+              onClick={() =>
+                theme === 'light'
+                  ? setTheme(createTheme({ palette: { mode: 'dark' } }))
+                  : setTheme(createTheme({ palette: { mode: 'light' } }))
+              }
+              color='inherit'
+              sx={{ display: 'block', borderRadius: 1 }}
+            >
+              {theme === 'light' ? (
+                <DarkModeIcon sx={{ fontSize: 28 }} />
+              ) : (
+                <LightModeIcon sx={{ fontSize: 28 }} />
+              )}
             </IconButton>
           </Div>
           <Div
