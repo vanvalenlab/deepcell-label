@@ -2,8 +2,8 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import { useReducer } from 'react';
+import CellAccordionContents from './CellAccordionContents';
 import CellCountIndicator from './CellCountIndicator';
-import CellGrid from './CellGrid';
 import CellTypeCheckbox from './CellTypeCheckbox';
 import CellTypeOpacitySlider from './CellTypeOpacitySlider';
 import ColorIndicator from './ColorIndicator';
@@ -80,8 +80,7 @@ function CellTypeAccordion(props) {
         />
       </AccordionSummary>
       <AccordionDetails sx={{ marginTop: '-1em' }}>
-        {/* Grid of cells to add and remove from cell type */}
-        <CellGrid id={cellType.id} name={cellType.name} color={cellType.color} />
+        <CellAccordionContents id={cellType.id} name={cellType.name} color={cellType.color} />
       </AccordionDetails>
     </Accordion>
   );

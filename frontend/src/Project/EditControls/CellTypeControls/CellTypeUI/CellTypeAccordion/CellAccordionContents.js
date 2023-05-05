@@ -13,7 +13,7 @@ import MatchMarkersButton from './MatchMarkersButton';
 import RemoveCellsButton from './RemoveCellsButton';
 import ViewChannelsButton from './ViewChannelsButton';
 
-function CellGrid(props) {
+function CellAccordionContents(props) {
   const { id, name, color } = props;
   const raw = useRaw();
   const layers = useLayers();
@@ -78,4 +78,4 @@ function CellGrid(props) {
   );
 }
 
-export default CellGrid;
+export default CellAccordionContents;
