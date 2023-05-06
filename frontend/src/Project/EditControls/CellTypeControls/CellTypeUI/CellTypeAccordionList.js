@@ -6,8 +6,6 @@ import { useCanvas, useCellTypes } from '../../../ProjectContext';
 import CellTypeAccordion from './CellTypeAccordion/CellTypeAccordion';
 
 const accordionStyle = {
-  position: 'relative',
-  top: 50,
   width: 300,
   margin: 'auto',
   overflow: 'hidden',

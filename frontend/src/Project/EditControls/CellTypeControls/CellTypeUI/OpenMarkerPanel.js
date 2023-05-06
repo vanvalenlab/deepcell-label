@@ -1,4 +1,4 @@
-import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
+import TableChartTwoToneIcon from '@mui/icons-material/TableChartTwoTone';
 import { IconButton } from '@mui/material';
 import { useState } from 'react';
 import MarkerPanelModal from './MarkerPanelModal';
@@ -12,8 +12,12 @@ function OpenMarkerPanel() {
 
   return (
     <>
-      <IconButton sx={{ marginLeft: 2 }} onClick={handlePanelModal}>
-        <AppRegistrationIcon />
+      <IconButton
+        color='primary'
+        sx={{ width: '100%', borderRadius: 1 }}
+        onClick={handlePanelModal}
+      >
+        <TableChartTwoToneIcon />
       </IconButton>
       <MarkerPanelModal open={panelOpen} setOpen={setPanelOpen} />
     </>

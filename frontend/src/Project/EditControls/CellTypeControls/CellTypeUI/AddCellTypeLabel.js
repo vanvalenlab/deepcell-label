@@ -1,5 +1,5 @@
-import AddIcon from '@mui/icons-material/Add';
-import { Box, Button, Paper } from '@mui/material';
+import CreateNewFolderTwoToneIcon from '@mui/icons-material/CreateNewFolderTwoTone';
+import { IconButton, Paper } from '@mui/material';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Popper from '@mui/material/Popper';
 import { useReducer, useRef } from 'react';
@@ -21,43 +21,23 @@ function AddCellTypeLabel(props) {
   };
 
   return (
-    <Box sx={{ position: 'relative' }}>
-      <Button
-        variant='contained'
-        startIcon={
-          <AddIcon
-            sx={{
-              position: 'relative',
-              top: -0.3,
-              left: -5,
-            }}
-          />
-        }
-        sx={{
-          position: 'absolute',
-          m: 1,
-          my: 0.25,
-          top: 0,
-          margin: 'auto',
-          height: '2.5rem',
-          width: 300,
-          fontWeight: 'bold',
-          fontSize: 14,
-        }}
-        onClick={toggle}
+    <>
+      <IconButton
         ref={anchorRef}
-        size='large'
+        color='primary'
+        sx={{ width: '100%', borderRadius: 1 }}
+        onClick={toggle}
       >
-        <div style={{ marginRight: 106 }}>Add Cell Type</div>
-      </Button>
-      <Popper open={open} anchorEl={anchorRef.current} placement='bottom'>
+        <CreateNewFolderTwoToneIcon />
+      </IconButton>
+      <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <ClickAwayListener onClickAway={toggle}>
           <Paper sx={{ p: '1em' }}>
             <CirclePicker colors={colors} onChange={handleChange} />
           </Paper>
         </ClickAwayListener>
       </Popper>
-    </Box>
+    </>
   );
 }
 
