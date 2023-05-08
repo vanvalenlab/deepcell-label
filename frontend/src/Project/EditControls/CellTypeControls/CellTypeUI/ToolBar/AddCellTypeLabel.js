@@ -1,11 +1,11 @@
 import CreateNewFolderTwoToneIcon from '@mui/icons-material/CreateNewFolderTwoTone';
-import { IconButton, Paper } from '@mui/material';
+import { IconButton, Paper, Tooltip } from '@mui/material';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Popper from '@mui/material/Popper';
 import { useReducer, useRef } from 'react';
 import { CirclePicker } from 'react-color';
-import { useEditCellTypes } from '../../../ProjectContext';
-import { colors } from './CellTypeAccordion/ColorIndicator';
+import { useEditCellTypes } from '../../../../ProjectContext';
+import { colors } from '../CellTypeAccordion/ColorIndicator';
 
 function AddCellTypeLabel(props) {
   const { toggleArray, setToggleArray } = props;
@@ -22,14 +22,16 @@ function AddCellTypeLabel(props) {
 
   return (
     <>
-      <IconButton
-        ref={anchorRef}
-        color='primary'
-        sx={{ width: '100%', borderRadius: 1 }}
-        onClick={toggle}
-      >
-        <CreateNewFolderTwoToneIcon />
-      </IconButton>
+      <Tooltip title='Add New Cell Type'>
+        <IconButton
+          ref={anchorRef}
+          color='primary'
+          sx={{ width: '100%', borderRadius: 1 }}
+          onClick={toggle}
+        >
+          <CreateNewFolderTwoToneIcon />
+        </IconButton>
+      </Tooltip>
       <Popper open={open} anchorEl={anchorRef.current} placement='bottom-end'>
         <ClickAwayListener onClickAway={toggle}>
           <Paper sx={{ p: '1em' }}>

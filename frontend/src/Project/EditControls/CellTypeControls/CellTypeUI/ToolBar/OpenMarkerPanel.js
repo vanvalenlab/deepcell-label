@@ -1,7 +1,7 @@
 import TableChartTwoToneIcon from '@mui/icons-material/TableChartTwoTone';
-import { IconButton } from '@mui/material';
+import { IconButton, Tooltip } from '@mui/material';
 import { useState } from 'react';
-import MarkerPanelModal from './MarkerPanelModal';
+import MarkerPanelModal from '../MarkerPanelModal';
 
 function OpenMarkerPanel() {
   const [panelOpen, setPanelOpen] = useState(false);
@@ -12,13 +12,15 @@ function OpenMarkerPanel() {
 
   return (
     <>
-      <IconButton
-        color='primary'
-        sx={{ width: '100%', borderRadius: 1 }}
-        onClick={handlePanelModal}
-      >
-        <TableChartTwoToneIcon />
-      </IconButton>
+      <Tooltip title='Marker Panel'>
+        <IconButton
+          color='primary'
+          sx={{ width: '100%', borderRadius: 1 }}
+          onClick={handlePanelModal}
+        >
+          <TableChartTwoToneIcon />
+        </IconButton>
+      </Tooltip>
       <MarkerPanelModal open={panelOpen} setOpen={setPanelOpen} />
     </>
   );

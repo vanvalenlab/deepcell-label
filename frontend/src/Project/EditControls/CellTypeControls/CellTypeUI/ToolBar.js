@@ -1,8 +1,8 @@
-import LayersTwoToneIcon from '@mui/icons-material/LayersTwoTone';
-import SpeakerNotesTwoToneIcon from '@mui/icons-material/SpeakerNotesTwoTone';
-import { Grid, IconButton } from '@mui/material';
-import AddCellTypeLabel from './AddCellTypeLabel';
-import OpenMarkerPanel from './OpenMarkerPanel';
+import { Grid } from '@mui/material';
+import AddCellTypeLabel from './ToolBar/AddCellTypeLabel';
+import HoverToggle from './ToolBar/HoverToggle';
+import ModeToggle from './ToolBar/ModeToggle';
+import OpenMarkerPanel from './ToolBar/OpenMarkerPanel';
 
 function ToolBar(props) {
   return (
@@ -14,14 +14,10 @@ function ToolBar(props) {
         <OpenMarkerPanel />
       </Grid>
       <Grid item xs={3}>
-        <IconButton color='primary' sx={{ width: '100%', borderRadius: 1 }}>
-          <LayersTwoToneIcon />
-        </IconButton>
+        <ModeToggle />
       </Grid>
       <Grid item xs={3}>
-        <IconButton color='primary' sx={{ width: '100%', borderRadius: 1 }}>
-          <SpeakerNotesTwoToneIcon />
-        </IconButton>
+        <HoverToggle />
       </Grid>
     </Grid>
   );
