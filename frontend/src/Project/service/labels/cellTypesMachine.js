@@ -290,13 +290,15 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
           let cellTypes;
           if (evt.mode === 'overwrite') {
             cellTypes = ctx.cellTypes.map((cellType) =>
-              cellType.id === evt.cellType && !cellType.cells.includes(evt.cell)
-                ? {
-                    ...cellType,
-                    cells: [...cellType.cells, evt.cell].sort(function (a, b) {
-                      return a - b;
-                    }),
-                  }
+              cellType.id === evt.cellType
+                ? !cellType.cells.includes(evt.cell)
+                  ? {
+                      ...cellType,
+                      cells: [...cellType.cells, evt.cell].sort(function (a, b) {
+                        return a - b;
+                      }),
+                    }
+                  : cellType
                 : {
                     ...cellType,
                     cells: cellType.cells.filter((cell) => cell !== evt.cell),
