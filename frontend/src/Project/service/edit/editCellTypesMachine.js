@@ -20,6 +20,8 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         selected: null,
         multiSelected: [],
         hovering: null,
+        hoveringCard: false,
+        mode: 'overwrite',
         cell: null,
         cellType: null,
         name: null,
@@ -29,6 +31,8 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         SELECTED: { actions: 'setSelected' },
         MULTISELECTION: { actions: 'setMultiSelected' },
         HOVERING: { actions: 'setHovering' },
+        TOGGLE_HOVER: { actions: 'toggleHoveringCard' },
+        SET_MODE: { actions: 'setMode' },
         REMOVE_ONE: { actions: ['setCell', 'setCellType', 'removeCell'] },
         REMOVE_TYPE: { actions: 'removeCellType' },
       },
@@ -94,6 +98,8 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         setSelected: assign({ selected: (_, evt) => evt.selected }),
         setMultiSelected: assign({ multiSelected: (ctx, evt) => evt.selected }),
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
+        toggleHoveringCard: assign({ hoveringCard: (ctx) => !ctx.hoveringCard }),
+        setMode: assign({ mode: (_, evt) => evt.mode }),
         removeCell: pure((ctx, _) => [
           send(
             {
@@ -129,6 +135,7 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
               type: 'ADD_CELL',
               cellType: ctx.cellType,
               cell: ctx.cell,
+              mode: ctx.mode,
             },
             { to: 'cellTypes' }
           ),
@@ -140,6 +147,7 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
               type: 'MULTI_ADD_CELLS',
               cellType: ctx.cellType,
               cells: ctx.multiSelected,
+              mode: ctx.mode,
             },
             { to: 'cellTypes' }
           ),

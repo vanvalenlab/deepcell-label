@@ -1,7 +1,7 @@
 import PreviewIcon from '@mui/icons-material/Preview';
 import { IconButton } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
-import { useRaw } from '../../../ProjectContext';
+import { useRaw } from '../../../../ProjectContext';
 
 function ViewChannelsButton(props) {
   const { matchedChannels } = props;

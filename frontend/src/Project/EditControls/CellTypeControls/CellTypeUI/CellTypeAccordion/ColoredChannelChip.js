@@ -1,8 +1,8 @@
 import { Grid } from '@mui/material';
 import Chip from '@mui/material/Chip';
 import { useSelector } from '@xstate/react';
-import { useRaw } from '../../../ProjectContext';
-import { hexToRgb } from '../../../service/labels/cellTypesMachine';
+import { useRaw } from '../../../../ProjectContext';
+import { hexToRgb } from '../../../../service/labels/cellTypesMachine';
 
 function ColoredChannelChip({ layer, matchedChannels }) {
   const raw = useRaw();

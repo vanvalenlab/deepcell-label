@@ -4,7 +4,7 @@ import EggAltIcon from '@mui/icons-material/EggAlt';
 import { IconButton } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
-import { useEditCellTypes } from '../../../ProjectContext';
+import { useEditCellTypes } from '../../../../ProjectContext';
 
 function RemoveCellsButton({ id, name }) {
   const editCellTypes = useEditCellTypes();

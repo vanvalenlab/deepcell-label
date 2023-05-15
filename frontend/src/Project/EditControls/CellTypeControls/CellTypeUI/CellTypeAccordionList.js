@@ -1,13 +1,11 @@
 import { Box } from '@mui/material';
-import equal from 'fast-deep-equal';
 import { useSelector } from '@xstate/react';
+import equal from 'fast-deep-equal';
 import { useState } from 'react';
-import CellTypeAccordion from './CellTypeAccordion';
-import { useCellTypes, useCanvas } from '../../../ProjectContext';
+import { useCanvas, useCellTypes } from '../../../ProjectContext';
+import CellTypeAccordion from './CellTypeAccordion/CellTypeAccordion';
 
 const accordionStyle = {
-  position: 'relative',
-  top: 50,
   width: 300,
   margin: 'auto',
   overflow: 'hidden',

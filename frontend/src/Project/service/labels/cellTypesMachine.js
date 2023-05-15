@@ -288,16 +288,34 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
         // Add one cell to a specified cell type
         addCell: send((ctx, evt) => {
           let cellTypes;
-          cellTypes = ctx.cellTypes.map((cellType) =>
-            cellType.id === evt.cellType && !cellType.cells.includes(evt.cell)
-              ? {
-                  ...cellType,
-                  cells: [...cellType.cells, evt.cell].sort(function (a, b) {
-                    return a - b;
-                  }),
-                }
-              : cellType
-          );
+          if (evt.mode === 'overwrite') {
+            cellTypes = ctx.cellTypes.map((cellType) =>
+              cellType.id === evt.cellType
+                ? !cellType.cells.includes(evt.cell)
+                  ? {
+                      ...cellType,
+                      cells: [...cellType.cells, evt.cell].sort(function (a, b) {
+                        return a - b;
+                      }),
+                    }
+                  : cellType
+                : {
+                    ...cellType,
+                    cells: cellType.cells.filter((cell) => cell !== evt.cell),
+                  }
+            );
+          } else if (evt.mode === 'multiLabel') {
+            cellTypes = ctx.cellTypes.map((cellType) =>
+              cellType.id === evt.cellType && !cellType.cells.includes(evt.cell)
+                ? {
+                    ...cellType,
+                    cells: [...cellType.cells, evt.cell].sort(function (a, b) {
+                      return a - b;
+                    }),
+                  }
+                : cellType
+            );
+          }
           return { type: 'EDITED_CELLTYPES', cellTypes };
         }),
 
@@ -307,16 +325,32 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
           const oldCells = ctx.cellTypes.filter((cellType) => cellType.id === evt.cellType)[0]
             .cells;
           const newCells = evt.cells.filter((cell) => !oldCells.includes(cell));
-          cellTypes = ctx.cellTypes.map((cellType) =>
-            cellType.id === evt.cellType
-              ? {
-                  ...cellType,
-                  cells: [...cellType.cells, ...newCells].sort(function (a, b) {
-                    return a - b;
-                  }),
-                }
-              : cellType
-          );
+          if (evt.mode === 'overwrite') {
+            cellTypes = ctx.cellTypes.map((cellType) =>
+              cellType.id === evt.cellType
+                ? {
+                    ...cellType,
+                    cells: [...cellType.cells, ...newCells].sort(function (a, b) {
+                      return a - b;
+                    }),
+                  }
+                : {
+                    ...cellType,
+                    cells: cellType.cells.filter((cell) => !evt.cells.includes(cell)),
+                  }
+            );
+          } else if (evt.mode === 'multiLabel') {
+            cellTypes = ctx.cellTypes.map((cellType) =>
+              cellType.id === evt.cellType
+                ? {
+                    ...cellType,
+                    cells: [...cellType.cells, ...newCells].sort(function (a, b) {
+                      return a - b;
+                    }),
+                  }
+                : cellType
+            );
+          }
           return { type: 'EDITED_CELLTYPES', cellTypes };
         }),
 

@@ -1,4 +1,5 @@
 import { useSelector } from '@xstate/react';
+import CellTypeHovering from '../../EditControls/CellTypeControls/CellTypeUI/CellTypeHovering';
 import {
   useEditCells,
   useEditCellTypes,
@@ -30,6 +31,7 @@ function ToolCanvas({ setBitmaps }) {
   const editCellTypes = useEditCellTypes();
   const addingCell = useSelector(editCellTypes, (state) => state.matches('addingCell'));
   const removingCell = useSelector(editCellTypes, (state) => state.matches('removingCell'));
+  const hoveringCard = useSelector(editCellTypes, (state) => state.context.hoveringCard);
 
   const labelMode = useLabelMode();
   const mode = useSelector(labelMode, (state) =>
@@ -77,8 +79,7 @@ function ToolCanvas({ setBitmaps }) {
         return (
           <>
             <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
-            {/* TODO: Allow user to toggle this on or off */}
-            {/* <CellTypeHovering /> */}
+            {hoveringCard ? <CellTypeHovering /> : null}
             <AddCellTypeCanvas setBitmaps={setBitmaps} />
           </>
         );
@@ -86,8 +87,7 @@ function ToolCanvas({ setBitmaps }) {
       return (
         <>
           <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
-          {/* TODO: Allow user to toggle this on or off */}
-          {/* <CellTypeHovering /> */}
+          {hoveringCard ? <CellTypeHovering /> : null}
           <CellSelectionCanvas setBitmaps={setBitmaps} />
         </>
       );

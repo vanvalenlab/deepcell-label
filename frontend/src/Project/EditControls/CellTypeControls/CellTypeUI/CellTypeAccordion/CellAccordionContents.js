@@ -4,8 +4,8 @@ import FormLabel from '@mui/material/FormLabel';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import { useState } from 'react';
-import { useLayers, useRaw } from '../../../ProjectContext';
-import { hexToRgb } from '../../../service/labels/cellTypesMachine';
+import { useLayers, useRaw } from '../../../../ProjectContext';
+import { hexToRgb } from '../../../../service/labels/cellTypesMachine';
 import AddCellsButton from './AddCellsButton';
 import ChannelChip from './ChannelChip';
 import ColoredChannelChip from './ColoredChannelChip';
@@ -13,7 +13,7 @@ import MatchMarkersButton from './MatchMarkersButton';
 import RemoveCellsButton from './RemoveCellsButton';
 import ViewChannelsButton from './ViewChannelsButton';
 
-function CellGrid(props) {
+function CellAccordionContents(props) {
   const { id, name, color } = props;
   const raw = useRaw();
   const layers = useLayers();
@@ -78,4 +78,4 @@ function CellGrid(props) {
   );
 }
 
-export default CellGrid;
+export default CellAccordionContents;

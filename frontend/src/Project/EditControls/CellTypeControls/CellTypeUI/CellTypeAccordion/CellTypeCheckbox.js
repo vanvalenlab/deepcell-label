@@ -1,5 +1,5 @@
 import Checkbox from '@mui/material/Checkbox';
-import { useEditCellTypes } from '../../../ProjectContext';
+import { useEditCellTypes } from '../../../../ProjectContext';
 
 const checkStyle = {
   marginTop: 40,

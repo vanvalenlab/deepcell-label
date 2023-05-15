@@ -1,7 +1,7 @@
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useRef, useState } from 'react';
-import { useEditCellTypes } from '../../../ProjectContext';
+import { useEditCellTypes } from '../../../../ProjectContext';
 
 const textStyle = {
   marginTop: 3,

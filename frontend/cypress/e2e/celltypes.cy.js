@@ -15,7 +15,7 @@ describe('Cell Type Editing', () => {
     cy.visit(`/project?projectId=${id}`);
     cy.get('.MuiCircularProgress-svg', { timeout: 30000 }).should('not.exist');
     cy.contains('Cell Types').click();
-    cy.contains('Add Cell Type').click();
+    cy.get('[aria-label="Add New Cell Type"]').click();
     cy.get('[title="#24fecd"]').click();
   });
 
@@ -77,7 +77,7 @@ describe('Cell Type Editing', () => {
   });
 
   it('adds another cell type and toggles properly', () => {
-    cy.contains('Add Cell Type').click();
+    cy.get('[aria-label="Add New Cell Type"]').click();
     cy.get('[title="#58b5e1"]').click();
     cy.get('[data-testid="SquareRoundedIcon"]')
       .last()

@@ -1,7 +1,7 @@
 import Slider from '@mui/material/Slider';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
-import { useCellTypes, useEditCellTypes } from '../../../ProjectContext';
+import { useCellTypes, useEditCellTypes } from '../../../../ProjectContext';
 
 function CellTypeOpacitySlider({ color, id }) {
   const editCellTypes = useEditCellTypes();

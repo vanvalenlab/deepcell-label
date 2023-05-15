@@ -3,7 +3,7 @@ import { IconButton } from '@mui/material';
 import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import Fuse from 'fuse.js';
-import { useCellTypes, useRaw } from '../../../ProjectContext';
+import { useCellTypes, useRaw } from '../../../../ProjectContext';
 
 const getClosestType = (name, markerPanel) => {
   const fuse = new Fuse(markerPanel, {
