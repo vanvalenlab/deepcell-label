@@ -8,10 +8,6 @@ function AddDaughterCanvas({ setBitmaps }) {
   const editDivisions = useEditDivisions();
   const daughter = useSelector(editDivisions, (state) => state.context.daughter);
 
-  if (!daughter) {
-    return null;
-  }
-
   return <OutlineCellCanvas setBitmaps={setBitmaps} cell={daughter} color={white} />;
 }
 

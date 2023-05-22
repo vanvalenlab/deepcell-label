@@ -10,10 +10,6 @@ function AddCellTypeCanvas({ setBitmaps }) {
   const editCellTypes = useEditCellTypes();
   const cell = useSelector(editCellTypes, (state) => state.context.cell);
 
-  if (!cell) {
-    return null;
-  }
-
   return <OutlineCellCanvas setBitmaps={setBitmaps} cell={cell} color={white} />;
 }
 
