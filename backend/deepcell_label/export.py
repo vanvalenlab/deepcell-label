@@ -19,6 +19,7 @@ class Export:
         self.load_dimensions()
         self.load_labeled()
         self.load_raw()
+        self.load_channels()
         self.load_cells()
 
         self.labeled, self.cells = rewrite_labeled(self.labeled, self.cells)
@@ -72,6 +73,12 @@ class Export:
                     raw, (self.num_channels, self.duration, self.height, self.width)
                 )
 
+    def load_channels(self):
+        """Loads the channels array from channels.json"""
+        with zipfile.ZipFile(self.labels_zip) as zf:
+            with zf.open('channels.json') as f:
+                self.channels = json.load(f)
+
     def load_cells(self):
         """Loads cell labels from cells.json."""
         with zipfile.ZipFile(self.labels_zip) as zf:
@@ -116,7 +123,10 @@ class Export:
                 ome=True,
                 photometric='minisblack',
                 compression='zlib',
-                metadata={'axes': 'CZYX'},
+                metadata={
+                    'axes': 'CZYX',
+                    'Channel': {'Name': self.channels}
+                },
             )
             raw_ome_tiff.seek(0)
             export_zf.writestr('X.ome.tiff', raw_ome_tiff.read())

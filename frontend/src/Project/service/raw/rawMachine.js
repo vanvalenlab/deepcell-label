@@ -99,6 +99,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
             },
           },
           on: {
+            GET_CHANNELS: { actions: 'sendChannels' },
             TOGGLE_INVERT: { actions: 'forwardToChannel' },
             SAVE: { actions: 'save' },
             RESTORE: { actions: ['restore', respond('RESTORED')] },
@@ -157,6 +158,10 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
             return channels;
           },
         }),
+        sendChannels: respond((ctx) => ({
+          type: 'CHANNELS',
+          channels: ctx.channelNames, // Send the channel names list for export
+        })),
         forwardToChannel: forwardTo((ctx) => `channel${ctx.channel}`),
         spawnLayers: assign({
           layers: ({ numChannels }) => {
