@@ -74,13 +74,13 @@ function OutlineCellCanvas({ setBitmaps, cell, color }) {
   useEffect(() => {
     const kernel = kernelRef.current;
     // Cell beyond the cell matrix, so it's not in the frame
-    if (cell > cellMatrix[0].length) {
+    if (cell && cell > cellMatrix[0].length) {
       // Remove the tool canvas
       setBitmaps((bitmaps) => {
         const { tool, ...rest } = bitmaps;
         return rest;
       });
-    } else if (labeledArray && cellMatrix) {
+    } else if (cell && labeledArray && cellMatrix) {
       const numValues = cellMatrix.length;
       kernel(labeledArray, cellMatrix, numValues, cell, color);
       // Rerender the parent canvas
