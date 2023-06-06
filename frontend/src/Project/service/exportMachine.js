@@ -7,7 +7,7 @@ import { fromEventBus } from './eventBus';
 
 /** Creates a blob for a zip file with all project data. */
 async function makeExportZip(context) {
-  const { raw, labeled, cells, cellTypes, divisions, spots } = context;
+  const { raw, labeled, channels, cells, cellTypes, divisions, spots } = context;
   const dimensions = {
     width: raw[0][0][0].length,
     height: raw[0][0].length,
@@ -20,6 +20,7 @@ async function makeExportZip(context) {
   await zipWriter.add('dimensions.json', new zip.TextReader(JSON.stringify(dimensions)));
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(flattenDeep(labeled))));
   await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
+  await zipWriter.add('channels.json', new zip.TextReader(JSON.stringify(channels)));
   await zipWriter.add('cells.json', new zip.TextReader(JSON.stringify(cells)));
   await zipWriter.add('cellTypes.json', new zip.TextReader(JSON.stringify(cellTypes)));
   await zipWriter.add('divisions.json', new zip.TextReader(JSON.stringify(divisions)));
@@ -82,6 +83,7 @@ const createExportMachine = ({ projectId, eventBuses }) =>
       id: 'export',
       invoke: [
         { id: 'arrays', src: fromEventBus('export', () => eventBuses.arrays, 'ARRAYS') },
+        { id: 'raw', src: fromEventBus('export', () => eventBuses.raw, 'CHANNELS') },
         { id: 'cells', src: fromEventBus('export', () => eventBuses.cells, 'CELLS') },
         { id: 'divisions', src: fromEventBus('export', () => eventBuses.divisions, 'DIVISIONS') },
         { id: 'cellTypes', src: fromEventBus('export', () => eventBuses.cellTypes, 'CELLTYPES') },
@@ -117,7 +119,11 @@ const createExportMachine = ({ projectId, eventBuses }) =>
           states: {
             getArrays: {
               entry: 'getArrays',
-              on: { ARRAYS: { target: 'upload', actions: 'setArrays' } },
+              on: { ARRAYS: { target: 'getChannels', actions: 'setArrays' } },
+            },
+            getChannels: {
+              entry: 'getChannels',
+              on: { CHANNELS: { target: 'upload', actions: 'setChannels' } },
             },
             upload: {
               invoke: {
@@ -134,7 +140,11 @@ const createExportMachine = ({ projectId, eventBuses }) =>
           states: {
             getArrays: {
               entry: 'getArrays',
-              on: { ARRAYS: { target: 'download', actions: 'setArrays' } },
+              on: { ARRAYS: { target: 'getChannels', actions: 'setArrays' } },
+            },
+            getChannels: {
+              entry: 'getChannels',
+              on: { CHANNELS: { target: 'download', actions: 'setChannels' } },
             },
             download: {
               invoke: {
@@ -159,9 +169,13 @@ const createExportMachine = ({ projectId, eventBuses }) =>
           link.click();
         },
         getArrays: send('GET_ARRAYS', { to: 'arrays' }),
+        getChannels: send('GET_CHANNELS', { to: 'raw' }),
         setArrays: assign((ctx, evt) => ({
           raw: evt.raw,
           labeled: evt.labeled,
+        })),
+        setChannels: assign((_, evt) => ({
+          channels: evt.channels,
         })),
         setCells: assign({ cells: (_, evt) => evt.cells }),
         setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
