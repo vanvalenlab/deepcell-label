@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { useCanvas, useCellTypes } from '../../../ProjectContext';
 import CellTypeAccordion from './CellTypeAccordion/CellTypeAccordion';
@@ -34,31 +34,20 @@ function CellTypeAccordionList(props) {
   );
   const cellTypes = useSelector(cellTypesRef, (state) => state.context.cellTypes);
   const feature = useSelector(cellTypesRef, (state) => state.context.feature);
+  const currentCellTypes = cellTypes.filter((cellType) => cellType.feature === feature);
 
   const menuHeight = scale * sh - 100;
-
-  const [currentCellTypes, setCurrentCellTypes] = useState(
-    cellTypes.filter((cellType) => cellType.feature === feature)
-  );
-
-  const reorder = (list, startIndex, endIndex) => {
-    const result = Array.from(list);
-    const [removed] = result.splice(startIndex, 1);
-    result.splice(endIndex, 0, removed);
-
-    return result;
-  };
 
   const onDragEnd = (result) => {
     if (!result.destination) {
       return;
     }
-    setCurrentCellTypes(reorder(currentCellTypes, result.source.index, result.destination.index));
+    cellTypesRef.send({
+      type: 'REORDER',
+      source: result.source.index,
+      destination: result.destination.index,
+    });
   };
-
-  useEffect(() => {
-    setCurrentCellTypes(cellTypes.filter((cellType) => cellType.feature === feature));
-  }, [cellTypes, feature]);
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
