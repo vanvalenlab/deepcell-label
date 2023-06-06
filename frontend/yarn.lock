@@ -3372,7 +3372,7 @@
   dependencies:
     fast-safe-stringify "^2.0.7"
 
-"@xstate/react@^2.0.0":
+"@xstate/react@^2.0.1":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@xstate/react/-/react-2.0.1.tgz#2b4717369d419e78a6c67f2dfcd1a3be9abce2d9"
   integrity sha512-sT3hxyzNBw+bm7uT3BP+uXzN0MnRqiaj/U9Yl4OYaMAUJXWsRvSA/ipL7EDf0gVLRGrRhJTCsC0cjWaduAAqnw==
@@ -13919,7 +13919,7 @@ xmlchars@^2.2.0:
   resolved "https://registry.yarnpkg.com/xmlchars/-/xmlchars-2.2.0.tgz#060fe1bcb7f9c76fe2a17db86a9bc3ab894210cb"
   integrity sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==
 
-xstate@^4.29.0:
+xstate@^4.37.2:
   version "4.37.2"
   resolved "https://registry.yarnpkg.com/xstate/-/xstate-4.37.2.tgz#c5f4c1d8062784238b91e2dfddca05f821cb4eac"
   integrity sha512-Qm337O49CRTZ3PRyRuK6b+kvI+D3JGxXIZCTul+xEsyFCVkTFDt5jixaL1nBWcUBcaTQ9um/5CRGVItPi7fveg==
