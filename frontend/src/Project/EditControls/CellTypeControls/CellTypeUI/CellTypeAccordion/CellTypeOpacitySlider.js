@@ -9,6 +9,10 @@ function CellTypeOpacitySlider({ color, id }) {
   const opacities = useSelector(cellTypes, (state) => state.context.opacities);
   const [opacity, setOpacity] = useState(opacities[id]);
 
+  const handleClick = (evt) => {
+    evt.stopPropagation();
+  };
+
   const handleChange = (evt, newValue) => {
     editCellTypes.send({ type: 'OPACITY', opacity: newValue, cellType: id });
     setOpacity(newValue);
@@ -20,30 +24,33 @@ function CellTypeOpacitySlider({ color, id }) {
   };
 
   return (
-    <Slider
-      value={opacity}
-      min={0.1}
-      max={0.8}
-      step={0.01}
-      onClick={(e) => e.stopPropagation()}
-      onChange={handleChange}
-      onDoubleClick={handleDoubleClick}
-      sx={{
-        position: 'absolute',
-        width: 100,
-        marginTop: 5,
-        marginLeft: 4.95,
-        color: color,
-        '& .MuiSlider-thumb': {
-          height: 15,
-          width: 15,
-          // '&:hover': {
-          //     boxShadow: `0 0 0 8px ${color}`,
-          // },
-        },
-      }}
-      size='small'
-    />
+    // This div is a really ugly way to work around react-beautiful-dnd overwriting the Slider
+    <div style={{ width: 0 }} contentEditable suppressContentEditableWarning={true} tabIndex='-1'>
+      <Slider
+        value={opacity}
+        min={0.1}
+        max={0.8}
+        step={0.01}
+        onClick={handleClick}
+        onChange={handleChange}
+        onDoubleClick={handleDoubleClick}
+        sx={{
+          position: 'absolute',
+          width: 100,
+          marginTop: 5,
+          marginLeft: 1.95,
+          color: color,
+          '& .MuiSlider-thumb': {
+            height: 15,
+            width: 15,
+            // '&:hover': {
+            //     boxShadow: `0 0 0 8px ${color}`,
+            // },
+          },
+        }}
+        size='small'
+      />
+    </div>
   );
 }
 

@@ -123,10 +123,7 @@ class Export:
                 ome=True,
                 photometric='minisblack',
                 compression='zlib',
-                metadata={
-                    'axes': 'CZYX',
-                    'Channel': {'Name': self.channels}
-                },
+                metadata={'axes': 'CZYX', 'Channel': {'Name': self.channels}},
             )
             raw_ome_tiff.seek(0)
             export_zf.writestr('X.ome.tiff', raw_ome_tiff.read())
