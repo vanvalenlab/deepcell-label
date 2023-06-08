@@ -17,14 +17,13 @@ const editStyle = {
 };
 
 function EditDeleteMenu(props) {
-  const { toggleType, id, toggleArray, setToggleArray } = props;
+  const { toggleType, id } = props;
   const editCellTypesRef = useEditCellTypes();
   const anchorRef = useRef(null);
   const [openMenu, toggleMenu] = useReducer((v) => !v, false);
 
   // Handler for when a cell type is deleted
   const handleRemove = () => {
-    setToggleArray(toggleArray.filter((e, i) => i !== id));
     editCellTypesRef.send({ type: 'REMOVE_TYPE', cellType: id });
   };
 
