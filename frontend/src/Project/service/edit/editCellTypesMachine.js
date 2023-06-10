@@ -32,20 +32,21 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         MULTISELECTION: { actions: 'setMultiSelected' },
         HOVERING: { actions: 'setHovering' },
         TOGGLE_HOVER: { actions: 'toggleHoveringCard' },
-        SET_MODE: { actions: 'setMode' },
-        REMOVE_ONE: { actions: ['setCell', 'setCellType', 'removeCell'] },
-        REMOVE_TYPE: { actions: 'removeCellType' },
+        SET_MODE: { actions: 'setMode' }, // overwrite / multilabel
       },
       initial: 'idle',
       states: {
         idle: {
           on: {
             mouseup: { actions: 'select' },
-            ADD: { target: 'addingCell', actions: ['setCellType', 'setName'] },
+            ADD_MODE: { target: 'addingCell', actions: ['setCellType', 'setName'] },
+            REMOVE_MODE: { target: 'removingCell', actions: ['setCellType', 'setName'] },
+            ADD_LABEL: { actions: ['setSelectedCell', 'setCellType', 'addCell'] },
+            REMOVE_LABEL: { actions: ['setSelectedCell', 'setCellType', 'removeCell'] },
             MULTIADD: { actions: ['setCellType', 'multiAddCells'] },
             MULTIREMOVE: { actions: ['setCellType', 'multiRemoveCells'] },
-            REMOVE_MODE: { target: 'removingCell', actions: ['setCellType', 'setName'] },
             ADD_TYPE: { actions: ['setColor', 'addCellType'] },
+            REMOVE_TYPE: { actions: 'removeCellType' },
             COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
             NAME: { actions: ['setCellType', 'setName', 'editName'] },
             TOGGLE: { actions: ['setCellType', 'toggleOn'] },
@@ -121,6 +122,7 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         setColor: assign({ color: (_, evt) => evt.color }),
         setName: assign({ name: (_, evt) => evt.name }),
         setCellType: assign({ cellType: (_, evt) => evt.cellType }),
+        setSelectedCell: assign({ cell: (_, evt) => evt.cell }),
         setCell: assign({
           cell: (ctx) => {
             const { hovering, cell } = ctx;

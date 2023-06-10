@@ -4,7 +4,7 @@ import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useCellTypes, useEditCellTypes, useLabeled } from '../../../ProjectContext';
 
-function getName(cellTypes, id) {
+export function getName(cellTypes, id) {
   const type = cellTypes.find((cellType) => cellType.id === id);
   return type.name;
 }

@@ -1,4 +1,5 @@
 import BarChartIcon from '@mui/icons-material/BarChart';
+import EggAltIcon from '@mui/icons-material/EggAlt';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import { Box } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -7,6 +8,8 @@ import Tabs from '@mui/material/Tabs';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useCanvas, useChannelExpression, useLabelMode } from '../../ProjectContext';
+import CellExpressions from './CellInfoUI/CellExpressions';
+import CellInfo from './CellInfoUI/CellInfo';
 import AddRemoveCancel from './ChannelExpressionUI/AddRemoveCancel';
 import Calculate from './ChannelExpressionUI/Calculate';
 import ChannelPlot from './ChannelExpressionUI/ChannelPlot';
@@ -17,7 +20,7 @@ function TabPanel({ children, value, index }) {
   return value === index && children;
 }
 
-function PlotAndLearnTabs() {
+function CellTypeTabs() {
   const channelExpression = useChannelExpression();
   const labelMode = useLabelMode();
   const canvas = useCanvas();
@@ -33,6 +36,7 @@ function PlotAndLearnTabs() {
     position: 'relative',
     right: window.innerWidth - 860 - sw * scale,
     paddingTop: 2,
+    width: 350,
     height: scale * sh - 60,
     overflow: 'hidden',
     overflowY: 'auto',
@@ -63,15 +67,22 @@ function PlotAndLearnTabs() {
       >
         <Tabs sx={{ height: 0 }} value={tab} onChange={handleTab} variant='fullWidth'>
           <Tab
-            sx={{ width: 175, top: -12 }}
+            sx={{ top: -12 }}
             value={0}
             label='Plot'
             icon={<BarChartIcon />}
             iconPosition='start'
           />
           <Tab
-            sx={{ width: 175, top: -12 }}
+            sx={{ top: -12 }}
             value={1}
+            label='Cell'
+            icon={<EggAltIcon sx={{ fontSize: 18 }} />}
+            iconPosition='start'
+          />
+          <Tab
+            sx={{ top: -12 }}
+            value={2}
             label='Learn'
             icon={<PsychologyIcon />}
             iconPosition='start'
@@ -91,6 +102,10 @@ function PlotAndLearnTabs() {
             ) : null}
           </TabPanel>
           <TabPanel value={tab} index={1}>
+            <CellInfo />
+            {calculations ? <CellExpressions calculations={calculations} /> : null}
+          </TabPanel>
+          <TabPanel value={tab} index={2}>
             <LearnTab />
           </TabPanel>
         </Grid>
@@ -99,4 +114,4 @@ function PlotAndLearnTabs() {
   ) : null;
 }
 
-export default PlotAndLearnTabs;
+export default CellTypeTabs;

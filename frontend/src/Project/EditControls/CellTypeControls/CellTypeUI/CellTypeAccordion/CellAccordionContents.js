@@ -1,12 +1,11 @@
 import { Grid } from '@mui/material';
-import Chip from '@mui/material/Chip';
 import FormLabel from '@mui/material/FormLabel';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
 import { useState } from 'react';
 import { useLayers, useRaw } from '../../../../ProjectContext';
-import { hexToRgb } from '../../../../service/labels/cellTypesMachine';
 import AddCellsButton from './AddCellsButton';
+import CellTypeChip from './CellTypeChip';
 import ChannelChip from './ChannelChip';
 import ColoredChannelChip from './ColoredChannelChip';
 import MatchMarkersButton from './MatchMarkersButton';
@@ -24,9 +23,6 @@ function CellAccordionContents(props) {
   const matchedClosed = matchedChannels.filter(
     (channel) => !openChannels.includes(channelNames[channel])
   );
-  const rgb = hexToRgb(color);
-  const backgroundColor = `rgba(${rgb[0] * 255},${rgb[1] * 255},${rgb[2] * 255},0.2)`;
-  const textColor = `rgba(${rgb[0] * 200},${rgb[1] * 200},${rgb[2] * 200}, 1)`;
 
   return (
     <Grid container spacing={1}>
@@ -51,16 +47,7 @@ function CellAccordionContents(props) {
       </Grid>
       {matchedName ? (
         <Grid item xs={12}>
-          <Chip
-            label={matchedName}
-            size='small'
-            style={{ minWidth: '4.6em' }}
-            sx={{
-              color: textColor,
-              backgroundColor: backgroundColor,
-              fontWeight: 500,
-            }}
-          />
+          <CellTypeChip name={matchedName} color={color} />
         </Grid>
       ) : null}
       <Grid item xs={12}>
