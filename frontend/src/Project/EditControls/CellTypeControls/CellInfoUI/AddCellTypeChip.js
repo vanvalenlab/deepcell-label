@@ -1,9 +1,15 @@
 import AddIcon from '@mui/icons-material/Add';
+import CircleIcon from '@mui/icons-material/Circle';
 import { Box, Chip, MenuItem, Select } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useCellTypes, useEditCellTypes, useSelectedCell } from '../../../ProjectContext';
 import { getName } from '../ChannelExpressionUI/AddRemoveCancel';
+
+export const getColorFromId = (cellTypes, id) => {
+  const cellType = cellTypes.find((cellType) => cellType.id === id);
+  return cellType.color;
+};
 
 function AddCellTypeChip() {
   const cellTypes = useCellTypes();
@@ -63,6 +69,14 @@ function AddCellTypeChip() {
       >
         {cellTypeIds.map((id, index) => (
           <MenuItem value={index} key={index}>
+            <CircleIcon
+              sx={{
+                fontSize: 12,
+                color: getColorFromId(cellTypesList, id),
+                marginLeft: '-0.5rem',
+                marginRight: '0.5rem',
+              }}
+            />
             {getName(cellTypesList, id)}
           </MenuItem>
         ))}
