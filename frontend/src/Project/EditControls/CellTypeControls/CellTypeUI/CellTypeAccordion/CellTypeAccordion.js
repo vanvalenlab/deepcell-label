@@ -1,7 +1,9 @@
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
+import { useSelector } from '@xstate/react';
 import { useReducer } from 'react';
+import { useEditCellTypes } from '../../../../ProjectContext';
 import CellAccordionContents from './CellAccordionContents';
 import CellCountIndicator from './CellCountIndicator';
 import CellTypeCheckbox from './CellTypeCheckbox';
@@ -20,14 +22,18 @@ const accordionSummaryStyle = {
   marginBottom: -5,
 };
 
-function CellTypeAccordion(props) {
-  const { cellType, expanded, setExpanded } = props;
-
+function CellTypeAccordion({ cellType }) {
   const [openColor, toggleColor] = useReducer((v) => !v, false);
+  const editCellTypes = useEditCellTypes();
+  const cellTypeOpen = useSelector(editCellTypes, (state) => state.context.cellTypeOpen);
 
   // Event handler for expanding accordion
   const handleChange = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
+    editCellTypes.send({
+      type: 'SET_CELLTYPE_OPEN',
+      cellType: isExpanded ? panel : false,
+      name: cellType.name,
+    });
   };
 
   // Togglers for text field edits
@@ -36,7 +42,7 @@ function CellTypeAccordion(props) {
   return (
     <Accordion
       sx={rowStyle}
-      expanded={expanded === cellType.id}
+      expanded={cellTypeOpen === cellType.id}
       onChange={handleChange(cellType.id)}
     >
       <AccordionSummary style={accordionSummaryStyle}>
