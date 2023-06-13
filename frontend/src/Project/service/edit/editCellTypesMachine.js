@@ -88,7 +88,7 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
       guards: {
         onNoCell: (ctx) => ctx.hovering.length === 0,
         shift: (_, evt) => evt.shiftKey,
-        onCell: (ctx) => ctx.hovering.includes(ctx.cell),
+        onCell: (ctx) => ctx.hovering.includes(ctx.cell) && ctx.cellTypeOpen, // if hovering over the cell and a cell type is open
       },
       actions: {
         select: send('SELECT', { to: 'select' }),
