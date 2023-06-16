@@ -93,7 +93,7 @@ function CellTypes(props) {
     <Chip
       key={i}
       sx={{
-        marginLeft: i == 0 ? 0 : 1,
+        marginLeft: i === 0 ? 0 : 1,
         color: textColor,
         backgroundColor: backgroundColor,
         fontWeight: 450,
@@ -198,7 +198,7 @@ function MarkerPanelModal({ open, setOpen }) {
   const markerPanel = useSelector(cellTypes, (state) => state.context.markerPanel);
 
   return (
-    <Modal open={open} onClose={() => setOpen(false)}>
+    <Modal open={open} onClose={() => setOpen(false)} disableAutoFocus={true}>
       <Box sx={style} display='flex'>
         <Grid container item direction='column' spacing={'4vh'}>
           <Grid item>

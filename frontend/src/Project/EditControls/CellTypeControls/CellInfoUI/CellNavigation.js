@@ -2,6 +2,8 @@ import ArrowLeftIcon from '@mui/icons-material/ArrowLeft';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import { Box, FormLabel, IconButton, Tooltip, Typography } from '@mui/material';
 import { useSelector } from '@xstate/react';
+import { bind, unbind } from 'mousetrap';
+import { useCallback, useEffect } from 'react';
 import { useEditCellTypes, useSelect, useSelectedCell } from '../../../ProjectContext';
 
 function CellNavigation({ currentCellTypes }) {
@@ -19,17 +21,17 @@ function CellNavigation({ currentCellTypes }) {
   }
 
   // Select the smallest element in cellsOpen that is higher than the value of the current selected cell
-  const handleRight = () => {
+  const handleRight = useCallback(() => {
     if (cellsOpen) {
       const nextCell = cellsOpen.find((cell) => cell > selected);
       if (nextCell) {
         select.send({ type: 'SELECT', cell: nextCell });
       }
     }
-  };
+  }, [cellsOpen, selected, select]);
 
   // Select the largest element in cellsOpen that is lower than the value of the current selected cell
-  const handleLeft = () => {
+  const handleLeft = useCallback(() => {
     if (cellsOpen) {
       const reversed = [...cellsOpen].reverse();
       const prevCell = reversed.find((cell) => cell < selected);
@@ -37,7 +39,17 @@ function CellNavigation({ currentCellTypes }) {
         select.send({ type: 'SELECT', cell: prevCell });
       }
     }
-  };
+  }, [cellsOpen, selected, select]);
+
+  // Bind the left and right arrow keys to the handleLeft and handleRight functions with mousetrap
+  useEffect(() => {
+    bind('left', handleLeft);
+    bind('right', handleRight);
+    return () => {
+      unbind('left');
+      unbind('right');
+    };
+  }, [handleLeft, handleRight]);
 
   return (
     <Box>
@@ -52,7 +64,13 @@ function CellNavigation({ currentCellTypes }) {
       </FormLabel>
       {selected > 0 ? ( // If there is no selected cell don't display anything
         <Box sx={{ display: 'inline-block' }}>
-          <Tooltip title={`Previous ${cellTypeOpenName}`}>
+          <Tooltip
+            title={
+              <span>
+                Previous {cellTypeOpenName} <kbd>←</kbd>
+              </span>
+            }
+          >
             {/* Span is needed to make the tooltip not error out when the button is disabled */}
             <span>
               <IconButton onClick={handleLeft} disabled={!cellTypeOpen}>
@@ -61,7 +79,13 @@ function CellNavigation({ currentCellTypes }) {
             </span>
           </Tooltip>
           <Typography sx={{ display: 'inline-block', fontWeight: 'bold' }}>{selected}</Typography>
-          <Tooltip title={`Next ${cellTypeOpenName}`}>
+          <Tooltip
+            title={
+              <span>
+                Next {cellTypeOpenName} <kbd>→</kbd>
+              </span>
+            }
+          >
             <span>
               <IconButton onClick={handleRight} disabled={!cellTypeOpen}>
                 <ArrowRightIcon />
