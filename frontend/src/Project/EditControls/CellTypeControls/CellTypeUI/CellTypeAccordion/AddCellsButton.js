@@ -16,7 +16,7 @@ function AddCellsButton({ id, name }) {
     if (addingCell || removingCell) {
       editCellTypes.send({ type: 'RESET' });
     } else {
-      editCellTypes.send({ type: 'ADD', cellType: id, name: name });
+      editCellTypes.send({ type: 'ADD_MODE', cellType: id, name: name });
     }
   };
 
