@@ -121,7 +121,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
                     ADD_PREDICTIONS: { actions: 'addPredictions', target: 'editing' },
                     MULTI_REMOVE_CELLS: { actions: 'removeCells', target: 'editing' },
                     ADD_CELLTYPE: {
-                      actions: ['addCellType', 'addIsOn', 'addOpacity', 'setMaxId'],
+                      actions: ['addCellType', 'addIsOn', 'addOpacity'],
                       target: 'editing',
                     },
                     REMOVE_CELLTYPE: {
@@ -150,7 +150,10 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
                       states: {
                         editing: {
                           on: {
-                            EDITED_CELLTYPES: { target: 'done', actions: 'setEditedCellTypes' },
+                            EDITED_CELLTYPES: {
+                              target: 'done',
+                              actions: ['setEditedCellTypes', 'setMaxId'],
+                            },
                           },
                         },
                         done: { type: 'final' },
@@ -166,7 +169,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
             },
             update: {
               on: {
-                // from CELLS event bus
+                // TODO: sync with CELLS'S DELETE events (replace and swap possibly not necessary?)
                 // REPLACE: { actions: ['replace', 'sendCellTypes'] },
                 DELETE: { actions: ['delete', 'sendCellTypes'] },
                 // SWAP: { actions: ['swap', 'sendCellTypes'] },
@@ -192,7 +195,15 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
         setHistoryRef: assign({ historyRef: (_, __, meta) => meta._event.origin }),
         setCellTypes: assign({ cellTypes: (_, evt) => evt.cellTypes }),
         setCells: assign({ numCells: (_, evt) => new Cells(evt.cells).getNewCell() }),
-        setIsOn: assign({ isOn: (ctx) => Array(ctx.maxId + 1).fill(true) }),
+        setIsOn: assign({
+          isOn: (ctx) => {
+            let isOn = Array(ctx.maxId + 1).fill(true);
+            isOn = isOn.map(
+              (_, i) => (ctx.cellTypes.some((cellType) => cellType.id === i) ? true : null) // null means not in cellTypes
+            );
+            return isOn;
+          },
+        }),
         setOpacities: assign({ opacities: (ctx) => Array(ctx.maxId + 1).fill(0.3) }),
         setEditEvent: assign({ editEvent: (_, evt) => evt }),
         setFeature: assign({ feature: (_, evt) => evt.feature }),
@@ -202,8 +213,8 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
 
         // Get the next highest id for the next cell type to add
         setMaxId: assign({
-          maxId: (ctx) => {
-            const ids = ctx.cellTypes.map((cellType) => cellType.id);
+          maxId: (ctx, evt) => {
+            const ids = evt.cellTypes.map((cellType) => cellType.id);
             if (ids.length === 0) {
               return 0;
             }
@@ -464,7 +475,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
         // Toggle a specified cell type on/off for the color map
         editIsOn: assign({
           isOn: (ctx, evt) => {
-            let isOn = ctx.isOn;
+            let isOn = [...ctx.isOn]; // Have to assign a separate copy for React to update
             isOn[evt.cellType] = !isOn[evt.cellType];
             return isOn;
           },
@@ -483,7 +494,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
         // Toggle all cell types on for the color map
         toggleAll: assign({
           isOn: (ctx) => {
-            let isOn = ctx.isOn.map((t) => 1);
+            let isOn = [...ctx.isOn.map((t) => (t === false ? true : t))];
             return isOn;
           },
         }),
@@ -491,7 +502,7 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
         // Toggle all cell types off for the color map
         untoggleAll: assign({
           isOn: (ctx) => {
-            let isOn = ctx.isOn.map((t) => 0);
+            let isOn = [...ctx.isOn.map((t) => (t === true ? false : t))];
             return isOn;
           },
         }),
@@ -508,16 +519,28 @@ const createCellTypesMachine = ({ eventBuses, undoRef }) =>
         // Add a new cell type to track for color map toggling
         addIsOn: assign({
           isOn: (ctx) => {
-            let isOn = ctx.isOn;
-            isOn.push(true);
-            return isOn;
+            const maxId = ctx.maxId;
+            let isOn = [...ctx.isOn];
+            /*
+             * Eg. If maxId = 2 and isOn = [true, true, true, false], the last false is
+             * a remnant of a deleted cell type, so make sure to reset it to true, otherwise
+             * the new cell type will be on by default.
+             */
+            if (maxId + 1 < isOn.length) {
+              isOn[maxId + 1] = true;
+              return isOn;
+            } else {
+              isOn.push(true);
+              return isOn;
+            }
           },
         }),
 
         // Remove a cell type to track for color map toggling
         removeIsOn: assign({
           isOn: (ctx, evt) => {
-            const isOn = ctx.isOn.filter((e, i) => i !== evt.cellType);
+            let isOn = [...ctx.isOn];
+            isOn[evt.cellType] = null; // Set to null so that toggle all ignores
             return isOn;
           },
         }),

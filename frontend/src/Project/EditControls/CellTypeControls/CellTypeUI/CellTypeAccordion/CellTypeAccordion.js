@@ -21,7 +21,7 @@ const accordionSummaryStyle = {
 };
 
 function CellTypeAccordion(props) {
-  const { cellType, expanded, setExpanded, toggleArray, setToggleArray } = props;
+  const { cellType, expanded, setExpanded } = props;
 
   const [openColor, toggleColor] = useReducer((v) => !v, false);
 
@@ -41,13 +41,7 @@ function CellTypeAccordion(props) {
     >
       <AccordionSummary style={accordionSummaryStyle}>
         {/* Toggle view of Cell Type with checkbox*/}
-        <CellTypeCheckbox
-          id={cellType.id}
-          color={cellType.color}
-          openColor={openColor}
-          toggleArray={toggleArray}
-          setToggleArray={setToggleArray}
-        />
+        <CellTypeCheckbox id={cellType.id} color={cellType.color} openColor={openColor} />
 
         {/* Slider for cell type opacity on canvas */}
         <CellTypeOpacitySlider id={cellType.id} color={cellType.color} />
@@ -72,12 +66,7 @@ function CellTypeAccordion(props) {
         />
 
         {/* Options button to open menu for name edit and delete */}
-        <EditDeleteMenu
-          id={cellType.id}
-          toggleType={toggleType}
-          toggleArray={toggleArray}
-          setToggleArray={setToggleArray}
-        />
+        <EditDeleteMenu id={cellType.id} toggleType={toggleType} />
       </AccordionSummary>
       <AccordionDetails sx={{ marginTop: '-1em' }}>
         <CellAccordionContents id={cellType.id} name={cellType.name} color={cellType.color} />

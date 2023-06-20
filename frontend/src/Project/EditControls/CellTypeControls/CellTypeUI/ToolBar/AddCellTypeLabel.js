@@ -7,15 +7,13 @@ import { CirclePicker } from 'react-color';
 import { useEditCellTypes } from '../../../../ProjectContext';
 import { colors } from '../CellTypeAccordion/ColorIndicator';
 
-function AddCellTypeLabel(props) {
-  const { toggleArray, setToggleArray } = props;
+function AddCellTypeLabel() {
   const editCellTypesRef = useEditCellTypes();
 
   const [open, toggle] = useReducer((v) => !v, false);
   const anchorRef = useRef(null);
 
   const handleChange = (color) => {
-    setToggleArray(toggleArray.concat([true]));
     editCellTypesRef.send({ type: 'ADD_TYPE', color: color.hex });
     toggle();
   };

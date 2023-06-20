@@ -8,7 +8,7 @@ function ToolBar(props) {
   return (
     <Grid sx={props.sx} container spacing={1}>
       <Grid item xs={3}>
-        <AddCellTypeLabel toggleArray={props.toggleArray} setToggleArray={props.setToggleArray} />
+        <AddCellTypeLabel />
       </Grid>
       <Grid item xs={3}>
         <OpenMarkerPanel />

@@ -22,8 +22,7 @@ const accordionStyle = {
   },
 };
 
-function CellTypeAccordionList(props) {
-  const { toggleArray, setToggleArray } = props;
+function CellTypeAccordionList() {
   const cellTypesRef = useCellTypes();
   const [expanded, setExpanded] = useState(-1);
   const canvasMachine = useCanvas();
@@ -71,8 +70,6 @@ function CellTypeAccordionList(props) {
                       cellType={cellType}
                       expanded={expanded}
                       setExpanded={setExpanded}
-                      toggleArray={toggleArray}
-                      setToggleArray={setToggleArray}
                     />
                   </div>
                 )}
