@@ -1,7 +1,6 @@
 import { Box } from '@mui/material';
 import { useSelector } from '@xstate/react';
 import equal from 'fast-deep-equal';
-import { useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { useCanvas, useCellTypes } from '../../../ProjectContext';
 import CellTypeAccordion from './CellTypeAccordion/CellTypeAccordion';
@@ -24,7 +23,6 @@ const accordionStyle = {
 
 function CellTypeAccordionList() {
   const cellTypesRef = useCellTypes();
-  const [expanded, setExpanded] = useState(-1);
   const canvasMachine = useCanvas();
   const [sh, scale] = useSelector(
     canvasMachine,
@@ -66,11 +64,7 @@ function CellTypeAccordionList() {
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                   >
-                    <CellTypeAccordion
-                      cellType={cellType}
-                      expanded={expanded}
-                      setExpanded={setExpanded}
-                    />
+                    <CellTypeAccordion cellType={cellType} />
                   </div>
                 )}
               </Draggable>

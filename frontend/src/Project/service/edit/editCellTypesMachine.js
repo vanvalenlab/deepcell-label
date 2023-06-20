@@ -24,6 +24,7 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         mode: 'overwrite',
         cell: null,
         cellType: null,
+        cellTypeOpen: null,
         name: null,
         color: null,
       },
@@ -33,26 +34,27 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         HOVERING: { actions: 'setHovering' },
         TOGGLE_HOVER: { actions: 'toggleHoveringCard' },
         SET_MODE: { actions: 'setMode' }, // overwrite / multilabel
+        SET_CELLTYPE_OPEN: { actions: ['setOpenedCellType', 'setName'] },
+        COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
+        NAME: { actions: ['setCellType', 'setName', 'editName'] },
+        TOGGLE: { actions: ['setCellType', 'toggleOn'] },
+        OPACITY: { actions: ['setCellType', 'changeOpacity'] },
+        TOGGLE_ALL: { actions: 'toggleAll' },
+        UNTOGGLE_ALL: { actions: 'untoggleAll' },
+        ADD_LABEL: { actions: ['setSelectedCell', 'setCellType', 'addCell'] },
+        REMOVE_LABEL: { actions: ['setSelectedCell', 'setCellType', 'removeCell'] },
+        MULTIADD: { actions: ['setCellType', 'multiAddCells'] },
+        MULTIREMOVE: { actions: ['setCellType', 'multiRemoveCells'] },
       },
       initial: 'idle',
       states: {
         idle: {
           on: {
             mouseup: { actions: 'select' },
-            ADD_MODE: { target: 'addingCell', actions: ['setCellType', 'setName'] },
-            REMOVE_MODE: { target: 'removingCell', actions: ['setCellType', 'setName'] },
-            ADD_LABEL: { actions: ['setSelectedCell', 'setCellType', 'addCell'] },
-            REMOVE_LABEL: { actions: ['setSelectedCell', 'setCellType', 'removeCell'] },
-            MULTIADD: { actions: ['setCellType', 'multiAddCells'] },
-            MULTIREMOVE: { actions: ['setCellType', 'multiRemoveCells'] },
+            ADD_MODE: { target: 'addingCell' },
+            REMOVE_MODE: { target: 'removingCell' },
             ADD_TYPE: { actions: ['setColor', 'addCellType'] },
             REMOVE_TYPE: { actions: 'removeCellType' },
-            COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
-            NAME: { actions: ['setCellType', 'setName', 'editName'] },
-            TOGGLE: { actions: ['setCellType', 'toggleOn'] },
-            TOGGLE_ALL: { actions: 'toggleAll' },
-            UNTOGGLE_ALL: { actions: 'untoggleAll' },
-            OPACITY: { actions: ['setCellType', 'changeOpacity'] },
           },
         },
         addingCell: {
@@ -61,13 +63,9 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
             mouseup: [
               { cond: 'onNoCell' },
               { cond: 'shift', actions: 'setCell' },
-              { cond: 'onCell', actions: 'addCell' },
+              { cond: 'onCell', actions: ['setCellTypeToOpened', 'addCell'] },
               { actions: 'setCell' },
             ],
-            COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
-            NAME: { actions: ['setCellType', 'setName', 'editName'] },
-            TOGGLE: { actions: ['setCellType', 'toggleOn'] },
-            OPACITY: { actions: ['setCellType', 'changeOpacity'] },
             RESET: { target: 'idle' },
           },
         },
@@ -77,11 +75,9 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
             mouseup: [
               { cond: 'onNoCell' },
               { cond: 'shift', actions: 'setCell' },
-              { cond: 'onCell', actions: 'removeCell' },
+              { cond: 'onCell', actions: ['setCellTypeToOpend', 'removeCell'] },
               { actions: 'setCell' },
             ],
-            COLOR: { actions: ['setCellType', 'setColor', 'editColor'] },
-            NAME: { actions: ['setCellType', 'setName', 'editName'] },
             RESET: { target: 'idle' },
           },
         },
@@ -92,7 +88,7 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
       guards: {
         onNoCell: (ctx) => ctx.hovering.length === 0,
         shift: (_, evt) => evt.shiftKey,
-        onCell: (ctx) => ctx.hovering.includes(ctx.cell),
+        onCell: (ctx) => ctx.hovering.includes(ctx.cell) && ctx.cellTypeOpen, // if hovering over the cell and a cell type is open
       },
       actions: {
         select: send('SELECT', { to: 'select' }),
@@ -101,6 +97,8 @@ const createEditCellTypesMachine = ({ eventBuses }) =>
         setHovering: assign({ hovering: (_, evt) => evt.hovering }),
         toggleHoveringCard: assign({ hoveringCard: (ctx) => !ctx.hoveringCard }),
         setMode: assign({ mode: (_, evt) => evt.mode }),
+        setOpenedCellType: assign({ cellTypeOpen: (_, evt) => evt.cellType }),
+        setCellTypeToOpened: assign({ cellType: (ctx) => ctx.cellTypeOpen }),
         removeCell: pure((ctx, _) => [
           send(
             {

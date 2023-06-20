@@ -1,8 +1,10 @@
+import CircleIcon from '@mui/icons-material/Circle';
 import { Button, MenuItem, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useSelector } from '@xstate/react';
 import { useState } from 'react';
 import { useCellTypes, useEditCellTypes, useLabeled } from '../../../ProjectContext';
+import { getColorFromId } from '../CellInfoUI/AddCellTypeChip';
 
 export function getName(cellTypes, id) {
   const type = cellTypes.find((cellType) => cellType.id === id);
@@ -50,6 +52,14 @@ function AddRemoveCancel() {
         >
           {cellTypeIds.map((opt, index) => (
             <MenuItem key={index} value={index}>
+              <CircleIcon
+                sx={{
+                  fontSize: 12,
+                  color: getColorFromId(cellTypesList, opt),
+                  marginLeft: '0rem',
+                  marginRight: '1rem',
+                }}
+              />
               {getName(cellTypesList, opt)}
             </MenuItem>
           ))}
