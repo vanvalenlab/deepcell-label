@@ -1,11 +1,10 @@
 // Canvas when selecting multiple cells
 import { useSelector } from '@xstate/react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useAlphaGpu,
   useArrays,
   useCanvas,
-  useCellMatrix,
   useEditCellTypes,
   useImage,
   useLabeled,
@@ -13,6 +12,7 @@ import {
 
 function CellSelectionCanvas({ setBitmaps }) {
   const canvas = useCanvas();
+  const enableAnimations = useSelector(canvas, (state) => state.context.enableAnimations);
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
@@ -31,44 +31,40 @@ function CellSelectionCanvas({ setBitmaps }) {
   const editCellTypes = useEditCellTypes();
   const selected = useSelector(editCellTypes, (state) => state.context.multiSelected);
 
-  const cellMatrix = useCellMatrix();
-
   const gpu = useAlphaGpu();
-  const kernelRef = useRef();
+
+  const [kernel1Value, setKernel1Value] = useState();
+  const [kernel2Value, setKernel2Value] = useState();
+  const [isLitUp, setisLitUp] = useState(true);
 
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (data, cells, numValues, numSelected, selected) {
+      `function (data, numSelected, selected, light) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
-        let north = value;
-        let south = value;
-        let east = value;
-        let west = value;
-        if (x !== 0) {
-          north = data[y][x - 1];
-        }
-        if (x !== this.constants.w - 1) {
-          south = data[y][x + 1];
-        }
-        if (y !== 0) {
-          west = data[y - 1][x];
-        }
-        if (y !== this.constants.h - 1) {
-          east = data[y + 1][x];
-        }
-
-        if (value < numValues) {
-          // Outline selected cells on plot
-          for (let i = 0; i < numSelected; i++) {
-            const cell = selected[i];
-            if (cells[value][cell] === 1 && value < numValues) {
-              if (cells[north][cell] === 0 || cells[south][cell] === 0 || cells[west][cell] === 0 || cells[east][cell] === 0
-                  || north >= numValues || south >= numValues || west >= numValues || east >= numValues) {
-                this.color(1, 1, 1, 1);
-              }
+        const north = x !== 0 ? data[y][x - 1] : value;
+        const south = x !== this.constants.w - 1 ? data[y][x + 1] : value;
+        const west = y !== 0 ? data[y - 1][x] : value;
+        const east = y !== this.constants.h - 1 ? data[y + 1][x] : value;
+        // Increase outline width to 2 pixels
+        const nnorth = x > 1 ? data[y][x - 2] : value;
+        const ssouth = x < this.constants.w - 2 ? data[y][x + 2] : value;
+        const wwest = y > 1 ? data[y - 2][x] : value;
+        const eeast = y < this.constants.h - 2 ? data[y + 2][x] : value;
+        
+        // Outline selected cells on plot
+        for (let i = 0; i < numSelected; i++) {
+          const cell = selected[i];
+          if (north !== value || south !== value || east !== value || west !== value
+              || nnorth !== value || ssouth !== value || eeast !== value || wwest !== value) {
+            if (cell === value && value > 0) {
+              this.color(1, 1, 1, 1);
             }
+          }
+          // Light up highlighted cells
+          else if (cell === value && value > 0 && light) {
+            this.color(1, 1, 1, 0.5);
           }
         }
       }`,
@@ -80,30 +76,57 @@ function CellSelectionCanvas({ setBitmaps }) {
         loopMaxIterations: 5000, // Maximum number of cell labels to render
       }
     );
-    kernelRef.current = kernel;
-  }, [gpu, width, height]);
+
+    async function bitmapSetter1(labeledArray, selected, kernel) {
+      kernel(labeledArray, selected.length, selected, true);
+      const bitmap1 = await createImageBitmap(kernel.canvas);
+      setKernel1Value(bitmap1);
+    }
+
+    async function bitmapSetter2(labeledArray, selected, kernel) {
+      kernel(labeledArray, selected.length, selected, false);
+      const bitmap2 = await createImageBitmap(kernel.canvas);
+      setKernel2Value(bitmap2);
+    }
+
+    // Calculate the actual bitmap values to store
+    if (labeledArray && selected && selected.length > 0) {
+      bitmapSetter1(labeledArray, selected, kernel);
+      bitmapSetter2(labeledArray, selected, kernel);
+    } else {
+      setKernel1Value(null);
+      setKernel2Value(null);
+    }
+  }, [gpu, labeledArray, selected, width, height]);
+
+  // Move the animation between frames if enabled
+  useEffect(() => {
+    let intervalId;
+    if (selected && selected.length > 0 && enableAnimations) {
+      intervalId = setInterval(() => {
+        setisLitUp((isLitUp) => !isLitUp);
+      }, 1000);
+    }
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [enableAnimations, isLitUp, selected]);
 
   useEffect(() => {
-    const kernel = kernelRef.current;
-    const numSelected = selected.length;
+    // Alternate between two kernel values if animations enabled
+    const kernelValue = isLitUp || !enableAnimations ? kernel1Value : kernel2Value;
 
-    if (numSelected > 0) {
-      if (labeledArray && cellMatrix) {
-        const numValues = cellMatrix.length;
-        kernel(labeledArray, cellMatrix, numValues, numSelected, selected);
-        // Rerender the parent canvas
-        createImageBitmap(kernel.canvas).then((bitmap) => {
-          setBitmaps((bitmaps) => ({ ...bitmaps, selections: bitmap }));
-        });
-      }
+    if (kernelValue) {
+      // Rerender the parent canvas
+      setBitmaps((bitmaps) => ({ ...bitmaps, selections: kernelValue }));
     } else {
-      // Remove the tool canvas
+      // Remove the bitmap from the parent canvas
       setBitmaps((bitmaps) => {
         const { selections, ...rest } = bitmaps;
         return rest;
       });
     }
-  }, [labeledArray, cellMatrix, selected, setBitmaps, width, height]);
+  }, [isLitUp, enableAnimations, setBitmaps, kernel1Value, kernel2Value]);
 
   useEffect(
     () => () =>
