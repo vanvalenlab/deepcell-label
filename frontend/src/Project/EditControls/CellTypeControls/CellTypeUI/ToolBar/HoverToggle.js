@@ -14,9 +14,9 @@ function HoverToggle() {
   }, [editCellTypes]);
 
   useEffect(() => {
-    bind('shift', handleHovering);
+    bind('x', handleHovering);
     return () => {
-      unbind('shift', handleHovering);
+      unbind('x', handleHovering);
     };
   }, [handleHovering]);
 
@@ -25,14 +25,15 @@ function HoverToggle() {
       title={
         hoveringCard ? (
           <span>
-            Hover for cell type(s) <kbd>Shift</kbd>
+            Hover for cell type(s) <kbd>X</kbd>
           </span>
         ) : (
           <span>
-            Hover disabled <kbd>Shift</kbd>
+            Hover disabled <kbd>X</kbd>
           </span>
         )
       }
+      placement='top'
     >
       <IconButton onClick={handleHovering} color='primary' sx={{ width: '100%', borderRadius: 1 }}>
         {hoveringCard ? <SpeakerNotesTwoToneIcon /> : <SpeakerNotesOffTwoToneIcon />}
