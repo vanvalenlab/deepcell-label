@@ -43,6 +43,22 @@ def test_create_project(client, mocker):
     response = client.post('/api/project', data={'images': 'https://test.com'})
     assert response.status_code == 200
 
+# Test create_project_from_zip
+def test_create_project_from_zip(client):
+    # Create temporary zip file
+    with tempfile.NamedTemporaryFile(suffix='.zip') as zf:
+        # Create a dummy tiff in the zip file
+        with TiffWriter(zf) as writer:
+            writer.save(np.zeros((1, 1, 1, 1)))
+            zf.seek(0)
+        # Send zip file to server
+        data = {'zip': (zf, 'test.zip')}
+        response = client.post(
+            '/api/project/zip', data=data, content_type='multipart/form-data'
+        )
+    assert response.status_code == 200
+        
+
 
 def test_create_project_dropped_npz(client):
     with tempfile.NamedTemporaryFile() as f:
