@@ -114,6 +114,38 @@ def create_project():
     )
     return jsonify(project.project)
 
+@bp.route('/api/project/zip', methods=['POST'])
+def create_project_from_zip():
+    """
+    Create a new Project from a local zipfile variable.
+    """
+    start = timeit.default_timer()
+    if 'zip' in request.files:
+        zip = request.files['zip']
+    else:
+        return abort(
+            400,
+            description='Include "zip" in the request form with an opened zipfile to create the project data.',
+        )
+    with tempfile.NamedTemporaryFile(
+        delete=DELETE_TEMP
+    ) as image_file, tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as label_file:
+        image_file.write(zip.read())
+        image_file.seek(0)
+        label_file = image_file
+        loader = Loader(image_file, label_file, None)
+        project = Project.create(loader)
+    if not DELETE_TEMP:
+        image_file.close()
+        label_file.close()
+        os.remove(image_file.name)  # Manually close and delete if using Windows
+    current_app.logger.info(
+        'Created project %s from a local zipfile variable in %s s.',
+        project.project,
+        timeit.default_timer() - start,
+    )
+    return jsonify(project.project)
+
 
 @bp.route('/api/project/dropped', methods=['POST'])
 def create_project_from_dropped_file():
