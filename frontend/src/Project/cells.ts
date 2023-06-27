@@ -55,6 +55,23 @@ class Cells {
     return matrix;
   }
 
+  /** Converts the cell list to a sparse matrix in CSR-like format where the (row[i], col[i])th element is 1 if value i encodes cell j at time t.
+   * @param t Time to generate cell array for.
+   * @returns Object with row and col arrays where the (row[i], col[i])th element is 1 if value i encodes cell j at time t and 0 otherwise
+   */
+  getCsrMatrix(t: number, c: number): Object {
+    const atT = this.cells.filter((cell) => cell.t === t && cell.c === c);
+    const maxCell = atT.reduce((max, cell) => Math.max(max, cell.cell), 0);
+    const maxValue = atT.reduce((max, cell) => Math.max(max, cell.value), 0);
+    const row: number[] = [];
+    const col: number[] = [];
+    for (const cell of atT) {
+      row.push(cell.value);
+      col.push(cell.cell);
+    }
+    return { row: row, col: col, maxValue: maxValue, maxCell: maxCell };
+  }
+
   /** Converts the cell list to a reduced-size sparse matrix where the (i, j)th element is 1 if value i encodes cell j at time t.
    * Reduced in this case means that the minimum cell and value counts will also be stored and any cells and values below
    * those counts will be cut off.

@@ -492,6 +492,16 @@ export function useCellMatrix() {
   return cellMatrix;
 }
 
+export function useCsrMatrix() {
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+  const labeled = useLabeled();
+  const c = useSelector(labeled, (state) => state.context.feature);
+  const cells = useCells();
+  const csrMatrix = useMemo(() => cells.getCsrMatrix(t, c), [cells, t, c]);
+  return csrMatrix;
+}
+
 export function useReducedCellMatrix() {
   const image = useImage();
   const t = useSelector(image, (state) => state.context.t);
