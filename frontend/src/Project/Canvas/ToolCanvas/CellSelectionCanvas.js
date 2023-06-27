@@ -52,7 +52,7 @@ function CellSelectionCanvas({ setBitmaps }) {
         const ssouth = x < this.constants.w - 2 ? data[y][x + 2] : value;
         const wwest = y > 1 ? data[y - 2][x] : value;
         const eeast = y < this.constants.h - 2 ? data[y + 2][x] : value;
-       
+
         // Outline selected cells on plot
         for (let i = 0; i < numSelected; i++) {
           const cell = selected[i];
