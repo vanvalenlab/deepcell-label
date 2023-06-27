@@ -39,6 +39,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
         dx: 0,
         dy: 0,
         panOnDrag: true,
+        enableAnimations: false, // Whether to enable animations like flashing highlighted cells
       },
       invoke: [
         { id: 'eventBus', src: fromEventBus('canvas', () => eventBuses.canvas) },
@@ -67,6 +68,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
           cond: 'newCoordinates',
           actions: ['setCoordinates', forwardTo('eventBus')],
         },
+        TOGGLE_ANIMATIONS: { actions: 'toggleAnimations' },
         'keydown.Space': '.pan.grab',
         'keyup.Space': '.pan.interactive',
       },
@@ -288,6 +290,7 @@ const createCanvasMachine = ({ undoRef, eventBuses }) =>
           return { type: 'SET_POSITION', zoom: newZoom, sx: newSx, sy: newSy };
         }),
         setPanOnDrag: assign({ panOnDrag: (_, evt) => evt.panOnDrag }),
+        toggleAnimations: assign({ enableAnimations: (ctx) => !ctx.enableAnimations }),
         sendToEventBus: forwardTo('eventBus'),
       },
     }

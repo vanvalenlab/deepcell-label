@@ -26,6 +26,7 @@ function OpenMarkerPanel() {
             Open Marker Panel <kbd>P</kbd>
           </span>
         }
+        placement='top'
       >
         <IconButton
           color='primary'

@@ -87,8 +87,8 @@ describe('Cell Type Editing', () => {
       cy.get('[data-testid="CheckBoxOutlineBlankIcon"]').eq(1).should('exist');
       cy.get('[data-testid="CheckBoxOutlineBlankIcon"]').eq(2).should('exist');
       cy.get('[data-testid="CheckBoxIcon"]').should('not.exist');
-      cy.get('[type="checkbox"]').eq(1).click();
       cy.get('[type="checkbox"]').eq(2).click();
+      cy.get('[type="checkbox"]').eq(3).click();
       for (let i = 0; i < 3; i++) {
         cy.get('[data-testid="CheckBoxIcon"]').eq(i).should('exist');
       }

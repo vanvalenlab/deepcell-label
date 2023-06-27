@@ -20,7 +20,7 @@ function AddCellTypeLabel() {
 
   return (
     <>
-      <Tooltip title='Add New Cell Type'>
+      <Tooltip title='Add New Cell Type' placement='top'>
         <IconButton
           ref={anchorRef}
           color='primary'

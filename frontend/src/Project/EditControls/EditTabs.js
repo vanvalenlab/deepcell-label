@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useLabelMode, useSpots } from '../ProjectContext';
 
 const tabKeybinds = {
-  segment: ['b', 'e', 'x', 'k', 'g', 'w', 'q'], // Remove 'm' and 't' so we can use it for cellTypes
+  segment: ['b', 'e', 'k', 'g', 'w', 'q'], // Remove 'm', 'x', and 't' so we can use it for cellTypes
   cells: ['Backspace', 'r', 's'],
 };
 

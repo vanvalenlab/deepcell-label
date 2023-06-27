@@ -36,6 +36,7 @@ function ModeToggle() {
           </span>
         )
       }
+      placement='top'
     >
       <IconButton onClick={handleMode} color='primary' sx={{ width: '100%', borderRadius: 1 }}>
         {mode === 'overwrite' ? <LayersClearTwoToneIcon /> : <LayersTwoToneIcon />}

@@ -1,4 +1,4 @@
-import { Box, FormLabel, Tooltip } from '@mui/material';
+import { FormLabel, Grid, Tooltip } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
 import { useSelector } from '@xstate/react';
 import { bind, unbind } from 'mousetrap';
@@ -26,15 +26,15 @@ function ToggleAll() {
   }, [handleCheck]);
 
   return (
-    <Tooltip title={<kbd>T</kbd>} placement='right'>
-      <Box display='flex' alignItems='center'>
+    <Grid item xs={5.5} display='flex' alignItems='center'>
+      <Tooltip title={<kbd>T</kbd>} placement='bottom'>
         <Checkbox
           checked={toggleArray.every((e, i) => e === true || e === null || i === 0)}
           onChange={handleCheck}
         />
-        <FormLabel sx={{ marginLeft: 0.75 }}>Toggle All</FormLabel>
-      </Box>
-    </Tooltip>
+      </Tooltip>
+      <FormLabel sx={{ marginLeft: 0.75 }}>Toggle All</FormLabel>
+    </Grid>
   );
 }
 
