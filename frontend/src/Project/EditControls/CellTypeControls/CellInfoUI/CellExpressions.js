@@ -40,8 +40,8 @@ function CellExpressions({ calculations }) {
       ]}
       layout={{
         width: 345,
-        height: 300,
-        margin: { l: maxNameLength * 8.5, r: 20, b: 30, t: 20, pad: 5 },
+        height: channelNames.length * 13 + 100,
+        margin: { l: maxNameLength * 5 + 50, r: 20, b: 30, t: 20, pad: 5 },
         xaxis: { automargin: true },
         yaxis: {
           autorange: 'reversed',
