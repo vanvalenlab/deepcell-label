@@ -11,7 +11,7 @@ function TrainingPlot() {
   const epochs = trainLogs.map((_, i) => i);
 
   const width = window.innerWidth * 0.4;
-  const height = window.innerHeight * 0.62;
+  const height = window.innerHeight * 0.55;
 
   return (
     <Grid item>

@@ -11,7 +11,7 @@ function PredictionModal({ open, setOpen }) {
     left: '50%',
     transform: 'translate(-50%, -50%)',
     width: '30vw',
-    height: '45vh',
+    height: '50vh',
     bgcolor: 'background.paper',
     borderRadius: 2,
     boxShadow: 24,
