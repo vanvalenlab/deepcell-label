@@ -1,4 +1,4 @@
-import { Box, Grid } from '@mui/material';
+import { Box } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import { useSelector } from '@xstate/react';
 import React from 'react';
@@ -47,45 +47,39 @@ function DisplayInstructions() {
   const raw = useRaw();
   const numChannels = useSelector(raw, (state) => state.context.numChannels);
 
-  const width = '150px';
+  const width = 150;
 
   return (
     <Box display='flex' justifyContent='space-between'>
       <div>
         <Typography>
-          The canvas on the right shows segmentations overlaid on multi-channel images. These
-          controls adjust how the images and segmentations.
+          The canvas shows segmentations overlaid on multi-channel images. These controls adjust how
+          the images are displayed.
         </Typography>
         <br />
-        <Box></Box>
-        <Grid container spacing={1}>
-          <Grid container item>
-            <Box sx={{ width }}>
-              <LabeledControls />
-            </Box>
+        <Box>
+          <Box display='flex' sx={{ boxShadow: 1, p: 2, borderRadius: 1 }}>
+            <LabeledControls />
+            <ColorModeToggle />
+          </Box>
+          <Box>
             <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
               <ul style={{ margin: 0 }}>
                 {numFeatures > 1 && (
                   <li>Feature selects a segmentation, like whole-cell or nuclear</li>
                 )}
-                <li>Highlight toggles coloring the selected cell red</li>
                 <li>Cells sets the opacity of the segmentation</li>
                 <li>Outline sets the opacity of cell outlines </li>
+                <li>Color toggle showing a single grayscale channel or multiple color channels</li>
               </ul>
             </Typography>
-          </Grid>
-          <Grid container item>
-            <Box sx={{ width }}>
-              <ColorModeToggle />
-            </Box>
-            <Typography sx={{ pl: 1, flex: '1 0 0' }}>
-              Toggles showing a single grayscale channel or multiple color channels
-            </Typography>
-          </Grid>
-          <Grid container item>
-            <Box sx={{ width }}>
-              <RGBControls />
-            </Box>
+          </Box>
+          <br />
+          <Box sx={{ boxShadow: 1, p: 2, borderRadius: 1 }}>
+            <RGBControls width={width * 3} />
+          </Box>
+          <Box>
+            <br />
             <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
               When color is on,
               <ul>
@@ -96,11 +90,13 @@ function DisplayInstructions() {
                 <li>the pop-up menu picks a color colors or removes the channel</li>
               </ul>
             </Typography>
-          </Grid>
-          <Grid container item>
-            <Box sx={{ width }}>
-              <GrayscaleControls />
-            </Box>
+          </Box>
+          <br />
+          <Box sx={{ boxShadow: 1, p: 2, borderRadius: 1 }}>
+            <GrayscaleControls />
+          </Box>
+          <Box>
+            <br />
             <Typography component={'span'} sx={{ pl: 1, flex: '1 0 0' }}>
               When color is off,
               <ul>
@@ -110,8 +106,8 @@ function DisplayInstructions() {
                 <li>double click a slider to reset it </li>
               </ul>
             </Typography>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </div>
       <DisplayShortcuts />
     </Box>

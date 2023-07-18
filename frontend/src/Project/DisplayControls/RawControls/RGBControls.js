@@ -27,7 +27,7 @@ export function useHorizontalScroll() {
   return elRef;
 }
 
-function RGBControls() {
+function RGBControls({ width }) {
   const raw = useRaw();
   const layers = useSelector(raw, (state) => state.context.layers);
   const numChannels = useSelector(raw, (state) => state.context.numChannels);
@@ -37,7 +37,7 @@ function RGBControls() {
     (state) => [state.context.width, state.context.scale],
     equal
   );
-  const menuWidth = scale * sw + 355;
+  const menuWidth = width ? width : scale * sw + 355;
   const scrollRef = useHorizontalScroll();
 
   return (

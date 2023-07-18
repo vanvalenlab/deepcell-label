@@ -43,11 +43,25 @@ function PlottingTrainingInstructions() {
         </Grid>
 
         <Grid item xs={12}>
+          <Typography variant='h5'>Cell Info</Typography>
+        </Grid>
+        <Grid item xs={12}>
+          <Typography>
+            On the second tab of the right-side panel, you can view the calculations for the cell
+            you have selected for whatever metric you last calculated. Additionally, you can add or
+            remove the cell from any cell types and view which cell type(s) it is apart of. Finally,
+            you can use the arrow keys or the arrow buttons to cycle to the next highest or lowest
+            cell in the currently opened cell type (defined as which cell type accordion on the left
+            is opened).
+          </Typography>
+        </Grid>
+
+        <Grid item xs={12}>
           <Typography variant='h5'>Visualization and Training</Typography>
         </Grid>
         <Grid item xs={12}>
           <Typography>
-            On the second tab of the right-side panel, you can run various visualizations or even
+            On the last tab of the right-side panel, you can run various visualizations or even
             train your own model in-browser for cell type classification using current labels as a
             training set.
           </Typography>
