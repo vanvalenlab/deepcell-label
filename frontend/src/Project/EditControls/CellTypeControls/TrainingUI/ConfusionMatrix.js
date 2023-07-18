@@ -43,7 +43,7 @@ function ConfusionMatrix({ confusionMatrix }) {
   ];
 
   const width = window.innerWidth * 0.4;
-  const height = window.innerHeight * 0.62;
+  const height = window.innerHeight * 0.55;
 
   return (
     <Plot

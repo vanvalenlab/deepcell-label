@@ -24,7 +24,7 @@ function DistributionHistogram({ trainCounts }) {
   const lightenedColors = colors.map((color) => lightenColor(color));
 
   const width = window.innerWidth * 0.4;
-  const height = window.innerHeight * 0.62;
+  const height = window.innerHeight * 0.55;
 
   return (
     <Grid item>
