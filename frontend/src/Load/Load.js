@@ -1,4 +1,4 @@
-import { Box, Container, Paper, Typography } from '@mui/material';
+import { Box, Container, Link, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import { useInterpret } from '@xstate/react';
 import ExampleFileSelect from './ExampleFileSelect';
@@ -31,7 +31,15 @@ function Introduction() {
         Label can work with 2D images, 3D images, and timelapses. 4D images, or 3D timelapse images,
         are not yet supported. Label expects input images to have time (T) first and channels (C)
         last, or a ZYXC (TYXC for timelapses) dimension order. When loading images with a different
-        dimension order, update the dimensions dropdown in the drag-and-drop box below.
+        dimension order, update the dimensions dropdown in the drag-and-drop box below. For more
+        details on DCL image formats, see the{' '}
+        <Link
+          href='https://github.com/vanvalenlab/deepcell-label/blob/main/documentation/LABEL_FILE_FORMAT.md'
+          target='_blank'
+        >
+          documentation
+        </Link>
+        .
       </Typography>
     </Box>
   );
