@@ -14,8 +14,10 @@ from xml.etree import ElementTree as ET
 
 import magic
 import numpy as np
+from numcodecs import JSON
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
+import zarr
 
 from deepcell_label.utils import convert_lineage, reshape
 
@@ -45,13 +47,11 @@ class Loader:
         self.label_file = label_file if label_file else image_file
         self.axes = axes
 
-        with tempfile.TemporaryFile() as project_file:
-            with zipfile.ZipFile(project_file, 'w', zipfile.ZIP_DEFLATED) as zip:
-                self.zip = zip
-                self.load()
-                self.write()
-            project_file.seek(0)
-            self.data = project_file.read()
+        self.zarr = zarr.group()
+        self.zarr.create_group('metadata')
+
+        self.load()
+        self.write()
 
     def load(self):
         """Loads data from input files."""
@@ -76,7 +76,7 @@ class Loader:
         self.write_divisions()
         self.write_cellTypes()
         self.write_cells()
-        self.write_embeddings()
+        # self.write_embeddings()
 
     def write_images(self):
         """
@@ -87,20 +87,10 @@ class Loader:
         """
         X = self.X
         if X is not None:
-            # Move channel axis
-            X = np.moveaxis(X, -1, 1)
-            images = io.BytesIO()
-            channels = []
-            for i in range(len(self.channels)):
-                channels.append({'Name': self.channels[i]})
-            with TiffWriter(images, ome=True) as tif:
-                tif.write(
-                    X,
-                    compression='zlib',
-                    metadata={'axes': 'ZCYX', 'Pixels': {'Channel': channels}},
-                )
-            images.seek(0)
-            self.zip.writestr('X.ome.tiff', images.read())
+            # TODO: Chunk in an intelligent way if it matters
+            X_array = self.zarr.create_dataset('X', data=X, chunks=False)
+            X_array.attrs['axes'] = self.axes
+            X_array.attrs['channels'] = self.channels
         # else:
         #     raise ValueError('No images found in files')
 
@@ -114,34 +104,29 @@ class Loader:
             )
         # TODO: check if float vs int matters
         y = y.astype(np.int32)
-        # Move channel axis
-        y = np.moveaxis(y, -1, 1)
-
-        segmentation = io.BytesIO()
-        with TiffWriter(segmentation, ome=True) as tif:
-            tif.write(y, compression='zlib', metadata={'axes': 'ZCYX'})
-        segmentation.seek(0)
-        self.zip.writestr('y.ome.tiff', segmentation.read())
+        # TODO: Chunk in an intelligent way if it matters
+        y_array = self.zarr.create_dataset('y', data=y, chunks=False)
+        y_array.attrs['axes'] = self.axes
 
     def write_spots(self):
         """Writes spots to spots.csv in the output zip."""
         if self.spots is not None:
-            buffer = io.BytesIO()
-            buffer.write(self.spots)
-            buffer.seek(0)
-            self.zip.writestr('spots.csv', buffer.read())
+            x, y = self.spots
+            spots_group = self.zarr.metadata.create_group('spots')
+            spots_group.create_dataset('x', data=x)
+            spots_group.create_dataset('y', data=y)
 
     def write_divisions(self):
         """Writes divisions to divisions.json in the output zip."""
-        self.zip.writestr('divisions.json', json.dumps(self.divisions))
+        self.zarr.metadata.create_dataset('divisions', data=self.divisions, dtype=object, object_codec=JSON())
 
     def write_cellTypes(self):
         """Writes cell types to cellTypes.json in the output zip."""
-        self.zip.writestr('cellTypes.json', json.dumps(self.cellTypes))
+        self.zarr.metadata.create_dataset('cellTypes', data=self.cellTypes, dtype=object, object_codec=JSON())
 
     def write_embeddings(self):
         """Writes embeddings to embeddings.json in the output zip."""
-        self.zip.writestr('embeddings.json', json.dumps(self.embeddings))
+        self.zarr.metadata.create_dataset('embeddings', data=self.embeddings, dtype=object, object_codec=JSON())
 
     def write_cells(self):
         """Writes cells to cells.json in the output zip."""
@@ -160,7 +145,8 @@ class Loader:
                                 }
                             )
             self.cells = cells
-        self.zip.writestr('cells.json', json.dumps(self.cells))
+        # self.zip.writestr('cells.json', json.dumps(self.cells))
+        self.zarr.metadata.create_dataset('cells', data=self.cells, dtype=object, object_codec=JSON())
 
 
 def load_images(image_file, axes=None):
@@ -450,9 +436,10 @@ def load_zip_csv(zf):
     """
     for name in zf.namelist():
         if name.endswith('.csv'):
+            # Extract the x and y coordinate data from first two columns
             with zf.open(name) as f:
-                return f.read()
-
+                f.seek(0)
+                return np.loadtxt(f, delimiter=',', usecols=(0, 1), skiprows=1, unpack=True)
 
 def load_zip_json(zf, filename=None):
     """

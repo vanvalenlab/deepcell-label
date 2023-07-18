@@ -7,7 +7,9 @@ import timeit
 from secrets import token_urlsafe
 
 import boto3
+import s3fs
 from flask_sqlalchemy import SQLAlchemy
+import zarr
 
 from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, S3_BUCKET
 
@@ -40,16 +42,15 @@ class Project(db.Model):
                 self.project = project
                 break
 
-        # Upload to s3
-        s3 = boto3.client(
-            's3',
-            aws_access_key_id=AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-        )
         self.bucket = S3_BUCKET
-        self.key = f'{self.project}.zip'
-        fileobj = io.BytesIO(loader.data)
-        s3.upload_fileobj(fileobj, self.bucket, self.key)
+        self.key = f'{self.project}.zarr'
+
+        s3_fs = s3fs.S3FileSystem(anon=False, key=AWS_ACCESS_KEY_ID, secret=AWS_SECRET_ACCESS_KEY)
+        s3_store = s3fs.S3Map(root=f'{self.bucket}/{self.key}', s3=s3_fs, check=False)
+        zarr_file = loader.zarr
+        print(zarr_file.tree())
+        # Upload the zarr to s3_store
+        zarr.convenience.copy_store(zarr_file.store, s3_store)
 
         logger.debug(
             'Initialized project %s and uploaded to %s in %ss.',

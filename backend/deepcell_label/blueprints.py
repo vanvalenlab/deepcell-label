@@ -11,6 +11,8 @@ import boto3
 import requests
 from flask import Blueprint, abort, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
+import s3fs
+import zarr
 
 from deepcell_label.config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, DELETE_TEMP
 from deepcell_label.export import Export
@@ -50,6 +52,14 @@ def get_project(project):
     if not project:
         return abort(404, description=f'project {project} not found')
     bucket = request.args.get('bucket', default=project.bucket)
+    print(f'THE BUCKET IS {bucket}')
+    print(f'THE KEY IS {project.key}')
+
+    s3_fs = s3fs.S3FileSystem(anon=False, key=AWS_ACCESS_KEY_ID, secret=AWS_SECRET_ACCESS_KEY)
+    s3_store = s3fs.S3Map(root=f'{bucket}/{project.key}', s3=s3_fs, check=False)
+    root = zarr.group(store=s3_store)
+    print(root.tree())
+
     s3 = boto3.client('s3')
     data = io.BytesIO()
     s3.download_fileobj(bucket, project.key, data)
