@@ -1,6 +1,6 @@
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditCellTypes } from '../../../../ProjectContext';
 
 const textStyle = {
@@ -11,7 +11,7 @@ const textStyle = {
 
 function EditNameField(props) {
   const { id, cellName, typing, toggleType } = props;
-  const [name, setName] = useState(cellName);
+  const [name, setName] = useState(null);
   const editCellTypesRef = useEditCellTypes();
   const focusRef = useRef(null);
 
@@ -35,6 +35,11 @@ function EditNameField(props) {
       editCellTypesRef.send({ type: 'NAME', cellType: id, name: name });
     }
   };
+
+  // Needed so that name updates on change and undo
+  useEffect(() => {
+    setName(cellName);
+  }, [cellName]);
 
   return (
     <div style={textStyle}>
