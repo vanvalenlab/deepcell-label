@@ -86,7 +86,7 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
                 EDIT_CHANNEL: {
                   actions: ['editLayer'],
                 },
-                EDIT_NAME: { actions: 'editChannelName' },
+                EDIT_NAME: { actions: ['editChannelName', 'sendChannelNames'] },
               },
             },
             grayscale: {
@@ -121,11 +121,18 @@ const createRawMachine = ({ projectId, eventBuses, undoRef }) =>
         }),
         editChannelName: assign({
           channelNames: (ctx, evt) => {
-            let channelNames = ctx.channelNames;
+            let channelNames = [...ctx.channelNames];
             channelNames[evt.channel] = evt.name;
             return channelNames;
           },
         }),
+        // Send an event to event bus that channel names have been edited
+        sendChannelNames: send(
+          (ctx) => ({ type: 'CHANNEL_NAMES', channelNames: ctx.channelNames }),
+          {
+            to: 'eventBus',
+          }
+        ),
         editLayer: assign({
           layersOpen: ({ channelNames, layersOpen }, { channel, index }) => [
             ...layersOpen.map((c, i) => (i === index ? channelNames[channel] : c)),
