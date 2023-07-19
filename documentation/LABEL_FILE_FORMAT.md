@@ -20,13 +20,29 @@ To create a project with DeepCell Label, POST a request to `label.deepcell.org/a
 
 The backend will download these files and reformat them into a standardized .zip with the following contents.
 
+### No URL
+
+If the image you want to input does not have a corresponding URL (i.e., on local disk or in memory), you can also POST a request to `label.deepcell.org/api/project/dropped` with form data:
+
+- `axes`: the dimension order of the images (e.g. `CZYX`)
+  and with the following file in the reqeuest:
+- `images`: bytes containing an opened file of
+  - a DeepCell Label .zip file (see below)
+  - a .tiff
+  - a .png
+  - an .npz, or zipped numpy array
+    - uses arrays named `X` for images and `y` for segmentation, otherwise uses the first array in the .npz
+  - a .trk file, a legacy format from from [deepcell-tracking](https://github.com/vanvalenlab/deepcell-tracking)
+
 ## DeepCell Label .zip Contents
 
-### X.ome.tiff
+DeepCell Label outputs zip files for S3 bucket storage and user downloading, and this zip format is also the current recommended method of uploading files. The zip contains a number of files:
 
-This is the image being labeled. It is a 4 dimensional uint8 image with dimension order CZYX and it is stored as an [OME-TIFF](https://docs.openmicroscopy.org/ome-model/5.6.3/ome-tiff/).
+### X.ome.tiff (required)
 
-### y.ome.tiff
+This is the image being labeled. It is a 4 dimensional image with dimension order CZYX and it is stored as an [OME-TIFF](https://docs.openmicroscopy.org/ome-model/5.6.3/ome-tiff/).
+
+### y.ome.tiff (optional on input)
 
 This is the segmentation image. It is a 4 dimensional int32 image with dimension order CZYX and it is stored as an [OME-TIFF](https://docs.openmicroscopy.org/ome-model/5.6.3/ome-tiff/).
 
@@ -36,7 +52,7 @@ Each pixel in the image may encode multiple cells. The cells.json describes how 
 - values that encode only one cell are replaced with the cell
 - values that encode multiple cells are strictly higher than the largest cell
 
-### cells.json
+### cells.json (optional on input)
 
 Contains a list of cell objects like `{ "value": 1, "cell": 1, "t": 0, "c": 0}`.
 The value is the pixel value in the segmentation image for time `t` and channel `c` and cell is what that value represents in that image slice.
@@ -45,12 +61,21 @@ With the "t" field, values can be reassigned across times to different cells wit
 With the "c" field, we could reassign cells across both channels as well, but the controls are not yet implemented.
 A "z" field may be added once 3D timelapses are implemented.
 
-### divisions.json
+### divisions.json (optional on input)
 
 Contains a list of division objects like `{"parent": 1, "daughters": [2, 3], "t": 1}`
 Each division has a parent cell `parent`, a list of daughter cells `daughters`, and the time of the division `t`. Our convention for division times is the first time after the division finishes, or the first time the daughters appear on. When creating a new division by adding a daughter, `t` is set to the time where the daughter is selected.
 
-### spots.csv
+### cellTypes.json (optional on input)
+
+Contains a list of cellType objects like `{"id": 1, "cells": [1, 2, 3], "color": "#58b5e1", "name": "BCELL", "feature": 0}`
+Each cellType object has a unique id, a list of cells that belong to that cell type, a color for visualization, a semantic name, and a feature denoting the corresponding segmentation mask.
+
+### embeddings.json (optional)
+
+Loads into an array of arrays, where the _i_ th array represents an embedding vector for cell _i_ for use in in-browser training and UMAP visualization.
+
+### spots.csv (optional)
 
 Contains the spots coordinates and cell assignments.
 

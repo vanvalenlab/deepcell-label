@@ -62,6 +62,8 @@ The root level machine spawns child actors and sets up event buses for these act
 
 Here's a tree diagram of the spawned state machines. The root project state machine, and the child state machine The state machines with stars have event buses that they broadcast events on. The events they broadcast are shown in blue to the right of the state machine. The events that state machines listen to from these event buses on are shown to the left.
 
+Note that as more machines are added (including cellTypes), this diagram is getting out of date in specifics, but the basic principles and structure remains true.
+
 ![xstate tree diagram](xstateTree.png)
 
 #### UI actors
@@ -96,6 +98,7 @@ These actors manage the interactions with the UI
     - `editSegmentMachine`
     - `editCellsMachine`
     - `editDivisionsMachine`
+    - `editCellTypesMachine`
     - each of these spawn actors for the tools it manages, and the tool actors send events to a label machine (e.g. `cellMachine`) to edit the labels
 
 #### Labels
@@ -115,6 +118,16 @@ These state machines hold the labels and manage the logic that edit labels.
 - `spotsMachine`
   - manages the spots labels
   - no spots editing implemented yet
+- `cellTypesMachine`
+  - manages the cell type labels
+  - edits cell type labels by adding and removing cell types (`ADD_CELLTYPE`, `REMOVE_CELLTYPE`), modifying which cells are in which types (`ADD_CELL`, `REMOVE_CELL`), and any other cell type label edits
+  - supplemented by 2 additional machines:
+    - `channelExpressionMachine`
+      - Makes calculations for channel expressions for each cell in the image via mean and total pixel values
+      - Calculations are calculated and saved for use in plotting functionality (histogram, scatter, UMAP)
+    - `trainingMachine`
+      - Uses the [tensorflow.js](https://www.tensorflow.org/js) package to train a machine learning model on the frontend using either the channel expression calculations or some imported embeddings for each cell
+      - The model can then be used to make predictions of cell type labels for each unlabeled cell, as well as estimate uncertainties, as we have translated the Python tensorflow implementation of [SNGP](https://www.tensorflow.org/tutorials/understanding/sngp) (still needs to be tested more extensively)
 
 #### Data management
 

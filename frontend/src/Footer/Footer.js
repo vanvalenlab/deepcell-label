@@ -23,7 +23,10 @@ export default function Footer() {
       </Typography>
       <Typography variant='caption' align='center' color='textSecondary' component='p'>
         For any questions or issues, please post on our{' '}
-        <Link href='https://github.com/vanvalenlab/deepcell-label/issues'>GitHub Issues</Link> page.{' '}
+        <Link href='https://github.com/vanvalenlab/deepcell-label/issues' target='_blank'>
+          GitHub Issues
+        </Link>{' '}
+        page.{' '}
         {/* <Link href='https://github.com/vanvalenlab/deepcell-label/commit/256862c378b3538b4b523d2bdcc5627d9f2ee4ed'>
           (Current deployment)
         </Link>{' '} */}
