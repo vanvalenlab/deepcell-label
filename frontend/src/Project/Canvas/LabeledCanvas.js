@@ -1,14 +1,16 @@
+/*
+ * Canvas that renders the interior labels of cells based on a color map
+ */
 import { useSelector } from '@xstate/react';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaGpu,
   useCanvas,
-  useCellsAtTime,
+  useCellValueMapping,
   useColormap,
   useLabeled,
   useLabeledArray,
   useLabelMode,
-  useReducedCellMatrix,
   useSelectedCell,
 } from '../ProjectContext';
 
@@ -24,8 +26,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
   const opacity = useSelector(labeled, (state) => state.context.cellsOpacity);
 
   const labeledArray = useLabeledArray();
-  const cellsList = useCellsAtTime();
-  const { cellMatrix, minCell, minValue } = useReducedCellMatrix();
+  const { mapping, lengths } = useCellValueMapping();
   const colormap = useColormap();
   const cell = useSelectedCell();
 
@@ -39,9 +40,18 @@ export const LabeledCanvas = ({ setBitmaps }) => {
     const kernel = cellTypes
       ? // Set entire layer to transparent if on cell types tab
         gpu.createKernel(
-          `function (labelArray, cellMatrix, minCell, minValue, cellsList, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
-      this.color(1, 1, 1, 0);
-    }`,
+          `function (
+            labeledArray,
+            mapping,
+            lengths,
+            opacity,
+            colormap,
+            cell,
+            highlight,
+            highlightColor) 
+          {
+            this.color(1, 1, 1, 0);
+          }`,
           {
             constants: { w: width, h: height },
             output: [width, height],
@@ -49,44 +59,44 @@ export const LabeledCanvas = ({ setBitmaps }) => {
             dynamicArguments: true,
           }
         )
-      : // Otherwise, render the normal labeled layer
+      : /*
+         * Otherwise, render the normal labeled layer
+         * Mix all mapped colors at 'opacity' for each cell that the pixel maps to
+         */
         gpu.createKernel(
-          `function (labelArray, cellMatrix, minCell, minValue, cellsList, opacity, colormap, cell, numValues, numLabels, highlight, highlightColor) {
-        const value = labelArray[this.constants.h - 1 - this.thread.y][this.thread.x];
-        let [r, g, b, a] = [0, 0, 0, 1];
-        if (value - minValue < numValues && value >= minValue) {
-          for (let i = 0; i < numLabels; i++) {
-            const currCell = cellsList[i];
-            if (cellMatrix[value - minValue][currCell - minCell] === 1) {
-              let [sr, sg, sb] = [0, 0, 0];
-              if (currCell === cell && highlight) {
-                sr = highlightColor[0];
-                sg = highlightColor[1];
-                sb = highlightColor[2];
-              } else {
-                sr = colormap[currCell][0];
-                sg = colormap[currCell][1];
-                sb = colormap[currCell][2];
+          `function (labeledArray, mapping, lengths, opacity, colormap, cell, highlight, highlightColor) {
+            const value = labeledArray[this.constants.h - 1 - this.thread.y][this.thread.x];
+            let [r, g, b, a] = [0, 0, 0, 1];
+            const numCells = lengths[value];
+            if (value > 0 && mapping[value][0] !== 0) {
+              for (let i = 0; i < numCells; i++) {
+                const currCell = mapping[value][i];
+                let [sr, sg, sb, sa] = [0, 0, 0, 1];
+                if (currCell === cell && highlight) {
+                  sr = highlightColor[0];
+                  sg = highlightColor[1];
+                  sb = highlightColor[2];
+                } else {
+                  sr = colormap[currCell][0];
+                  sg = colormap[currCell][1];
+                  sb = colormap[currCell][2];
+                }
+                // Only use mixing if overlap
+                if (a < 1) {
+                  sa = opacity;
+                }
+                a = a * (1 - opacity);
+                sr = sa * sr / 255;
+                sg = sa * sg / 255;
+                sb = sa * sb / 255;
+  
+                r = r + sr - r * sr;
+                g = g + sg - g * sg;
+                b = b + sb - b * sb;
               }
-
-              let sa = 1;
-              // Only use mixing if overlap
-              if (a < 1) {
-                sa = opacity;
-              }
-              a = a * (1 - opacity);
-              sr = sa * sr / 255;
-              sg = sa * sg / 255;
-              sb = sa * sb / 255;
-
-              r = r + sr - r * sr;
-              g = g + sg - g * sg;
-              b = b + sb - b * sb;
             }
-          }
-        }
-        this.color(r, g, b, 1 - a);
-      }`,
+            this.color(r, g, b, 1 - a);
+          }`,
           {
             constants: { w: width, h: height },
             output: [width, height],
@@ -100,24 +110,9 @@ export const LabeledCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    if (labeledArray && cellMatrix && cellsList.length > 0) {
-      const numLabels = cellsList.length;
-      const numValues = cellMatrix.length;
+    if (labeledArray && mapping && lengths) {
       // Compute the label image with the kernel
-      kernel(
-        labeledArray,
-        cellMatrix,
-        minCell,
-        minValue,
-        cellsList,
-        opacity,
-        colormap,
-        cell,
-        numValues,
-        numLabels,
-        highlight,
-        highlightColor
-      );
+      kernel(labeledArray, mapping, lengths, opacity, colormap, cell, highlight, highlightColor);
       // Rerender with the new bitmap
       createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, labeled: bitmap }));
@@ -125,10 +120,8 @@ export const LabeledCanvas = ({ setBitmaps }) => {
     }
   }, [
     labeledArray,
-    cellMatrix,
-    cellsList,
-    minCell,
-    minValue,
+    mapping,
+    lengths,
     opacity,
     colormap,
     cell,

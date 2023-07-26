@@ -11,7 +11,8 @@ import AddCellTypeCanvas from './AddCellTypeCanvas';
 import AddDaughterCanvas from './AddDaughterCanvas';
 import BrushCanvas from './BrushCanvas';
 import CellSelectionCanvas from './CellSelectionCanvas';
-import CellTypeCanvasNoOverlap from './CellTypeCanvasNoOverlap';
+import CellTypeCanvas from './CellTypeCanvas';
+import CellTypeOutlineCanvas from './CellTypeOutlineCanvas';
 import FloodCanvas from './FloodCanvas';
 import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
@@ -78,7 +79,8 @@ function ToolCanvas({ setBitmaps }) {
       if (addingCell || removingCell) {
         return (
           <>
-            <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
+            <CellTypeCanvas setBitmaps={setBitmaps} />
+            <CellTypeOutlineCanvas setBitmaps={setBitmaps} />
             {hoveringCard ? <CellTypeHovering /> : null}
             <AddCellTypeCanvas setBitmaps={setBitmaps} />
           </>
@@ -86,7 +88,8 @@ function ToolCanvas({ setBitmaps }) {
       }
       return (
         <>
-          <CellTypeCanvasNoOverlap setBitmaps={setBitmaps} />
+          <CellTypeCanvas setBitmaps={setBitmaps} />
+          <CellTypeOutlineCanvas setBitmaps={setBitmaps} />
           {hoveringCard ? <CellTypeHovering /> : null}
           <CellSelectionCanvas setBitmaps={setBitmaps} />
         </>

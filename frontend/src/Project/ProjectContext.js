@@ -482,16 +482,6 @@ export function useOverlaps() {
   return overlaps;
 }
 
-export function useCellMatrix() {
-  const image = useImage();
-  const t = useSelector(image, (state) => state.context.t);
-  const labeled = useLabeled();
-  const c = useSelector(labeled, (state) => state.context.feature);
-  const cells = useCells();
-  const cellMatrix = useMemo(() => cells.getMatrix(t, c), [cells, t, c]);
-  return cellMatrix;
-}
-
 export function useReducedCellMatrix() {
   const image = useImage();
   const t = useSelector(image, (state) => state.context.t);
@@ -500,6 +490,16 @@ export function useReducedCellMatrix() {
   const cells = useCells();
   const cellMatrix = useMemo(() => cells.getReducedMatrix(t, c), [cells, t, c]);
   return cellMatrix;
+}
+
+export function useCellValueMapping() {
+  const image = useImage();
+  const t = useSelector(image, (state) => state.context.t);
+  const labeled = useLabeled();
+  const c = useSelector(labeled, (state) => state.context.feature);
+  const cells = useCells();
+  const { mapping, lengths } = useMemo(() => cells.getCellMapping(t, c), [cells, t, c]);
+  return { mapping, lengths };
 }
 
 export function useLabeledArray() {

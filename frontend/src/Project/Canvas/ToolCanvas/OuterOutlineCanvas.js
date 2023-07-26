@@ -1,10 +1,13 @@
+/*
+ * Renders an outline around the outside of a specified cell, used for the flood tool.
+ */
 import { useSelector } from '@xstate/react';
 import { useEffect, useRef } from 'react';
 import {
   useAlphaGpu,
   useArrays,
   useCanvas,
-  useCellMatrix,
+  useCellValueMapping,
   useImage,
   useLabeled,
 } from '../../ProjectContext';
@@ -26,14 +29,19 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
     (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
-  const cellMatrix = useCellMatrix();
+  const { mapping, lengths } = useCellValueMapping();
 
   const gpu = useAlphaGpu();
   const kernelRef = useRef();
 
+  /*
+   * Color the pixel if both are true:
+   * (1) the pixel value doesn't map to 'cell'
+   * (2) the pixel is adjacent to a pixel that *does* map to 'cell'
+   */
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (data, cells, numValues, cell, color) {
+      `function (data, mapping, lengths, cell, color) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -53,12 +61,69 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
         if (y !== this.constants.h - 1) {
           east = data[y + 1][x];
         }
-        if (cells[value][cell] === 0 && value < numValues) {
-          if (cells[north][cell] === 1 || cells[south][cell] === 1 || cells[west][cell] === 1 || cells[east][cell] === 1) {
-            if (north < numValues && south < numValues && west < numValues && east < numValues) {
-              const [r, g, b, a] = color;
-              this.color(r, g, b, a);
+
+        const numCells = lengths[value];
+        let numNotMapped = 0;
+        let adjacent = false;
+
+        // Check if the pixel value doesn't map to 'cell'
+        for (let i = 0; i < numCells; i++) {
+          const currCell = mapping[value][i];
+          if (currCell !== cell) {
+            numNotMapped += 1;
+          }
+        }
+
+        // If so, check if the pixel is adjacent to a pixel that does map to 'cell'
+        if (numNotMapped === numCells) {
+          for (let i = 0; i < numCells; i++) {
+            // Check if north cell maps to 'cell'
+            const numNorth = lengths[north];
+            for (let j = 0; j < numNorth; j++) {
+              const northCell = mapping[north][j];
+              if (northCell === cell) {
+                adjacent = true;
+                break;
+              }
             }
+            if (!adjacent) {
+              // Check if south cell maps to 'cell'
+              const numSouth = lengths[south];
+              for (let j = 0; j < numSouth; j++) {
+                const southCell = mapping[south][j];
+                if (southCell === cell) {
+                  adjacent = true;
+                  break;
+                }
+              }
+              if (!adjacent) {
+                // Check if west cell maps to 'cell'
+                const numWest = lengths[west];
+                for (let j = 0; j < numWest; j++) {
+                  const westCell = mapping[west][j];
+                  if (westCell === cell) {
+                    adjacent = true;
+                    break;
+                  }
+                }
+                if (!adjacent) {
+                  // Check if east cell maps to 'cell'
+                  const numEast = lengths[east];
+                  for (let j = 0; j < numEast; j++) {
+                    const eastCell = mapping[east][j];
+                    if (eastCell === cell) {
+                      adjacent = true;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          // Color pixel if conditions are met
+          if (adjacent) {
+            const [r, g, b, a] = color;
+            this.color(r, g, b, a);
           }
         }
       }`,
@@ -74,22 +139,14 @@ function OuterOutlineCanvas({ setBitmaps, cell, color }) {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    // Cell beyond the cell matrix, so it's not in the frame
-    if (cell > cellMatrix[0].length) {
-      // Remove the tool canvas
-      setBitmaps((bitmaps) => {
-        const { tool, ...rest } = bitmaps;
-        return rest;
-      });
-    } else if (labeledArray && cellMatrix) {
-      const numValues = cellMatrix.length;
-      kernel(labeledArray, cellMatrix, numValues, cell, color);
+    if (mapping && lengths) {
+      kernel(labeledArray, mapping, lengths, cell, color);
       // Rerender the parent canvas
       createImageBitmap(kernel.canvas).then((bitmap) => {
         setBitmaps((bitmaps) => ({ ...bitmaps, tool: bitmap }));
       });
     }
-  }, [labeledArray, cellMatrix, cell, color, setBitmaps, width, height]);
+  }, [labeledArray, mapping, lengths, cell, color, setBitmaps, width, height]);
 
   useEffect(
     () => () =>
