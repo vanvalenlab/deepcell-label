@@ -1,65 +1,72 @@
 import Cells from './cells';
 
-test('cell matrix in slice with one cell', () => {
+test('mapping in slice with one cell', () => {
   const cells = new Cells([{ value: 1, cell: 1, t: 0, c: 0 }]);
-  expect(cells.getMatrix(0, 0)).toEqual([
-    [0, 0],
-    [0, 1],
-  ]);
+  expect(cells.getCellMapping(0, 0)).toEqual({
+    mapping: [[0], [1]],
+    lengths: [1, 1],
+  });
 });
 
-test('empty cells makes empty matrix', () => {
+test('empty cells mapping gives null', () => {
   const empty = new Cells([]);
 
-  expect(empty.getMatrix(0, 0)).toEqual([[0]]);
+  expect(empty.getCellMapping(0, 0)).toEqual({
+    mapping: null,
+    lengths: null,
+  });
 });
 
-test('no cells in slice makes empty matrix', () => {
+test('no cells in slice mapping', () => {
   const cells = new Cells([{ value: 1, cell: 1, t: 0, c: 0 }]);
-  expect(cells.getMatrix(1, 0)).toEqual([[0]]);
+  expect(cells.getCellMapping(1, 0)).toEqual({
+    mapping: [[0]],
+    lengths: [1],
+  });
 });
 
-test('cell matrix with two cells in slice', () => {
+test('mapping with two cells in slice', () => {
   const cells = new Cells([
     { value: 1, cell: 1, t: 0, c: 0 },
     { value: 2, cell: 2, t: 0, c: 0 },
   ]);
-  expect(cells.getMatrix(0, 0)).toEqual([
-    [0, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-  ]);
+  expect(cells.getCellMapping(0, 0)).toEqual({
+    mapping: [[0], [1], [2]],
+    lengths: [1, 1, 1],
+  });
 });
 
-test('different cell matrix when there are different cells in different slices', () => {
+test('different mappings when there are different cells in different slices', () => {
   const cells = new Cells([
     { value: 1, cell: 1, t: 0, c: 0 },
     { value: 2, cell: 2, t: 1, c: 0 },
   ]);
-  expect(cells.getMatrix(0, 0)).toEqual([
-    [0, 0],
-    [0, 1],
-  ]);
-  expect(cells.getMatrix(1, 0)).toEqual([
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 1],
-  ]);
+  expect(cells.getCellMapping(0, 0)).toEqual({
+    mapping: [[0], [1]],
+    lengths: [1, 1],
+  });
+  expect(cells.getCellMapping(1, 0)).toEqual({
+    mapping: [[0], [0], [2]],
+    lengths: [1, 1, 1],
+  });
 });
 
-test('get matrix for slice with overlapping cells', () => {
+test('get mapping for slice with overlapping cells', () => {
   const cells = new Cells([
     { value: 1, cell: 1, t: 0, c: 0 },
     { value: 2, cell: 2, t: 0, c: 0 },
     { value: 3, cell: 1, t: 0, c: 0 },
     { value: 3, cell: 2, t: 0, c: 0 },
   ]);
-  expect(cells.getMatrix(0, 0)).toEqual([
-    [0, 0, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-    [0, 1, 1],
-  ]);
+  expect(cells.getCellMapping(0, 0)).toEqual({
+    mapping: [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [1, 2],
+    ],
+    lengths: [1, 1, 1, 2],
+  });
 });
 
 test('get times for cell at one time', () => {

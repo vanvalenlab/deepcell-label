@@ -1,5 +1,5 @@
 /*
- * Canvas that renders the outlines of cell labels in a certain opacity
+ * Canvas that renders the cell type outline colors around cells
  */
 import { useSelector } from '@xstate/react';
 import { useEffect, useRef } from 'react';
@@ -7,27 +7,20 @@ import {
   useAlphaGpu,
   useArrays,
   useCanvas,
+  useCellTypes,
   useCellValueMapping,
-  useChannel,
   useImage,
   useLabeled,
-  useRaw,
-} from '../ProjectContext';
+  useSelectedCell,
+} from '../../ProjectContext';
 
-const OutlineCanvas = ({ setBitmaps }) => {
+function CellTypeOutlineCanvas({ setBitmaps }) {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
 
   const labeled = useLabeled();
-  const opacity = useSelector(labeled, (state) => state.context.outlineOpacity);
   const feature = useSelector(labeled, (state) => state.context.feature);
-
-  const raw = useRaw();
-  const isGrayscale = useSelector(raw, (state) => state.context.isGrayscale);
-  const channelIndex = useSelector(raw, (state) => state.context.channel);
-  const channel = useChannel(channelIndex);
-  const invert = useSelector(channel, (state) => state.context.invert && isGrayscale);
 
   const image = useImage();
   const t = useSelector(image, (state) => state.context.t);
@@ -38,20 +31,24 @@ const OutlineCanvas = ({ setBitmaps }) => {
     (state) => state.context.labeled && state.context.labeled[feature][t]
   );
 
+  const cell = useSelectedCell();
+
+  const cellTypes = useCellTypes();
+  const colorMap = useSelector(cellTypes, (state) => state.context.colorMap);
+
   const { mapping, lengths } = useCellValueMapping();
 
   const gpu = useAlphaGpu();
   const kernelRef = useRef();
 
   /*
-   * Color the pixel white at 'opacity' if both are true:
-   * (1) the pixel value maps to a certain cell
-   * (2) the pixel is adjacent to a pixel that doesn't map to that same cell
-   * 'Mixes' (brightens) this if this is true for multiple cells
+   * Render the pixel as a cell's mapped color (or mix of multiple cells') if
+   * (1) The pixel maps to that cell
+   * (2) The pixel is adjacent to a pixel that *doesn't* map to that cell
    */
   useEffect(() => {
     const kernel = gpu.createKernel(
-      `function (data, mapping, lengths, opacity, invert) {
+      `function (data, cell, mapping, lengths, colorMap) {
         const x = this.thread.x;
         const y = this.constants.h - 1 - this.thread.y;
         const value = data[y][x];
@@ -71,11 +68,13 @@ const OutlineCanvas = ({ setBitmaps }) => {
         if (y !== this.constants.h - 1) {
           east = data[y + 1][x];
         }
-        let outlineOpacity = 1;
-
+        let [r, g, b, a] = [0, 0, 0, 1];
         const numCells = lengths[value];
+        let selected = false;
+
         if (value > 0 && mapping[value][0] !== 0) {
           for (let i = 0; i < numCells; i++) {
+            let [sr, sg, sb, sa] = [0, 0, 0, 1];
             const currCell = mapping[value][i];
             let isOutline = 0;
             const numNorth = lengths[north];
@@ -90,7 +89,19 @@ const OutlineCanvas = ({ setBitmaps }) => {
               }
             }
             if (isOutline === numNorth) {
-              outlineOpacity = outlineOpacity * (1 - opacity);
+              if (currCell === cell) {
+                this.color(1, 1, 1, 1);
+                selected = true;
+                break;
+              } else if (colorMap[currCell][3] !== 0) {
+                sr = colorMap[currCell][0];
+                sg = colorMap[currCell][1];
+                sb = colorMap[currCell][2];
+                r = r + sr - r * sr;
+                g = g + sg - g * sg;
+                b = b + sb - b * sb;
+                a = 0;
+              }
             } else {
               isOutline = 0;
               // Check if south pixel contains current cell or not
@@ -101,7 +112,19 @@ const OutlineCanvas = ({ setBitmaps }) => {
                 }
               }
               if (isOutline === numSouth) {
-                outlineOpacity = outlineOpacity * (1 - opacity);
+                if (currCell === cell) {
+                  this.color(1, 1, 1, 1);
+                  selected = true;
+                  break;
+                } else if (colorMap[currCell][3] !== 0) {
+                  sr = colorMap[currCell][0];
+                  sg = colorMap[currCell][1];
+                  sb = colorMap[currCell][2];
+                  r = r + sr - r * sr;
+                  g = g + sg - g * sg;
+                  b = b + sb - b * sb;
+                  a = 0;
+                }
               } else {
                 isOutline = 0;
                 // Check if west pixel contains current cell or not
@@ -112,7 +135,19 @@ const OutlineCanvas = ({ setBitmaps }) => {
                   }
                 }
                 if (isOutline === numWest) {
-                  outlineOpacity = outlineOpacity * (1 - opacity);
+                  if (currCell === cell) {
+                    this.color(1, 1, 1, 1);
+                    selected = true;
+                    break;
+                  } else if (colorMap[currCell][3] !== 0) {
+                    sr = colorMap[currCell][0];
+                    sg = colorMap[currCell][1];
+                    sb = colorMap[currCell][2];
+                    r = r + sr - r * sr;
+                    g = g + sg - g * sg;
+                    b = b + sb - b * sb;
+                    a = 0;
+                  }
                 } else {
                   isOutline = 0;
                   // Check if east pixel contains current cell or not
@@ -123,27 +158,35 @@ const OutlineCanvas = ({ setBitmaps }) => {
                     }
                   }
                   if (isOutline === numEast) {
-                    outlineOpacity = outlineOpacity * (1 - opacity);
+                    if (currCell === cell) {
+                      this.color(1, 1, 1, 1);
+                      selected = true;
+                      break;
+                    } else if (colorMap[currCell][3] !== 0) {
+                      sr = colorMap[currCell][0];
+                      sg = colorMap[currCell][1];
+                      sb = colorMap[currCell][2];
+                      r = r + sr - r * sr;
+                      g = g + sg - g * sg;
+                      b = b + sb - b * sb;
+                      a = 0;
+                    }
                   }
                 }
               }
             }
           }
         }
-        let [r, g, b] = [1, 1, 1];
-        if (invert) {
-          r = 0;
-          g = 0;
-          b = 0;
+        if (!selected) {
+          this.color(r, g, b, 1 - a);
         }
-        this.color(r, g, b, 1 - outlineOpacity);
       }`,
       {
         constants: { w: width, h: height },
         output: [width, height],
         graphical: true,
         dynamicArguments: true,
-        loopMaxIterations: 5000, // Maximum number of outlines to render
+        loopMaxIterations: 5000, // Maximum number of cell labels to render
       }
     );
     kernelRef.current = kernel;
@@ -151,17 +194,26 @@ const OutlineCanvas = ({ setBitmaps }) => {
 
   useEffect(() => {
     const kernel = kernelRef.current;
-    if (labeledArray && mapping && lengths) {
-      // Compute the outline of the labels with the kernel
-      kernel(labeledArray, mapping, lengths, opacity, invert);
+
+    if (labeledArray) {
+      kernel(labeledArray, cell, mapping, lengths, colorMap);
       // Rerender the parent canvas
       createImageBitmap(kernel.canvas).then((bitmap) => {
-        setBitmaps((bitmaps) => ({ ...bitmaps, outline: bitmap }));
+        setBitmaps((bitmaps) => ({ ...bitmaps, typeOutlines: bitmap }));
       });
     }
-  }, [labeledArray, mapping, lengths, opacity, invert, setBitmaps, width, height]);
+  }, [labeledArray, cell, mapping, lengths, colorMap, setBitmaps, width, height]);
+
+  useEffect(
+    () => () =>
+      setBitmaps((bitmaps) => {
+        const { typeOutlines, ...rest } = bitmaps;
+        return rest;
+      }),
+    [setBitmaps]
+  );
 
   return null;
-};
+}
 
-export default OutlineCanvas;
+export default CellTypeOutlineCanvas;
