@@ -80,8 +80,8 @@ it('opens instructions', () => {
   cy.get('[id="instructions-modal"]').contains('Segment').click();
   cy.get('[id="instructions-modal"]').contains('Cells').click();
   cy.get('[id="instructions-modal"]').contains('Divisions').click();
-  cy.get('[id="instructions-modal"]').contains('Cell Types Left').click();
-  cy.get('[id="instructions-modal"]').contains('Cell Types Right').click();
+  cy.get('[id="instructions-modal"]').contains('Cell Types').click();
+  cy.get('[id="instructions-modal"]').contains('Plotting / Training').click();
 });
 
 it('shows quality control interface', () => {

@@ -144,8 +144,8 @@ export default function InstructionsModal({ open, setOpen }) {
             <Tab label='Segment' />
             <Tab label='Cells' />
             <Tab label='Divisions' />
-            <Tab label='Cell Types Left' />
-            <Tab label='Cell Types Right' />
+            <Tab label='Cell Types' />
+            <Tab label='Plotting / Training' />
           </Tabs>
         </Box>
         <TabPanel value={value} index={0} sx={tabPanelStyle}>

@@ -2,12 +2,17 @@ import AddIcon from '@mui/icons-material/Add';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ClearIcon from '@mui/icons-material/Clear';
 import ColorizeIcon from '@mui/icons-material/Colorize';
+import CreateNewFolderTwoToneIcon from '@mui/icons-material/CreateNewFolderTwoTone';
 import EggAltIcon from '@mui/icons-material/EggAlt';
+import HighlightTwoToneIcon from '@mui/icons-material/HighlightTwoTone';
+import LayersClearTwoToneIcon from '@mui/icons-material/LayersClearTwoTone';
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PreviewIcon from '@mui/icons-material/Preview';
+import SpeakerNotesTwoToneIcon from '@mui/icons-material/SpeakerNotesTwoTone';
 import SquareRoundedIcon from '@mui/icons-material/SquareRounded';
-import { Box, Button, Grid, IconButton } from '@mui/material';
+import TableChartTwoToneIcon from '@mui/icons-material/TableChartTwoTone';
+import { Box, Grid, IconButton } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import Slider from '@mui/material/Slider';
@@ -57,30 +62,12 @@ function CellTypeInstructions() {
         <Grid item xs={12}>
           <Typography variant='h6'>Adding, Editing, and Removing Cell Types</Typography>
         </Grid>
-        <Grid item xs={3}>
-          <Button
-            variant='contained'
-            startIcon={
-              <AddIcon
-                sx={{
-                  position: 'relative',
-                  top: -0.3,
-                  left: -5,
-                }}
-              />
-            }
-            size='large'
-            sx={{
-              height: '2.5rem',
-              width: '100%',
-              fontWeight: 'bold',
-              fontSize: 14,
-            }}
-          >
-            Add Cell Type
-          </Button>
+        <Grid item xs={1}>
+          <IconButton color='primary' sx={{ width: '100%', boxShadow: 1, borderRadius: 1 }}>
+            <CreateNewFolderTwoToneIcon />
+          </IconButton>
         </Grid>
-        <Grid item xs={9}>
+        <Grid item xs={11}>
           <Typography sx={{ marginTop: 0.5 }}>
             Click the <b>Add Cell Type</b> button and select the color you want associated with the
             cell type.
@@ -128,6 +115,53 @@ function CellTypeInstructions() {
           </Typography>
         </Grid>
         <Grid item xs={12}>
+          <Typography variant='h6'>Tool Bar</Typography>
+        </Grid>
+        <Grid item xs={1}>
+          <IconButton color='primary' sx={{ width: '100%', boxShadow: 1, borderRadius: 1 }}>
+            <TableChartTwoToneIcon />
+          </IconButton>
+        </Grid>
+        <Grid item xs={11}>
+          <Typography sx={{ marginTop: 0.5 }}>
+            Click the <b>Open Marker Panel</b> button to open a modal that shows a default (and
+            editable) panel mapping cell types to channels.
+          </Typography>
+        </Grid>
+        <Grid item xs={1}>
+          <IconButton color='primary' sx={{ width: '100%', boxShadow: 1, borderRadius: 1 }}>
+            <LayersClearTwoToneIcon />
+          </IconButton>
+        </Grid>
+        <Grid item xs={11}>
+          <Typography sx={{ marginTop: 0.5 }}>
+            Click the <b>Overwrite Mode</b> button to toggle whether adding a cell type to a labeled
+            cell overwrites or allows for multi-labels.
+          </Typography>
+        </Grid>
+        <Grid item xs={1}>
+          <IconButton color='primary' sx={{ width: '100%', boxShadow: 1, borderRadius: 1 }}>
+            <SpeakerNotesTwoToneIcon />
+          </IconButton>
+        </Grid>
+        <Grid item xs={11}>
+          <Typography sx={{ marginTop: 0.5 }}>
+            Click the <b>Hover Toggle</b> button to toggle whether a cell type tooltip shows when
+            hovering over cells.
+          </Typography>
+        </Grid>
+        <Grid item xs={1}>
+          <IconButton color='primary' sx={{ width: '100%', boxShadow: 1, borderRadius: 1 }}>
+            <HighlightTwoToneIcon />
+          </IconButton>
+        </Grid>
+        <Grid item xs={11}>
+          <Typography sx={{ marginTop: 0.5 }}>
+            Click the <b>Highlight Multi-labels</b> button to select and highlight all cells with
+            multi-labels.
+          </Typography>
+        </Grid>
+        <Grid item xs={12}>
           <Typography variant='h6'>Labeling Cells</Typography>
         </Grid>
         <Grid item xs={1}>
@@ -146,7 +180,7 @@ function CellTypeInstructions() {
         <Grid item xs={11}>
           <Typography sx={{ marginTop: 0.5 }}>
             Click the <b>Add Cells</b> button to enter Add Mode, where clicking any cell on the
-            canvas twice will label that cell.
+            canvas twice will label that cell to the opened cell type.
           </Typography>
         </Grid>
         <Grid item xs={1}>
@@ -165,7 +199,7 @@ function CellTypeInstructions() {
         <Grid item xs={11}>
           <Typography sx={{ marginTop: 0.5 }}>
             Click the <b>Remove Cells</b> button to enter Remove Mode, where clicking any cell twice
-            will remove the label from that cell.
+            will remove the cell from the opened cell type.
           </Typography>
         </Grid>
         <Grid item xs={1}>
