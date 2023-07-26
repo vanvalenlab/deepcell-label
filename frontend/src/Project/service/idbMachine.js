@@ -19,6 +19,7 @@ function createIDBMachine({ projectId, eventBuses }) {
         {
           src: fromEventBus('IDB', () => eventBuses.arrays, ['EDITED_SEGMENT', 'RESTORED_SEGMENT']),
         },
+        { src: fromEventBus('IDB', () => eventBuses.raw, 'CHANNEL_NAMES') },
         { src: fromEventBus('IDB', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('IDB', () => eventBuses.divisions, 'DIVISIONS') },
         { src: fromEventBus('IDB', () => eventBuses.cellTypes, 'CELLTYPES') },
@@ -77,6 +78,7 @@ function createIDBMachine({ projectId, eventBuses }) {
             RESTORED_SEGMENT: { actions: forwardTo('idb') },
             CELLS: { actions: forwardTo('idb') },
             CELLTYPES: { actions: forwardTo('idb') },
+            CHANNEL_NAMES: { actions: forwardTo('idb') },
             DIVISIONS: { actions: forwardTo('idb') },
             SPOTS: { actions: forwardTo('idb') },
           },

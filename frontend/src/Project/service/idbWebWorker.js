@@ -72,6 +72,11 @@ const idbMachine = createMachine(
           },
           CELLS: { target: '.putCells', actions: 'updateCells', internal: false },
           CELLTYPES: { target: '.putCellTypes', actions: 'updateCellTypes', internal: false },
+          CHANNEL_NAMES: {
+            target: '.putChannels',
+            actions: 'updateChannels',
+            internal: false,
+          },
           DIVISIONS: {
             target: '.putDivisions',
             actions: 'updateDivisions',
@@ -93,6 +98,9 @@ const idbMachine = createMachine(
           },
           putCellTypes: {
             invoke: { src: 'putCellTypes', onDone: 'idle' },
+          },
+          putChannels: {
+            invoke: { src: 'putChannels', onDone: 'idle' },
           },
           putDivisions: {
             invoke: { src: 'putDivisions', onDone: 'idle' },
@@ -168,6 +176,7 @@ const idbMachine = createMachine(
       putLabeled: (ctx) => ctx.db.put('labeled', ctx.labeled, ctx.projectId),
       putCells: (ctx) => ctx.db.put('cells', ctx.cells, ctx.projectId),
       putCellTypes: (ctx) => ctx.db.put('cellTypes', ctx.cellTypes, ctx.projectId),
+      putChannels: (ctx) => ctx.db.put('channels', ctx.channels, ctx.projectId),
       putDivisions: (ctx) => ctx.db.put('divisions', ctx.divisions, ctx.projectId),
       putSpots: (ctx) => ctx.db.put('spots', ctx.spots, ctx.projectId),
     },
@@ -211,6 +220,9 @@ const idbMachine = createMachine(
       }),
       updateCellTypes: assign({
         cellTypes: (_, evt) => evt.cellTypes,
+      }),
+      updateChannels: assign({
+        channels: (_, evt) => evt.channelNames,
       }),
       updateDivisions: assign({
         divisions: (_, evt) => evt.divisions,
