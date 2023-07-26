@@ -73,7 +73,7 @@ function CellSelectionCanvas({ setBitmaps }) {
           }
           if (label) {
             break;
-          } 
+          }
           // Otherwise, check if the pixel is adjacent to a selected cell for outer outline
           else {
             let isOutline = 0;

@@ -48,7 +48,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
             colormap,
             cell,
             highlight,
-            highlightColor) 
+            highlightColor)
           {
             this.color(1, 1, 1, 0);
           }`,
@@ -89,7 +89,7 @@ export const LabeledCanvas = ({ setBitmaps }) => {
                 sr = sa * sr / 255;
                 sg = sa * sg / 255;
                 sb = sa * sb / 255;
-  
+
                 r = r + sr - r * sr;
                 g = g + sg - g * sg;
                 b = b + sb - b * sb;
