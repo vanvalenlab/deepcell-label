@@ -40,7 +40,7 @@ function AddRemoveCancel() {
     editCellTypes.send({ type: 'MULTIREMOVE', cellType: cellTypeIds[cellType] });
   };
 
-  return (
+  return cellTypeIds.length > 0 ? (
     <>
       <Grid item>
         <TextField
@@ -103,7 +103,7 @@ function AddRemoveCancel() {
         </Button>
       </Grid>
     </>
-  );
+  ) : null;
 }
 
 export default AddRemoveCancel;
