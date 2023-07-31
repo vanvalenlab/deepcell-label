@@ -380,7 +380,7 @@ class Edit(object):
         else:
             image = self.raw.copy()
             image -= _vmin
-            image /= _vmax - _vmin
+            image = image / (_vmax - _vmin)
         image = image[top:bottom, left:right]
         contoured = morphological_chan_vese(
             image, iterations, init_level_set=init_level_set
