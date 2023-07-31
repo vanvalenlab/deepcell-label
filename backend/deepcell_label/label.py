@@ -7,7 +7,6 @@ import zipfile
 
 import numpy as np
 import skimage
-from matplotlib.colors import Normalize
 from skimage import filters
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
@@ -374,7 +373,15 @@ class Edit(object):
 
         # Contour the cell
         init_level_set = mask[top:bottom, left:right]
-        image = Normalize()(self.raw)[top:bottom, left:right]
+        # Normalize to range [0., 1.]
+        _vmin, _vmax = self.raw.min(), self.raw.max()
+        if _vmin == _vmax:
+            image = np.zeros_like(self.raw)
+        else:
+            image = self.raw.copy()
+            image -= _vmin
+            image /= _vmax - _vmin
+        image = image[top:bottom, left:right]
         contoured = morphological_chan_vese(
             image, iterations, init_level_set=init_level_set
         )
