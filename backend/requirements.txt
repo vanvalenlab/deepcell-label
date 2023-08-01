@@ -5,15 +5,13 @@ flask-cors~=3.0.10
 flask-dropzone~=1.6.0
 flask-monitoringdashboard~=3.1.1
 flask-sqlalchemy~=2.5.1
-imagecodecs~=2022.2.22
 mysqlclient~=2.1.0
 numpy
-pillow~=9.0.1
 python-decouple~=3.1
 python-dotenv~=0.19.2
 python-magic~=0.4.25
 requests~=2.29.0
 scikit-image~=0.19.0
 sqlalchemy~=1.3.24
-tifffile~=2021.11.2
-jsonpatch~=1.32
+tifffile
+imagecodecs
