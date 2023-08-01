@@ -14,17 +14,15 @@ If the command fails, install Python with Anaconda by following the installation
 
 ### Create a Python virtual environment
 
-We recommend installing Python dependencies in a virtual environment isolate the project from the rest of your machine. If you're using Anaconda, create a virtual environment named `deepcell-label` with this command: `conda create -n deepcell-label python=3.8`.
+We recommend installing Python dependencies in a virtual environment to isolate the project from the rest of your machine. Create a virtual environment named `deepcell-label-env` with this command: `python -m venv deepcell-label-env`.
 
-Then activate the virtual environment with: `conda activate deepcell-label`.
+Then activate the virtual environment with the activate script in the `deepcell-label/Scripts` or `deepcell-label/bin` folder.
 
 Now when you run `pip install -r requirements.txt`, all the dependencies will be installed in the virtual environment.
 
-You can deactivate the virtual environment with: `source deactivate`.
+You can deactivate the virtual environment with: `deactivate`.
 
-Read more about virtual environments with conda here: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html.
-
-If you are not using Anaconda, set up a virtual environment with Python's built-in virtual environment manager `venv`: https://docs.python.org/3/tutorial/venv.html.
+Read more about virtual environments with `venv` here: https://docs.python.org/3/tutorial/venv.html.
 
 ## Setup Node.js (Javascript)
 

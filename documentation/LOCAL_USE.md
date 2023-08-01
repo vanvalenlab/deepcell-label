@@ -38,6 +38,20 @@ flask run
 
 By default, DeepCell Label creates a temporary database in `/tmp`. Change `SQLALCHEMY_DATABASE_URI` in your `.env`, for example `SQLALCHEMY_DATABASE_URI=sqlite:///~/Documents/deepcell_label.db`, to make a persistent database in another location.
 
+### Running the backend tests
+
+Make sure to be in the `/deepcell_label` folder inside of the backend:
+
+```bash
+cd deepcell-label/backend/deepcell_label
+```
+
+Then run the tests using the `-m` flag with pytest:
+
+```bash
+python -m pytest .
+```
+
 ### Run with Docker
 
 The backend can also be containerized with [Docker](https://www.docker.com). To build a production-ready Docker image, run:
@@ -70,3 +84,32 @@ yarn start
 ```
 
 Visit [localhost:3000](http://localhost:3000) to see the DeepCell Label homepage.
+
+### Running the frontend tests
+
+Run the Jest tests with:
+
+```bash
+yarn test
+```
+
+And open the Cypress UI with:
+
+```bash
+npx cypress open
+```
+
+They can also be run from command line with:
+
+```bash
+npx cypress run
+```
+
+## Common Issues (Especially on Windows)
+
+- If SQLAlchemy is giving Operational Errors, it could be because the `/tmp` folder does not exist, which will need to be created (e.g. on C: for Windows)
+- On Windows, after installing Python requirements, you probably have to run
+  ```bash
+  pip uninstall python-magic
+  pip install python-magic-bin==0.4.14
+  ```
