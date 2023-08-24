@@ -50,7 +50,7 @@ function CellsOpacitySlider() {
   return (
     <Tooltip title={<kbd>Z</kbd>} placement='right'>
       <Slider
-        value={isCellTypes? 0 : opacity}
+        value={isCellTypes ? 0 : opacity}
         min={0}
         max={1}
         // track={false}
