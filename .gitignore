@@ -170,6 +170,4 @@ package.json
 
 .nyc_output
 
-cypress/
-cypress.config.js
 client.py
