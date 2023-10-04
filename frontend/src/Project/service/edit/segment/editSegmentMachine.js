@@ -102,6 +102,8 @@ const createEditSegmentMachine = (context) =>
 
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
+
+        SEGMENTALL: { actions: 'segment_all' },
       },
     },
     {
@@ -154,6 +156,14 @@ const createEditSegmentMachine = (context) =>
           (ctx) => ({
             type: 'EDIT',
             action: 'active_contour',
+            args: { cell: ctx.selected },
+          }),
+          { to: 'arrays' }
+        ),
+        segment_all: send(
+          (ctx) => ({
+            type: 'EDIT',
+            action: 'segment_all',
             args: { cell: ctx.selected },
           }),
           { to: 'arrays' }

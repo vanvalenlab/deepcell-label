@@ -7,6 +7,7 @@ import zipfile
 
 import numpy as np
 import skimage
+from flask import current_app
 from skimage import filters
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
@@ -418,3 +419,23 @@ class Edit(object):
         mask = self.get_mask(cell)
         dilated = dilation(mask, square(3))
         self.add_mask(dilated, cell)
+
+    def action_segment_all(self, cell):
+        current_app.logger.debug('inside segment all!')
+        current_app.logger.debug(self.labels.shape)
+        if len(self.labels.shape) == 2:
+            self.labels = np.expand_dims(np.expand_dims(self.labels, 0), 3)
+        cells = []
+        for t in range(self.labels.shape[0]):
+            for c in range(self.labels.shape[-1]):
+                for value in np.unique(self.labels[t, :, :, c]):
+                    if value != 0:
+                        cells.append(
+                            {
+                                'cell': int(value),
+                                'value': int(value),
+                                't': int(t),
+                                'c': int(c),
+                            }
+                        )
+        self.cells = cells

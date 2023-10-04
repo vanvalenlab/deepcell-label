@@ -107,6 +107,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+deepcell-env/
 
 # Spyder project settings
 .spyderproject
@@ -168,3 +169,7 @@ package-lock.json
 package.json
 
 .nyc_output
+
+cypress/
+cypress.config.js
+client.py

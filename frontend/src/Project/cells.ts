@@ -80,6 +80,7 @@ class Cells {
     const atT = this.cells.filter((cell) => cell.t === t && cell.c === c);
     const maxValue = atT.reduce((max, cell) => Math.max(max, cell.value), 0);
     const mapping: number[][] = Array.from({ length: maxValue + 1 }, () => []);
+    console.log('mapping');
     for (const cell of atT) {
       mapping[cell.value].push(cell.cell);
     }
