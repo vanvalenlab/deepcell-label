@@ -1,5 +1,6 @@
 boto3~=1.26.153
 flask~=2.0.2
+werkzeug<3
 flask-compress~=1.10.1
 flask-cors~=3.0.10
 flask-dropzone~=1.6.0
