@@ -7,12 +7,15 @@ import zipfile
 
 import numpy as np
 import skimage
-from flask import current_app
+
+# from flask import current_app
 from skimage import filters
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
 from skimage.morphology import dilation, disk, erosion, flood, square
 from skimage.segmentation import morphological_chan_vese, watershed
+
+# from deepcell_label.samlog import generate_masks
 
 
 class Edit(object):
@@ -421,8 +424,11 @@ class Edit(object):
         self.add_mask(dilated, cell)
 
     def action_segment_all(self, cell):
-        current_app.logger.debug('inside segment all!')
-        current_app.logger.debug(self.labels.shape)
+        # client-side only
+        # self.labels = generate_masks(self.labels)
+        # self.labels = self.labels.astype(np.int32).T
+        # with server
+        # self.labels = np.load("deepcell_label/mask.npy").astype(np.int32).T
         if len(self.labels.shape) == 2:
             self.labels = np.expand_dims(np.expand_dims(self.labels, 0), 3)
         cells = []

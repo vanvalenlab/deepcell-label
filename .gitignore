@@ -169,5 +169,3 @@ package-lock.json
 package.json
 
 .nyc_output
-
-client.py
