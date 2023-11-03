@@ -7,6 +7,7 @@ import { useCanvas } from '../ProjectContext';
 const Canvas = styled('canvas')``;
 
 export const ComposeCanvas = ({ bitmaps }) => {
+  console.log(bitmaps)
   const canvas = useCanvas();
   const { sx, sy, zoom, sw, sh, scale } = useSelector(
     canvas,

@@ -18,6 +18,9 @@ import ReplaceCanvas from './ReplaceCanvas';
 import SwapCanvas from './SwapCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
+import SamCanvas from './SamCanvas';
+import SamMaskCanvas from './SamMaskCanvas';
+import { useState } from 'react';
 
 function ToolCanvas({ setBitmaps }) {
   const editSegment = useEditSegment();
@@ -47,6 +50,8 @@ function ToolCanvas({ setBitmaps }) {
       : false
   );
 
+  const [runONNX, setRunONNX] = useState(false)
+
   switch (mode) {
     case 'segment':
       switch (segmentTool) {
@@ -58,6 +63,11 @@ function ToolCanvas({ setBitmaps }) {
           return <ThresholdCanvas setBitmaps={setBitmaps} />;
         case 'watershed':
           return <WatershedCanvas setBitmaps={setBitmaps} />;
+        case 'sam':
+          return <>
+            <SamCanvas setRunONNXCommand={setRunONNX} />
+            <SamMaskCanvas runONNXCommand={runONNX} />
+          </>;
         default:
           return null;
       }

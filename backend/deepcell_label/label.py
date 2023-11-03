@@ -64,6 +64,7 @@ class Edit(object):
         """
         if not zipfile.is_zipfile(labels_zip):
             raise ValueError('Attached labels.zip is not a zip file.')
+        
         zf = zipfile.ZipFile(labels_zip)
 
         # Load edit args
@@ -71,6 +72,8 @@ class Edit(object):
             raise ValueError('Attached labels.zip must contain edit.json.')
         with zf.open('edit.json') as f:
             edit = json.load(f)
+            print("EDIT")
+            print(edit)
             if 'action' not in edit:
                 raise ValueError('No action specified in edit.json.')
             self.action = edit['action']
@@ -89,6 +92,8 @@ class Edit(object):
             raise ValueError('zip must contain labeled.dat.')
         with zf.open('labeled.dat') as f:
             labels = np.frombuffer(f.read(), np.int32)
+            print("LABELED")
+            print(labels)
             self.initial_labels = np.reshape(labels, (self.height, self.width))
             self.labels = self.initial_labels.copy()
 
@@ -97,12 +102,17 @@ class Edit(object):
             raise ValueError('zip must contain cells.json.')
         with zf.open('cells.json') as f:
             self.cells = json.load(f)
+            print("CELLS")
+            print(self.cells)
 
         # Load raw image
         if 'raw.dat' in zf.namelist():
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), np.uint8)
                 self.raw = np.reshape(raw, (self.width, self.height))
+                print("RAW")
+                print(raw.shape)
+                print(self.raw)
         elif self.action in self.raw_required:
             raise ValueError(
                 f'Include raw array in raw.json to use action {self.action}.'

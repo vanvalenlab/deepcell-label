@@ -74,7 +74,9 @@ const createBrushMachine = (context) =>
         decreaseBrushSize: assign({
           brushSize: (ctx) => Math.max(1, ctx.brushSize - 1),
         }),
-        addToTrace: assign({ trace: (ctx) => [...ctx.trace, [ctx.x, ctx.y]] }),
+        addToTrace: assign({ trace: (ctx) => { 
+            console.log("ADDING TO TRACE")
+        return [...ctx.trace, [ctx.x, ctx.y]] }}),
         paint: send(
           (ctx) => ({
             type: 'EDIT',
