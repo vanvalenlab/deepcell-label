@@ -215,36 +215,6 @@ def submit_project():
     )
     return {}
 
-# @bp.route('/api/sendToSam/<projectId>', methods=['POST'])
-# def send_to_sam(projectId):
-#     """Segment the user selection with the SAM API and return a zipped response file to re-render on the frontend."""
-#     # if 'labels' not in request.files:
-#     #     return abort(400, description='Attach the labeled data to edit in labels.zip.')
-#     # labels_zip = request.files['labels']
-#     # edit = Edit(labels_zip)
-#     # current_app.logger.debug(
-#     #     'Finished action %s in %s s.',
-#     #     edit.action,
-#     #     timeit.default_timer() - start,
-#     # )
-#     # return send_file(edit.response_zip, mimetype='application/zip')
-#     print("RECEIVED REQUEST", projectId)
-
-#     print(request.data)
-
-#     project = Project.get(project=projectId)
-#     bucket = project.bucket
-#     print(bucket)
-#     print(project.key)
-#     s3 = boto3.client('s3')
-#     data = io.BytesIO()
-#     s3.download_fileobj(bucket, project.key, data)
-#     data.seek(0)
-
-#     print(data)
-
-#     return {"message": "success"}
-
 @bp.route('/api/testSamGeneration', methods=['POST'])
 def test_sam_generation():
     """Tests the generation of a SAM model. This is a temporary route to test the generation of a SAM model. 

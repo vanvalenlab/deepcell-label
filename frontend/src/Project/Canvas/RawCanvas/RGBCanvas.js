@@ -27,7 +27,6 @@ export const RGBCanvas = ({ setBitmaps }) => {
       ctx.drawImage(layerBitmaps[key], 0, 0);
     }
     createImageBitmap(composeCanvas).then((bitmap) => {
-      console.log(bitmap)
       setBitmaps((bitmaps) => ({ ...bitmaps, raw: bitmap }));
     });
   }, [layerBitmaps, width, height, setBitmaps, composeCanvas]);
