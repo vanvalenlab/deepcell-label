@@ -2,27 +2,12 @@
 import { assign, Machine, send } from 'xstate';
 import { fromEventBus } from '../../eventBus';
 
-async function sendToSamAPI(ctx) {
-    const id = new URLSearchParams(window.location.search).get('projectId')
-    console.log("SHOULD SEND TO API", ctx)
-    const options = {
-        method: 'POST',
-        body: JSON.stringify(ctx),
-        'Content-Type': 'application/json',
-        };
-    const response = await fetch(`${document.location.origin}/api/sendToSam/${id}`, options)
-    const data = await response.json()
-
-    await new Promise(r => setTimeout(r, 4000))
-
-    return data
-}
-
 const createSAMMachine = (context) =>
 Machine(
     {
       invoke: [
         { src: fromEventBus('watershed', () => context.eventBuses.canvas, 'COORDINATES') },
+        { id: 'arrays', src: fromEventBus('sam', () => context.eventBuses.arrays, ['EDITED_SEGMENT']) },
       ],
       context: {
         isMouseDown: false,
@@ -50,16 +35,12 @@ Machine(
         waiting: {
             on: {
                 CLEAR_SELECTION: { target: 'done', actions: ['clearSelection']},
-                SEND_TO_API: { target: "fetching" }
+                SEND_TO_API: {target: "fetching", actions: ["sendToAPI"]}
             },
         },
         fetching: {
-            invoke: {
-                src: sendToSamAPI,
-                onDone: {
-                    target: 'done',
-                    actions: ['clearSelection']
-                },
+            on: {
+              EDITED_SEGMENT: { target: 'done', actions: ['clearSelection'] },
             }
         },
         done: {
@@ -78,6 +59,19 @@ Machine(
         setMouseIsDown: assign({ isMouseDown: true }),
         setMouseIsNotDown: assign({ isMouseDown: false }),
         clearSelection: assign({ startX: null, startY: null, endX: null, endY: null, isMouseDown: false, x: 0, y: 0 }),
+        sendToAPI: send(
+          (ctx) => ({
+            type: 'EDIT',
+            action: 'sam',
+            args: {
+              x_start: ctx.startX,
+              y_start: ctx.startY,
+              x_end: ctx.endX,
+              y_end: ctx.endY,
+            },
+          }),
+          { to: 'arrays' }
+        ),
       },
     }
   );

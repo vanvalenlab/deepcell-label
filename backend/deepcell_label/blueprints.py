@@ -19,6 +19,8 @@ from deepcell_label.export import Export
 from deepcell_label.label import Edit
 from deepcell_label.loaders import Loader
 from deepcell_label.models import Project
+import json
+
 
 import cv2
 import numpy as np
@@ -289,7 +291,7 @@ def test_sam_prediction():
 
     The output of this endpoint is an ndarray of 0's and 1's indicating where to draw the mask on the frontend.
     """
-    json_data = request.get_json()
+    json_data = json.loads(request.data, strict=False)
     bbox = BBox(**json_data)
 
     image_embedding, ort_session = retrieve_sam_model_data()

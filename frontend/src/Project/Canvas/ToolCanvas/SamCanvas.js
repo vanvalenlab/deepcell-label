@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSam, useCanvas } from '../../ProjectContext';
 import "./styles/sam-canvas.css"
 
-const SamCanvas = ({setRunONNXCommand}) => {
+const SamCanvas = () => {
   const canvas = useCanvas();
   const width = useSelector(canvas, (state) => state.context.width);
   const height = useSelector(canvas, (state) => state.context.height);
@@ -33,13 +33,7 @@ const SamCanvas = ({setRunONNXCommand}) => {
   useEffect(() => {
     // User has selected a region for segmentation
     if (!isMouseDown && startX && startY && endX && endY) {
-        if (window.confirm("Send selected region for segmentation?")) {
-            // sam.send({ type: 'SEND_TO_API' })
-            setRunONNXCommand(true)
-            // setRunONNXCommand(false)
-        } else {
-            sam.send({ type: 'CLEAR_SELECTION' })
-        }
+        sam.send({ type: 'SEND_TO_API' })
     }
   }, [isMouseDown])
 

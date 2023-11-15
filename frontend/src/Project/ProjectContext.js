@@ -300,7 +300,6 @@ export function useEditSegment() {
 }
 
 export function useEditSegmentCopy() {
-  console.log("HERE")
   const project = useProject();
   const segment = useSelector(project, (state) => {
     const tool = state.context.toolRef;
@@ -308,7 +307,6 @@ export function useEditSegmentCopy() {
     return segment;
   });
 
-  console.log("SEGMENT")
   return segment;
 }
 

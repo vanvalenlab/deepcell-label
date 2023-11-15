@@ -19,7 +19,6 @@ import SwapCanvas from './SwapCanvas';
 import ThresholdCanvas from './ThresholdCanvas';
 import WatershedCanvas from './WatershedCanvas';
 import SamCanvas from './SamCanvas';
-import SamMaskCanvas from './SamMaskCanvas';
 import { useState } from 'react';
 
 function ToolCanvas({ setBitmaps }) {
@@ -65,8 +64,7 @@ function ToolCanvas({ setBitmaps }) {
           return <WatershedCanvas setBitmaps={setBitmaps} />;
         case 'sam':
           return <>
-            <SamCanvas setRunONNXCommand={setRunONNX} />
-            <SamMaskCanvas runONNXCommand={runONNX} />
+            <SamCanvas />
           </>;
         default:
           return null;
