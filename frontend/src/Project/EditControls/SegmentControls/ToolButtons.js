@@ -12,6 +12,7 @@ import SelectButton from './ToolButtons/SelectButton';
 import ThresholdButton from './ToolButtons/ThresholdButton';
 import TrimButton from './ToolButtons/TrimButton';
 import WatershedButton from './ToolButtons/WatershedButton';
+import SegmentAnythingButton from './ToolButtons/SegmentAnythingButton';
 
 function ToolButtons() {
   const brush = useBrush();
@@ -24,6 +25,7 @@ function ToolButtons() {
     <Box display='flex' flexDirection='column'>
       <FormLabel>Tools</FormLabel>
       <ToggleButtonGroup orientation='vertical'>
+        <SegmentAnythingButton />
         <SelectButton />
         <BrushButton />
         <EraserButton />

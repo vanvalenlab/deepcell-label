@@ -7,7 +7,9 @@ function TrimButton(props) {
   const segment = useEditSegment();
   const tool = useSelector(segment, (state) => state.context.tool);
 
-  const onClick = useCallback(() => segment.send({ type: 'SET_TOOL', tool: 'trim' }), [segment]);
+  const onClick = useCallback(() => {
+    segment.send({ type: 'SET_TOOL', tool: 'trim' })
+  }, [segment]);
 
   const tooltipText = (
     <span>
