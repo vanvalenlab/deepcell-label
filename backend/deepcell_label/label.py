@@ -106,6 +106,7 @@ class Edit(object):
         if 'raw.dat' in zf.namelist():
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), np.uint8)
+                print(raw.shape)
                 self.raw = np.reshape(raw, (self.width, self.height))
         elif self.action in self.raw_required:
             raise ValueError(
@@ -428,7 +429,7 @@ class Edit(object):
         # self.labels = generate_masks(self.labels)
         # self.labels = self.labels.astype(np.int32).T
         # with server
-        # self.labels = np.load("deepcell_label/mask.npy").astype(np.int32).T
+        self.labels = np.load('deepcell_label/mask.npy').astype(np.int32).T
         if len(self.labels.shape) == 2:
             self.labels = np.expand_dims(np.expand_dims(self.labels, 0), 3)
         cells = []
@@ -445,3 +446,11 @@ class Edit(object):
                             }
                         )
         self.cells = cells
+
+    def action_select_channels(self, channels):
+        print(channels)
+        print(self.raw.shape)
+        # print(len(self.labels.shape))
+        if len(self.labels.shape) == 2:
+            self.labels = np.expand_dims(np.expand_dims(self.labels, 0), 3)
+            # print(self.labels.shape)

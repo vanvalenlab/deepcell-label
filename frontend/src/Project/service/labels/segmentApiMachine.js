@@ -31,7 +31,12 @@ async function makeEditZip(context, event) {
   );
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files
-  const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
+  console.log(raw);
+  const usesRaw =
+    action === 'active_contour' ||
+    action === 'threshold' ||
+    action === 'watershed' ||
+    'select_channels';
   if (usesRaw) {
     await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(raw)));
   }
@@ -89,7 +94,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
       invoke: [
         {
           id: 'arrays',
-          src: fromEventBus('editSegment', () => eventBuses.arrays, ['LABELED', 'RAW']),
+          src: fromEventBus('editSegment', () => eventBuses.arrays, ['LABELED', 'RAW', 'ARRAYS']),
         },
         { id: 'cells', src: fromEventBus('editSegment', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('editSegment', () => eventBuses.image, 'SET_T') },
@@ -109,6 +114,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
       on: {
         LABELED: { actions: 'setLabeled' },
         RAW: { actions: 'setRaw' },
+        ARRAYS: { actions: 'setRaw' },
         CELLS: { actions: 'setCells' },
         SET_T: { actions: 'setT' },
         SET_FEATURE: { actions: 'setC' },

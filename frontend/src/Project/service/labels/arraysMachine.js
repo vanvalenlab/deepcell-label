@@ -69,14 +69,14 @@ const createArraysMachine = (context) =>
           },
           onDone: {
             target: 'idle',
-            actions: ['sendLabeledFrame', 'sendRawFrame'],
+            actions: ['sendLabeledFrame', 'sendRawFrame', 'sendArrays'],
           },
         },
         idle: {
           // TODO: factor out raw and labeled states (and/or machines)
           on: {
             EDIT: { target: 'editing', actions: forwardTo('api') },
-            SET_T: { actions: ['setT', 'sendLabeledFrame', 'sendRawFrame'] },
+            SET_T: { actions: ['setT', 'sendLabeledFrame', 'sendRawFrame', 'sendArrays'] },
             SET_FEATURE: { actions: ['setFeature', 'sendLabeledFrame'] },
             SET_CHANNEL: { actions: ['setChannel', 'sendRawFrame'] },
             GET_ARRAYS: { actions: 'sendArrays' },
