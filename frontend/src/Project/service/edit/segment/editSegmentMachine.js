@@ -15,7 +15,15 @@ import createWatershedMachine from './watershedMachine';
 const { pure, respond } = actions;
 
 const colorTools = ['brush', 'select', 'trim', 'flood'];
-const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'];
+const grayscaleTools = [
+  'brush',
+  'select',
+  'trim',
+  'flood',
+  'threshold',
+  'watershed',
+  'segment_all',
+];
 const panTools = ['select', 'trim', 'flood', 'watershed'];
 const noPanTools = ['brush', 'threshold'];
 
@@ -41,8 +49,8 @@ const createEditSegmentMachine = (context) =>
         tool: 'select',
         tools: null,
         eventBuses: context.eventBuses,
-        wholeCellChannel: '0',
-        nuclearChannel: '1',
+        nuclearChannel: 0,
+        wholeCellChannel: 1,
       },
       type: 'parallel',
       states: {
@@ -108,7 +116,6 @@ const createEditSegmentMachine = (context) =>
         SEGMENTALL: { actions: 'segment_all' },
         SET_WHOLE_CELL_CHANNEL: { actions: 'set_whole_cell_channel' },
         SET_NUCLEAR_CHANNEL: { actions: 'set_nuclear_channel' },
-        SELECT_CHANNELS: { actions: 'select_channels' },
       },
     },
     {
@@ -173,16 +180,7 @@ const createEditSegmentMachine = (context) =>
           (ctx) => ({
             type: 'EDIT',
             action: 'segment_all',
-            args: { cell: ctx.selected },
-          }),
-          { to: 'arrays' }
-        ),
-        select_channels: send(
-          (ctx) => ({
-            type: 'EDIT',
-            action: 'select_channels',
-            // args: { wholeCellChannel: ctx.wholeCellChannel, nuclearChannel: ctx.nuclearChannel },
-            args: { channels: [ctx.wholeCellChannel, ctx.nuclearChannel] },
+            args: { channels: [ctx.nuclearChannel, ctx.wholeCellChannel] },
           }),
           { to: 'arrays' }
         ),

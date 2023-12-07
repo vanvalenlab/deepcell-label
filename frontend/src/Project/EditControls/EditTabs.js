@@ -77,7 +77,7 @@ function EditTabs() {
         variant='scrollable'
       >
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment' />
-        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment-SAM' />
+        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment-CellSAM' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cells' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Divisions' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cell Types' />

@@ -49,7 +49,10 @@ const createArraysMachine = (context) =>
               states: {
                 loading: {
                   on: {
-                    LOADED: { target: 'done', actions: ['setRaw', 'setLabeled', 'setRawOriginal'] },
+                    LOADED: {
+                      target: 'done',
+                      actions: ['setRaw', 'setLabeled', 'setRawOriginal'],
+                    },
                   },
                 },
                 done: { type: 'final' },
@@ -76,7 +79,9 @@ const createArraysMachine = (context) =>
           // TODO: factor out raw and labeled states (and/or machines)
           on: {
             EDIT: { target: 'editing', actions: forwardTo('api') },
-            SET_T: { actions: ['setT', 'sendLabeledFrame', 'sendRawFrame', 'sendArrays'] },
+            SET_T: {
+              actions: ['setT', 'sendLabeledFrame', 'sendRawFrame', 'sendArrays', 'setGray'],
+            },
             SET_FEATURE: { actions: ['setFeature', 'sendLabeledFrame'] },
             SET_CHANNEL: { actions: ['setChannel', 'sendRawFrame'] },
             GET_ARRAYS: { actions: 'sendArrays' },
@@ -158,7 +163,7 @@ const createArraysMachine = (context) =>
         sendRawFrame: send(
           (ctx, evt) => ({
             type: 'RAW',
-            raw: ctx.raw[ctx.channel][ctx.t],
+            raw: ctx.raw,
           }),
           { to: 'eventBus' }
         ),

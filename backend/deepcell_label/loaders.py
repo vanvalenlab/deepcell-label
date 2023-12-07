@@ -14,8 +14,7 @@ from xml.etree import ElementTree as ET
 
 import magic
 import numpy as np
-
-# from flask import current_app
+from flask import current_app
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
@@ -45,6 +44,7 @@ class Loader:
         self.embeddings = None
 
         self.image_file = image_file
+        current_app.logger.info(image_file)
         self.label_file = label_file if label_file else image_file
         self.axes = axes
 
@@ -193,6 +193,7 @@ def load_images(image_file, axes=None):
         X = load_png(image_file)
     if X is None:
         X = load_trk(image_file, filename='raw.npy')
+    print(X.shape)
     return X
 
 
