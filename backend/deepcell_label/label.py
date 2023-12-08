@@ -7,8 +7,6 @@ import zipfile
 
 import numpy as np
 import skimage
-
-# from flask import current_app
 from skimage import filters
 from skimage.exposure import rescale_intensity
 from skimage.measure import regionprops
@@ -43,6 +41,7 @@ class Edit(object):
 
         self.valid_modes = ['overlap', 'overwrite', 'exclude']
         self.raw_required = ['watershed', 'active_contour', 'threshold']
+
         self.load(labels_zip)
         self.dispatch_action()
         self.write_response_zip()
@@ -68,6 +67,7 @@ class Edit(object):
         if not zipfile.is_zipfile(labels_zip):
             raise ValueError('Attached labels.zip is not a zip file.')
         zf = zipfile.ZipFile(labels_zip)
+
         # Load edit args
         if 'edit.json' not in zf.namelist():
             raise ValueError('Attached labels.zip must contain edit.json.')
@@ -111,7 +111,6 @@ class Edit(object):
                 self.rawOriginal = np.reshape(raw, (self.d1, self.d2, self.d3, self.d4))
                 # self.rawOriginal = np.reshape(self.rawOriginal, (self.d3, self.d4, self.d1))
                 self.raw = self.rawOriginal[0][0]
-            # raise ValueError
         elif self.action in self.raw_required:
             raise ValueError(
                 f'Include raw array in raw.json to use action {self.action}.'

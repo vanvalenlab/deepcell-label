@@ -18,7 +18,6 @@ from flask import current_app
 from PIL import Image
 from tifffile import TiffFile, TiffWriter
 
-# from deepcell_label.client import send_to_server
 from deepcell_label.utils import convert_lineage, reshape
 
 
@@ -89,7 +88,6 @@ class Loader:
             ValueError: no image data has been loaded to write
         """
         X = self.X
-        # send_to_server(X, "X")
         if X is not None:
             if len(X.shape) == 3:
                 X = np.expand_dims(X, 0)
@@ -108,12 +106,12 @@ class Loader:
                 )
             images.seek(0)
             self.zip.writestr('X.ome.tiff', images.read())
+        # else:
         #     raise ValueError('No images found in files')
 
     def write_segmentation(self):
         """Writes segmentation to y.ome.tiff in the output zip."""
         y = self.y
-        # send_to_server(y, "y")
         if len(y.shape) == 2:
             y = np.expand_dims(np.expand_dims(y, 0), 3)
             self.y = y
@@ -193,7 +191,6 @@ def load_images(image_file, axes=None):
         X = load_png(image_file)
     if X is None:
         X = load_trk(image_file, filename='raw.npy')
-    print(X.shape)
     return X
 
 

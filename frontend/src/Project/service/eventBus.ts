@@ -53,6 +53,7 @@ export function fromEventBus<TContext, TEvent extends EventObject = AnyEventObje
 ): InvokeCreator<TContext, TEvent> {
   return (context, event) => (sendBack, receive) => {
     const bus = createEventBus(context, event);
+
     const subscriber: Subscriber<TEvent> = (event) => {
       if (type === undefined) {
         sendBack(event);
