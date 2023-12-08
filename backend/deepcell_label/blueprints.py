@@ -122,7 +122,6 @@ def create_project_from_dropped_file():
     """
     start = timeit.default_timer()
     input_file = request.files.get('images')
-
     axes = request.form['axes'] if 'axes' in request.form else None
     # axes = request.form['axes'] if 'axes' in request.form else DCL_AXES
     with tempfile.NamedTemporaryFile(delete=DELETE_TEMP) as f:
@@ -139,7 +138,6 @@ def create_project_from_dropped_file():
         input_file.filename,
         timeit.default_timer() - start,
     )
-    # current_app.logger.info(IMAGE_FILE)
     return jsonify(project.project)
 
 
