@@ -107,9 +107,7 @@ class Edit(object):
         if 'raw.dat' in zf.namelist():
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), np.uint8)
-                # self.rawOriginal = np.reshape(raw, (self.d1, self.d2, self.d3, self.d4))[:, 0, :, :]
                 self.rawOriginal = np.reshape(raw, (self.d1, self.d2, self.d3, self.d4))
-                # self.rawOriginal = np.reshape(self.rawOriginal, (self.d3, self.d4, self.d1))
                 self.raw = self.rawOriginal[0][0]
         elif self.action in self.raw_required:
             raise ValueError(
