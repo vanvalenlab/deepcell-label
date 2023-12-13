@@ -9,7 +9,6 @@ function ActionButtons() {
   const raw = useRaw();
   const layers = useSelector(raw, (state) => state.context.layers);
   const layer = layers[0];
-  console.log(layers);
   return (
     <Box display='flex' flexDirection='column'>
       <FormLabel>Actions</FormLabel>

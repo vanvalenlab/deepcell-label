@@ -3,7 +3,7 @@ import Slider from '@mui/material/Slider';
 // import Tooltip from '@mui/material/Tooltip';
 import { useSelector } from '@xstate/react';
 import React, { useEffect } from 'react';
-import { useLabeled, useMousetrapRef, useLabelMode } from '../../ProjectContext';
+import { useLabeled, useMousetrapRef } from '../../ProjectContext';
 
 let numMounted = 0;
 
@@ -17,9 +17,6 @@ function CellsOpacitySlider() {
     labeled.send({ type: 'SET_CELLS_OPACITY', opacity: newValue });
 
   const handleDoubleClick = () => labeled.send({ type: 'SET_CELLS_OPACITY', opacity: 0.3 }); // [0.3, 1] for range slider
-
-  const labelMode = useLabelMode();
-  const isCellTypes = useSelector(labelMode, (state) => state.matches('editCellTypes'));
 
   useEffect(() => {
     const listener = (e) => {
@@ -50,7 +47,7 @@ function CellsOpacitySlider() {
   return (
     <Tooltip title={<kbd>Z</kbd>} placement='right'>
       <Slider
-        value={isCellTypes ? 0 : opacity}
+        value={opacity}
         min={0}
         max={1}
         // track={false}
@@ -60,7 +57,6 @@ function CellsOpacitySlider() {
         onDoubleClick={handleDoubleClick}
         componentsProps={{ input: { ref: inputRef } }}
         sx={{ py: 0, '& .MuiSlider-thumb': { height: 15, width: 15 } }}
-        disabled={isCellTypes}
       />
     </Tooltip>
   );
