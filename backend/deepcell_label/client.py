@@ -1,4 +1,5 @@
 import asyncio
+import os
 import pickle
 import zlib
 
@@ -7,7 +8,7 @@ from flask import current_app
 
 
 async def perform_send(to_send):
-    uri = 'ws://131.215.2.187:8765'
+    uri = os.environ['CELLSAM_SERVER']
     async with websockets.connect(uri, ping_interval=None) as websocket:
         data = {'img': to_send}
         print(uri)
