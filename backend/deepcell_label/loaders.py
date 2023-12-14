@@ -87,9 +87,6 @@ class Loader:
         """
         X = self.X
         if X is not None:
-            if len(X.shape) == 3:
-                X = np.expand_dims(X, 0)
-                self.X = X
             # Move channel axis
             X = np.moveaxis(X, -1, 1)
             images = io.BytesIO()
@@ -110,9 +107,6 @@ class Loader:
     def write_segmentation(self):
         """Writes segmentation to y.ome.tiff in the output zip."""
         y = self.y
-        if len(y.shape) == 2:
-            y = np.expand_dims(np.expand_dims(y, 0), 3)
-            self.y = y
         if y.shape[:-1] != self.X.shape[:-1]:
             raise ValueError(
                 'Segmentation shape %s is incompatible with image shape %s'
@@ -153,19 +147,18 @@ class Loader:
         """Writes cells to cells.json in the output zip."""
         if self.cells is None:
             cells = []
-            # currently disable instant segmentation upon loading
-            # for t in range(self.y.shape[0]):
-            #     for c in range(self.y.shape[-1]):
-            #         for value in np.unique(self.y[t, :, :, c]):
-            #             if value != 0:
-            #                 cells.append(
-            #                     {
-            #                         'cell': int(value),
-            #                         'value': int(value),
-            #                         't': int(t),
-            #                         'c': int(c),
-            #                     }
-            #                 )
+            for t in range(self.y.shape[0]):
+                for c in range(self.y.shape[-1]):
+                    for value in np.unique(self.y[t, :, :, c]):
+                        if value != 0:
+                            cells.append(
+                                {
+                                    'cell': int(value),
+                                    'value': int(value),
+                                    't': int(t),
+                                    'c': int(c),
+                                }
+                            )
             self.cells = cells
         self.zip.writestr('cells.json', json.dumps(self.cells))
 

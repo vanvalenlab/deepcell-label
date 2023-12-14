@@ -7,8 +7,9 @@ import websockets
 from flask import current_app
 
 
+# connects to cell SAM server
 async def perform_send(to_send):
-    uri = os.environ['CELLSAM_SERVER']
+    uri = os.environ['CELLSAM_SERVER']  # to be replaced with cell SAM server uri
     async with websockets.connect(uri, ping_interval=None) as websocket:
         data = {'img': to_send}
         print(uri)
