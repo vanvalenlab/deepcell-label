@@ -1,8 +1,8 @@
 import { useSelector } from '@xstate/react';
-import React, { useCallback } from 'react';
-import { useEditSegment, useSelect, useRaw } from '../../../ProjectContext';
+import React, { useCallback, useState } from 'react';
+import { useEditSegment, useSelect, useRaw, useSegmentApi } from '../../../ProjectContext';
 import ActionButton from './ActionButton';
-import { MenuItem, TextField } from '@mui/material';
+import { MenuItem, TextField, LinearProgress, Box } from '@mui/material';
 import Grid from '@mui/material/Grid';
 
 function LayerSelector({ layer, channelType }) {
@@ -54,9 +54,16 @@ function LayerSelector({ layer, channelType }) {
 
 function SegmentAllButton({ props, layer }) {
   const segment = useEditSegment();
+  const segmentAPI = useSegmentApi();
+  const segmentFinished = useSelector(segmentAPI, (state) => state.matches('idle'));
   const grayscale = useSelector(segment, (state) => state.matches('display.grayscale'));
 
-  const onClick = useCallback(() => segment.send('SEGMENTALL'), [segment]);
+  const segmentAction = useCallback(() => {
+    setSegmentButtonClicked(true);
+    segment.send('SEGMENTALL');
+  }, [segment]);
+
+  const [segmentButtonClicked, setSegmentButtonClicked] = useState(false);
 
   const tooltipText = (
     <span>
@@ -79,12 +86,15 @@ function SegmentAllButton({ props, layer }) {
           {...props}
           // disabled={!grayscale}
           tooltipText={grayscale ? tooltipText : 'Run cell sam on one channel'}
-          onClick={onClick}
+          onClick={segmentAction}
           hotkey='m'
         >
           Segment All
         </ActionButton>
       </Grid>
+      <Box sx={{ minWidth: 140, marginTop: 0.4 }}>
+        {segmentButtonClicked && !segmentFinished && <LinearProgress />}
+      </Box>
     </Grid>
   );
 }
