@@ -107,6 +107,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+deepcell-env/
 
 # Spyder project settings
 .spyderproject
