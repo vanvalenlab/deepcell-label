@@ -49,8 +49,8 @@ const createEditSegmentMachine = (context) =>
         tool: 'select',
         tools: null,
         eventBuses: context.eventBuses,
-        nuclearChannel: 0,
-        wholeCellChannel: 1,
+        primaryChannel: 0,
+        secondaryChannel: 1,
       },
       type: 'parallel',
       states: {
@@ -114,8 +114,8 @@ const createEditSegmentMachine = (context) =>
         RESTORE: { actions: ['restore', respond('RESTORED')] },
 
         SEGMENTALL: { actions: 'segment_all' },
-        SET_WHOLE_CELL_CHANNEL: { actions: 'set_whole_cell_channel' },
-        SET_NUCLEAR_CHANNEL: { actions: 'set_nuclear_channel' },
+        SET_PRIMARY_CHANNEL: { actions: 'set_primary_channel' },
+        SET_SECONDARY_CHANNEL: { actions: 'set_secondary_channel' },
       },
     },
     {
@@ -148,10 +148,10 @@ const createEditSegmentMachine = (context) =>
           }),
         }),
         forwardToTool: forwardTo((ctx) => ctx.tools[ctx.tool]),
-        set_whole_cell_channel: assign({
-          wholeCellChannel: (_, { wholeCellChannel }) => wholeCellChannel,
+        set_primary_channel: assign({ primaryChannel: (_, { primaryChannel }) => primaryChannel }),
+        set_secondary_channel: assign({
+          secondaryChannel: (_, { secondaryChannel }) => secondaryChannel,
         }),
-        set_nuclear_channel: assign({ nuclearChannel: (_, { nuclearChannel }) => nuclearChannel }),
         erode: send(
           (ctx) => ({
             type: 'EDIT',
@@ -180,7 +180,7 @@ const createEditSegmentMachine = (context) =>
           (ctx) => ({
             type: 'EDIT',
             action: 'segment_all',
-            args: { channels: [ctx.nuclearChannel, ctx.wholeCellChannel] },
+            args: { channels: [ctx.primaryChannel, ctx.secondaryChannel] },
           }),
           { to: 'arrays' }
         ),

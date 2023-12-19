@@ -425,20 +425,16 @@ class Edit(object):
         dilated = dilation(mask, square(3))
         self.add_mask(dilated, cell)
 
-    def action_select_channels(self, channels):
-        self.nuclear_channel = int(channels[0])
-        self.wholecell_channel = int(channels[1])
-
     def action_segment_all(self, channels):
-        nuclear_channel = channels[0]
-        wholecell_channel = channels[1]
+        primary_channel = channels[0]
+        secondary_channel = channels[1]
         to_send = []
         if self.d1 == 1:
             to_send = self.raw.reshape(self.d3, self.d4, self.d1)
         elif self.d1 > 1:
-            nuclear = self.rawOriginal[nuclear_channel][0]
-            wholecell = self.rawOriginal[wholecell_channel][0]
-            to_send = np.stack([nuclear, wholecell], axis=-1)
+            primary = self.rawOriginal[primary_channel][0]
+            secondary = self.rawOriginal[secondary_channel][0]
+            to_send = np.stack([primary, secondary], axis=-1)
         mask = send_to_server(to_send)
         self.labels = mask.astype(np.int32)
         if len(self.labels.shape) == 2:
