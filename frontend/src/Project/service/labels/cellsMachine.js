@@ -177,6 +177,7 @@ const createCellsMachine = ({ eventBuses, undoRef }) =>
             send({ type: 'CELLS', cells }, { to: 'eventBus' }),
           ];
         }),
+        // uploadSegmentSam: assign({cells: }),
         sendCells: send((ctx) => ({ type: 'CELLS', cells: ctx.cells }), { to: 'eventBus' }),
         // needs to be pure because assign events have priority
         // NOTE: this is changing in xstate v5, can revert to assign when that's released

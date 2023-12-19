@@ -13,14 +13,16 @@ function EditTabs() {
   const value = useSelector(labelMode, (state) => {
     return state.matches('editSegment')
       ? 0
-      : state.matches('editCells')
+      : state.matches('editSegmentSam')
       ? 1
-      : state.matches('editDivisions')
+      : state.matches('editCells')
       ? 2
-      : state.matches('editCellTypes')
+      : state.matches('editDivisions')
       ? 3
-      : state.matches('editSpots')
+      : state.matches('editCellTypes')
       ? 4
+      : state.matches('editSpots')
+      ? 5
       : false;
   });
   const handleChange = (event, newValue) => {
@@ -29,15 +31,18 @@ function EditTabs() {
         labelMode.send('EDIT_SEGMENT');
         break;
       case 1:
-        labelMode.send('EDIT_CELLS');
+        labelMode.send('EDIT_SEGMENT_SAM');
         break;
       case 2:
-        labelMode.send('EDIT_DIVISIONS');
+        labelMode.send('EDIT_CELLS');
         break;
       case 3:
-        labelMode.send('EDIT_CELLTYPES');
+        labelMode.send('EDIT_DIVISIONS');
         break;
       case 4:
+        labelMode.send('EDIT_CELLTYPES');
+        break;
+      case 5:
         labelMode.send('EDIT_SPOTS');
         break;
       default:
@@ -72,6 +77,7 @@ function EditTabs() {
         variant='scrollable'
       >
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment' />
+        <Tab sx={{ p: 0.5, minHeight: 0 }} label='Segment-CellSAM' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cells' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Divisions' />
         <Tab sx={{ p: 0.5, minHeight: 0 }} label='Cell Types' />
