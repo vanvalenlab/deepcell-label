@@ -14,6 +14,16 @@ and open the repository with:
 cd deepcell-label
 ```
 
+## Configuring project size
+
+There is a configurable upper bound to the size of project deepcell-label
+supports.
+This value is stored in `backend/.platform/nginx/conf.d/proxy.conf` and
+can be modified to support larger projects.
+Bear in mind however that projects are uploaded/downloaded from s3 buckets,
+so beware of increasing this value too much lest the size of the bucket
+grows too rapidly!
+
 ## Set up Flask backend
 
 Open the subfolder for the backend:
