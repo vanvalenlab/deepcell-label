@@ -13,6 +13,8 @@ from skimage.measure import regionprops
 from skimage.morphology import dilation, disk, erosion, flood, square
 from skimage.segmentation import morphological_chan_vese, watershed
 
+from deepcell_label.client import send_to_server
+
 
 class Edit(object):
     """
@@ -76,6 +78,9 @@ class Edit(object):
             self.action = edit['action']
             self.height = edit['height']
             self.width = edit['width']
+            self.d1, self.d2, self.d3, self.d4 = [
+                edit[k] for k in ['d1', 'd2', 'd3', 'd4']
+            ]
             self.args = edit.get('args', None)
             # TODO: specify write mode per cell?
             self.write_mode = edit.get('writeMode', 'overlap')
@@ -102,7 +107,8 @@ class Edit(object):
         if 'raw.dat' in zf.namelist():
             with zf.open('raw.dat') as f:
                 raw = np.frombuffer(f.read(), np.uint8)
-                self.raw = np.reshape(raw, (self.width, self.height))
+                self.rawOriginal = np.reshape(raw, (self.d1, self.d2, self.d3, self.d4))
+                self.raw = self.rawOriginal[0][0]
         elif self.action in self.raw_required:
             raise ValueError(
                 f'Include raw array in raw.json to use action {self.action}.'
@@ -418,3 +424,32 @@ class Edit(object):
         mask = self.get_mask(cell)
         dilated = dilation(mask, square(3))
         self.add_mask(dilated, cell)
+
+    def action_segment_all(self, channels):
+        primary_channel = channels[0]
+        secondary_channel = channels[1]
+        to_send = []
+        if self.d1 == 1:
+            to_send = self.raw.reshape(self.d3, self.d4, self.d1)
+        elif self.d1 > 1:
+            primary = self.rawOriginal[primary_channel][0]
+            secondary = self.rawOriginal[secondary_channel][0]
+            to_send = np.stack([primary, secondary], axis=-1)
+        mask = send_to_server(to_send)
+        self.labels = mask.astype(np.int32)
+        if len(self.labels.shape) == 2:
+            self.labels = np.expand_dims(np.expand_dims(self.labels, 0), 3)
+        cells = []
+        for t in range(self.labels.shape[0]):
+            for c in range(self.labels.shape[-1]):
+                for value in np.unique(self.labels[t, :, :, c]):
+                    if value != 0:
+                        cells.append(
+                            {
+                                'cell': int(value),
+                                'value': int(value),
+                                't': int(t),
+                                'c': int(c),
+                            }
+                        )
+        self.cells = cells
