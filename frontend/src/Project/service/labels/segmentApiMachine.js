@@ -40,22 +40,41 @@ async function makeEditZip(context, event) {
   return zipBlob;
 }
 
-/** Sends a label zip to the DeepCell Label API to edit. */
-async function edit(context, event) {
-  const form = new FormData();
-  const zipBlob = await makeEditZip(context, event);
-  form.append('labels', zipBlob, 'labels.zip');
-  const width = context.labeled[0].length;
-  const height = context.labeled.length;
-
+async function testSamPrediction(context, event) {
   const options = {
     method: 'POST',
-    body: form,
-    'Content-Type': 'multipart/form-data',
+    body: JSON.stringify(event.args),
+    'Content-Type': 'application/json',
   };
-  return fetch(`${document.location.origin}/api/edit`, options)
+  return fetch(`${document.location.origin}/api/testSamPrediction`, options)
     .then(checkResponseCode)
-    .then((res) => parseResponseZip(res, width, height));
+    .then((res) => res.json())
+    .then((data) => {
+      return { labeled: data.data[0], cells: context.cells}
+    })
+}
+
+/** Sends a label zip to the DeepCell Label API to edit. */
+async function edit(context, event) {
+
+  if (event.action === "sam") {
+    return testSamPrediction(context, event)
+  } else {
+    const form = new FormData();
+    const zipBlob = await makeEditZip(context, event);
+    form.append('labels', zipBlob, 'labels.zip');
+    const width = context.labeled[0].length;
+    const height = context.labeled.length;
+  
+    const options = {
+      method: 'POST',
+      body: form,
+      'Content-Type': 'multipart/form-data',
+    };
+    return fetch(`${document.location.origin}/api/edit`, options)
+      .then(checkResponseCode)
+      .then((res) => parseResponseZip(res, width, height));
+  }
 }
 
 function checkResponseCode(response) {

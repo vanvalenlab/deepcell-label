@@ -64,6 +64,7 @@ class Edit(object):
         """
         if not zipfile.is_zipfile(labels_zip):
             raise ValueError('Attached labels.zip is not a zip file.')
+        
         zf = zipfile.ZipFile(labels_zip)
 
         # Load edit args

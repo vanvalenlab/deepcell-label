@@ -11,13 +11,14 @@ import createSelectMachine from './selectMachine';
 import createThresholdMachine from './thresholdMachine';
 import createTrimMachine from './trimMachine';
 import createWatershedMachine from './watershedMachine';
+import createSAMMachine from './samMachine';
 
 const { pure, respond } = actions;
 
-const colorTools = ['brush', 'select', 'trim', 'flood'];
-const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'];
-const panTools = ['select', 'trim', 'flood', 'watershed'];
-const noPanTools = ['brush', 'threshold'];
+const colorTools = ['brush', 'select', 'trim', 'flood', 'sam'];
+const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed', 'sam'];
+const panTools = ['select', 'trim', 'flood', 'watershed', 'sam'];
+const noPanTools = ['brush', 'threshold', 'sam'];
 
 const createEditSegmentMachine = (context) =>
   Machine(
@@ -115,10 +116,11 @@ const createEditSegmentMachine = (context) =>
       },
       actions: {
         setSelected: assign({ selected: (_, evt) => evt.selected }),
-        setTool: pure((ctx, evt) => [
-          send('EXIT', { to: ctx.tools[ctx.tool] }),
-          assign({ tool: evt.tool }),
-        ]),
+        setTool: pure((ctx, evt) => {
+          return [
+            send('EXIT', { to: ctx.tools[ctx.tool] }),
+            assign({ tool: evt.tool }),
+        ]}),
         setPanOnDragTrue: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: true }),
         setPanOnDragFalse: sendParent({ type: 'SET_PAN_ON_DRAG', panOnDrag: false }),
         save: respond((ctx) => ({ type: 'RESTORE', tool: ctx.tool })),
@@ -131,6 +133,7 @@ const createEditSegmentMachine = (context) =>
             trim: spawn(createTrimMachine(ctx)),
             flood: spawn(createFloodMachine(ctx)),
             watershed: spawn(createWatershedMachine(ctx)),
+            sam: spawn(createSAMMachine(ctx))
           }),
         }),
         forwardToTool: forwardTo((ctx) => ctx.tools[ctx.tool]),

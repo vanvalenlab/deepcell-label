@@ -299,6 +299,17 @@ export function useEditSegment() {
   return segment;
 }
 
+export function useEditSegmentCopy() {
+  const project = useProject();
+  const segment = useSelector(project, (state) => {
+    const tool = state.context.toolRef;
+    const segment = tool.state.context.editSegmentRef;
+    return segment;
+  });
+
+  return segment;
+}
+
 export function useBrush() {
   const project = useProject();
   const tool = useSelector(project, (state) => {
@@ -306,6 +317,17 @@ export function useBrush() {
     const segment = labelMode.state.context.editSegmentRef;
     const tools = segment.state.context.tools;
     return tools.brush;
+  });
+  return tool;
+}
+
+export function useSam() {
+  const project = useProject();
+  const tool = useSelector(project, (state) => {
+    const labelMode = state.context.toolRef;
+    const segment = labelMode.state.context.editSegmentRef;
+    const tools = segment.state.context.tools;
+    return tools.sam;
   });
   return tool;
 }
