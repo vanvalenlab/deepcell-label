@@ -15,6 +15,7 @@ import OverviewInstructions from './OverviewInstructions';
 import PlottingTrainingInstructions from './PlottingTrainingInstructions';
 import SegmentInstructions from './SegmentInstructions';
 import SelectInstructions from './SelectInstructions';
+import SegmentCellSAMInstructions from './SegmentCellSAMInstructions';
 
 const PREFIX = 'Instructions';
 
@@ -142,6 +143,7 @@ export default function InstructionsModal({ open, setOpen }) {
             <Tab label='Canvas' />
             <Tab label='Display' />
             <Tab label='Segment' />
+            <Tab label='Segment Cell SAM' />
             <Tab label='Cells' />
             <Tab label='Divisions' />
             <Tab label='Cell Types' />
@@ -164,15 +166,18 @@ export default function InstructionsModal({ open, setOpen }) {
           <SegmentInstructions />
         </TabPanel>
         <TabPanel value={value} index={5} sx={tabPanelStyle}>
-          <CellsInstructions />
+          <SegmentCellSAMInstructions />
         </TabPanel>
         <TabPanel value={value} index={6} sx={tabPanelStyle}>
-          <DivisionsInstructions />
+          <CellsInstructions />
         </TabPanel>
         <TabPanel value={value} index={7} sx={tabPanelStyle}>
-          <CellTypeInstructions />
+          <DivisionsInstructions />
         </TabPanel>
         <TabPanel value={value} index={8} sx={tabPanelStyle}>
+          <CellTypeInstructions />
+        </TabPanel>
+        <TabPanel value={value} index={9} sx={tabPanelStyle}>
           <PlottingTrainingInstructions />
         </TabPanel>
       </Box>
