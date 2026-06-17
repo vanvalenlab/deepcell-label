@@ -15,7 +15,15 @@ import createWatershedMachine from './watershedMachine';
 const { pure, respond } = actions;
 
 const colorTools = ['brush', 'select', 'trim', 'flood'];
-const grayscaleTools = ['brush', 'select', 'trim', 'flood', 'threshold', 'watershed'];
+const grayscaleTools = [
+  'brush',
+  'select',
+  'trim',
+  'flood',
+  'threshold',
+  'watershed',
+  'segment_all',
+];
 const panTools = ['select', 'trim', 'flood', 'watershed'];
 const noPanTools = ['brush', 'threshold'];
 
@@ -41,6 +49,8 @@ const createEditSegmentMachine = (context) =>
         tool: 'select',
         tools: null,
         eventBuses: context.eventBuses,
+        nuclearChannel: 0,
+        wholeCellChannel: 1,
       },
       type: 'parallel',
       states: {
@@ -102,6 +112,10 @@ const createEditSegmentMachine = (context) =>
 
         SAVE: { actions: 'save' },
         RESTORE: { actions: ['restore', respond('RESTORED')] },
+
+        SEGMENTALL: { actions: 'segment_all' },
+        SET_WHOLE_CELL_CHANNEL: { actions: 'set_whole_cell_channel' },
+        SET_NUCLEAR_CHANNEL: { actions: 'set_nuclear_channel' },
       },
     },
     {
@@ -134,6 +148,10 @@ const createEditSegmentMachine = (context) =>
           }),
         }),
         forwardToTool: forwardTo((ctx) => ctx.tools[ctx.tool]),
+        set_whole_cell_channel: assign({
+          wholeCellChannel: (_, { wholeCellChannel }) => wholeCellChannel,
+        }),
+        set_nuclear_channel: assign({ nuclearChannel: (_, { nuclearChannel }) => nuclearChannel }),
         erode: send(
           (ctx) => ({
             type: 'EDIT',
@@ -155,6 +173,14 @@ const createEditSegmentMachine = (context) =>
             type: 'EDIT',
             action: 'active_contour',
             args: { cell: ctx.selected },
+          }),
+          { to: 'arrays' }
+        ),
+        segment_all: send(
+          (ctx) => ({
+            type: 'EDIT',
+            action: 'segment_all',
+            args: { channels: [ctx.nuclearChannel, ctx.wholeCellChannel] },
           }),
           { to: 'arrays' }
         ),

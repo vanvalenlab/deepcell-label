@@ -5,6 +5,7 @@
 import * as zip from '@zip.js/zip.js';
 import { assign, Machine, sendParent } from 'xstate';
 import { fromEventBus } from '../eventBus';
+import { flattenDeep } from 'lodash';
 
 /** Splits a 1D Int32Array buffer into a 2D list of Int32Array with height and width. */
 function splitRows(buffer, width, height) {
@@ -20,7 +21,17 @@ function splitRows(buffer, width, height) {
 async function makeEditZip(context, event) {
   const { labeled, raw, cells, writeMode, t, c } = context;
   const { action, args } = event;
-  const edit = { width: labeled[0].length, height: labeled.length, action, args, writeMode };
+  const edit = {
+    width: labeled[0].length,
+    height: labeled.length,
+    action,
+    args,
+    writeMode,
+    d1: raw.length,
+    d2: raw[0].length,
+    d3: raw[0][0].length,
+    d4: raw[0][0][0].length,
+  };
 
   const zipWriter = new zip.ZipWriter(new zip.BlobWriter('application/zip'));
   // Required files
@@ -31,9 +42,15 @@ async function makeEditZip(context, event) {
   );
   await zipWriter.add('labeled.dat', new zip.BlobReader(new Blob(labeled)));
   // Optional files
-  const usesRaw = action === 'active_contour' || action === 'threshold' || action === 'watershed';
+
+  const usesRaw =
+    action === 'active_contour' ||
+    action === 'threshold' ||
+    action === 'watershed' ||
+    action === 'segment_all' ||
+    action === 'select_channels';
   if (usesRaw) {
-    await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(raw)));
+    await zipWriter.add('raw.dat', new zip.BlobReader(new Blob(flattenDeep(raw))));
   }
 
   const zipBlob = await zipWriter.close();
@@ -89,7 +106,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
       invoke: [
         {
           id: 'arrays',
-          src: fromEventBus('editSegment', () => eventBuses.arrays, ['LABELED', 'RAW']),
+          src: fromEventBus('editSegment', () => eventBuses.arrays, ['LABELED', 'RAW', 'ARRAYS']),
         },
         { id: 'cells', src: fromEventBus('editSegment', () => eventBuses.cells, 'CELLS') },
         { src: fromEventBus('editSegment', () => eventBuses.image, 'SET_T') },
@@ -109,6 +126,7 @@ const createSegmentApiMachine = ({ eventBuses }) =>
       on: {
         LABELED: { actions: 'setLabeled' },
         RAW: { actions: 'setRaw' },
+        ARRAYS: { actions: 'setRaw' },
         CELLS: { actions: 'setCells' },
         SET_T: { actions: 'setT' },
         SET_FEATURE: { actions: 'setC' },
