@@ -6,6 +6,7 @@ import CellControls from './CellControls';
 import CellTypeControls from './CellTypeControls';
 import TrackingControls from './DivisionsControls';
 import SegmentControls from './SegmentControls';
+import SegmentSamControls from './SegmentSamControls';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -28,14 +29,16 @@ function EditControls() {
   const value = useSelector(labelMode, (state) => {
     return state.matches('editSegment')
       ? 0
-      : state.matches('editCells')
+      : state.matches('editSegmentSam')
       ? 1
-      : state.matches('editDivisions')
+      : state.matches('editCells')
       ? 2
-      : state.matches('editCellTypes')
+      : state.matches('editDivisions')
       ? 3
-      : state.matches('editSpots')
+      : state.matches('editCellTypes')
       ? 4
+      : state.matches('editSpots')
+      ? 5
       : false;
   });
 
@@ -51,15 +54,18 @@ function EditControls() {
         <SegmentControls />
       </TabPanel>
       <TabPanel value={value} index={1}>
-        <CellControls />
+        <SegmentSamControls />
       </TabPanel>
       <TabPanel value={value} index={2}>
-        <TrackingControls />
+        <CellControls />
       </TabPanel>
       <TabPanel value={value} index={3}>
-        <CellTypeControls />
+        <TrackingControls />
       </TabPanel>
       <TabPanel value={value} index={4}>
+        <CellTypeControls />
+      </TabPanel>
+      <TabPanel value={value} index={5}>
         <SpotsControls />
       </TabPanel>
     </Box>

@@ -45,6 +45,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         checkTool: {
           always: [
             { cond: ({ tool }) => tool === 'editSegment', target: 'editSegment' },
+            { cond: ({ tool }) => tool === 'editSegmentSam', target: 'editSegmentSam' },
             { cond: ({ tool }) => tool === 'editCells', target: 'editCells' },
             { cond: ({ tool }) => tool === 'editDivisions', target: 'editDivisions' },
             { cond: ({ tool }) => tool === 'editCellTypes', target: 'editCellTypes' },
@@ -57,6 +58,13 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
           on: {
             mouseup: { actions: forwardTo('editSegment') },
             mousedown: { actions: forwardTo('editSegment') },
+          },
+        },
+        editSegmentSam: {
+          entry: [assign({ tool: 'editSegmentSam' }), send({ type: 'ENTER_TAB' })],
+          on: {
+            mouseup: { actions: forwardTo('editSegmentSam') },
+            mousedown: { actions: forwardTo('editSegmentSam') },
           },
         },
         editDivisions: {
@@ -103,6 +111,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         SAVE: { actions: 'save' },
         RESTORE: { target: '.checkTool', actions: ['restore', respond('RESTORED')] },
         EDIT_SEGMENT: 'editSegment',
+        EDIT_SEGMENT_SAM: 'editSegmentSam',
         EDIT_DIVISIONS: 'editDivisions',
         EDIT_CELLS: 'editCells',
         EDIT_CELLTYPES: 'editCellTypes',
@@ -118,6 +127,7 @@ const createEditMachine = ({ eventBuses, undoRef }) =>
         restore: assign((_, { tool }) => ({ tool })),
         spawnTools: assign((context) => ({
           editSegmentRef: spawn(createEditSegmentMachine(context), 'editSegment'),
+          editSegmentSamRef: spawn(createEditSegmentMachine(context), 'editSegmentSam'),
           editDivisionsRef: spawn(createEditDivisionsMachine(context), 'editDivisions'),
           editCellsRef: spawn(createEditCellsMachine(context), 'editCells'),
           editCellTypesRef: spawn(createEditCellTypesMachine(context), 'editCellTypes'),

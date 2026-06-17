@@ -12,6 +12,10 @@ AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
 S3_BUCKET = config('S3_BUCKET', default='deepcell-label-input')
 
+# Cellsam compute server
+CELLSAM_IP = config('CELLSAM_IP', default='')
+CELLSAM_PORT = config('CELLSAM_PORT', default='')
+
 TEMPLATES_AUTO_RELOAD = config('TEMPLATES_AUTO_RELOAD', cast=bool, default=True)
 
 # SQLAlchemy settings
