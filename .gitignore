@@ -82,7 +82,7 @@ fmd_config.cfg
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+documentation/_build/
 
 # PyBuilder
 target/
