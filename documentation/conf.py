@@ -18,7 +18,8 @@ extensions = ["myst_nb"]
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-
+# Autogenerate heading anchor slugs down to H5 headings
+myst_heading_anchors = 5
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
