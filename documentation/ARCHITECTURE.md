@@ -5,7 +5,8 @@ DeepCell Label has two subcomponents
 - a [backend](#python-backend) that handles data input and output and logic to edit segmentations
 - a [frontend](#client) that shows and edits an image with its labels
 
-See details on how to run them [locally](LOCAL_USE.md) or [on the cloud](DEPLOYMENT.md).
+See details on how to run them {doc}`locally <setup/LOCAL_USE>` or
+{doc}`on the cloud <setup/DEPLOYMENT>`.
 
 ## Python backend
 
