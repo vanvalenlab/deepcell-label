@@ -1,3 +1,6 @@
+# Editor cruft
+*.swp
+
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
