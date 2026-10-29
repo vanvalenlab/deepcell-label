@@ -64,7 +64,7 @@ Here's a tree diagram of the spawned state machines. The root project state mach
 
 Note that as more machines are added (including cellTypes), this diagram is getting out of date in specifics, but the basic principles and structure remains true.
 
-![xstate tree diagram](xstateTree.png)
+![xstate tree diagram](_static/xstateTree.png)
 
 #### UI actors
 
