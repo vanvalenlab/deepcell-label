@@ -1,4 +1,4 @@
-# DeepCell Label File Format
+# Data Format
 
 ## Supported input files
 
