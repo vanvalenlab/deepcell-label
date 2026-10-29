@@ -6,8 +6,6 @@ deepcell-label
 hidden: true
 ---
 ARCHITECTURE
+setup/index
 LABEL_FILE_FORMAT
-FIRST_TIME_SETUP
-LOCAL_USE
-DEPLOYMENT
 ```
