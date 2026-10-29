@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Deployment &#8212; deepcell-label</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'setup/DEPLOYMENT';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Data Format" href="../LABEL_FILE_FORMAT.html" />
+    <link rel="prev" title="Local use" href="LOCAL_USE.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">deepcell-label</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../ARCHITECTURE.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Setup and Deployment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../LABEL_FILE_FORMAT.html">
+    Data Format
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../ARCHITECTURE.html">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Setup and Deployment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../LABEL_FILE_FORMAT.html">
+    Data Format
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="FIRST_TIME_SETUP.html">First Time Setup Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LOCAL_USE.html">Local use</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Deployment</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Setup and Deployment</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Deployment</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="deployment">
+<h1>Deployment<a class="headerlink" href="#deployment" title="Link to this heading">#</a></h1>
+<p>Deploying DeepCell Label at a web address like label.deepcell.org uses several services on AWS and Google Cloud Platform, including</p>
+<ul class="simple">
+<li><p>an <a class="reference internal" href="#host-a-static-site-with-an-s3-bucket">S3 bucket hosted static site</a> for the frontend assets</p></li>
+<li><p>an <a class="reference internal" href="#host-the-backend-with-elastic-beanstalk">Elastic Beanstalk instance</a> for the backend</p></li>
+<li><p>a <a class="reference internal" href="#create-a-shared-endpoint-with-cloudfront">CloudFront distribution</a></p></li>
+<li><p>a <a class="reference internal" href="#use-a-custom-domain-name">custom domain name</a></p></li>
+<li><p>an <a class="reference internal" href="#appendix-using-the-aws-rds-database">MySQL database</a></p></li>
+</ul>
+<p>This guide walkthrough how to create, configure, and coordinates these services to complete a deployment. Unless otherwise specified, use the default settings for each service.</p>
+<section id="host-a-static-site-with-an-s3-bucket">
+<h2>Host a static site with an S3 bucket<a class="headerlink" href="#host-a-static-site-with-an-s3-bucket" title="Link to this heading">#</a></h2>
+<p>Create a new S3 bucket with the <a class="reference external" href="https://s3.console.aws.amazon.com/s3/buckets">AWS console</a> and uncheck “Block all public access”.</p>
+<p>In the Properties tab of the bucket, scroll to the bottom to find the Static website hosting settings.</p>
+<ul class="simple">
+<li><p>Enable static site hosting.</p></li>
+<li><p>Set the Index document to <code class="docutils literal notranslate"><span class="pre">index.html</span></code></p></li>
+<li><p>Set the Error document to <code class="docutils literal notranslate"><span class="pre">index.html</span></code></p>
+<ul>
+<li><p>needed for React Router to serve different pages like /project, /loading, etc. Otherwise, the site raises a 404 error because it cannot find a file named <code class="docutils literal notranslate"><span class="pre">project</span></code> or <code class="docutils literal notranslate"><span class="pre">loading</span></code> in the bucket.</p></li>
+</ul>
+</li>
+</ul>
+<p>The Static site hosting section will now show a “Bucket website endpoint” with a URL for the site. Make a note of this URL to use with CloudFront.</p>
+<p>In the Permissions tab,
+set the Bucket policy to</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">"Version"</span><span class="p">:</span> <span class="s2">"2012-10-17"</span><span class="p">,</span>
+    <span class="s2">"Statement"</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">"Sid"</span><span class="p">:</span> <span class="s2">"PublicRead"</span><span class="p">,</span>
+            <span class="s2">"Effect"</span><span class="p">:</span> <span class="s2">"Allow"</span><span class="p">,</span>
+            <span class="s2">"Principal"</span><span class="p">:</span> <span class="s2">"*"</span><span class="p">,</span>
+            <span class="s2">"Action"</span><span class="p">:</span> <span class="p">[</span>
+                <span class="s2">"s3:GetObject"</span><span class="p">,</span>
+                <span class="s2">"s3:GetObjectVersion"</span>
+            <span class="p">],</span>
+            <span class="s2">"Resource"</span><span class="p">:</span> <span class="s2">"arn:aws:s3:::INSERT_BUCKET_NAME_HERE/*"</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Note that you need to update the bucket name at <code class="docutils literal notranslate"><span class="pre">INSERT_BUCKET_NAME_HERE</span></code>.</p>
+<p>Build the frontend by running</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">frontend</span></code> to open the frontend folder</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">yarn</span></code> to install or update the dependencies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">build</span></code> to generate the static assets</p></li>
+</ul>
+<p>Open the <code class="docutils literal notranslate"><span class="pre">frontend/build</span></code> folder and upload all the files to the S3 bucket.</p>
+</section>
+<section id="host-the-backend-with-elastic-beanstalk">
+<h2>Host the backend with Elastic Beanstalk<a class="headerlink" href="#host-the-backend-with-elastic-beanstalk" title="Link to this heading">#</a></h2>
+<p>Loading and editing data with DeepCell Label happens with a Flask application hosted on Elastic Beanstalk.</p>
+<p>Install the Elastic Beanstalk command line tools following <a class="reference external" href="https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html">these instructions</a>. You can check that they are installed by running <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">--version</span></code> on the command line.</p>
+<p>If using Elastic Beanstalk for the first time in the repository, run <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">init</span></code> from the <code class="docutils literal notranslate"><span class="pre">backend</span></code> folder of the repository to initialize Elastic Beanstalk.</p>
+<ul class="simple">
+<li><p>Select region 14 to use the existing application for deepcell label</p></li>
+<li><p>Select the <code class="docutils literal notranslate"><span class="pre">caliban-test-with-db</span></code> application</p></li>
+<li><p>Decline CodeCommit</p></li>
+</ul>
+<p>use <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">create</span></code>. creating an Elastic Beanstalk environment for the first time,</p>
+<ul class="simple">
+<li><p>Select load balancer type 2: application</p></li>
+<li><p>Decline spot fleet requests</p></li>
+</ul>
+<p>To use existing environment, run <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">use</span> <span class="pre">ENVIRONMENT_NAME</span></code> to set the environment for the current git branch. Each time you switch git branches, make sure to set the environment with <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">use</span></code>.</p>
+<p>Once the environment is set, run <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">status</span></code>. Look for CNAME to see the instance’s endpoint URL. You can also find this URL on the <a class="reference external" href="https://us-east-2.console.aws.amazon.com/elasticbeanstalk/home">AWS Console</a>. Make a note of this URL to use with CloudFront.</p>
+<p>Before deploying the instance, confirm that you have set the following values in the <code class="docutils literal notranslate"><span class="pre">.env</span></code> file:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">AWS_ACCESS_KEY_ID</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AWS_SECRET_ACCESS_KEY</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">S3_BUCKET</span></code> - this is the bucket where you will store files uploaded to DCL</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SQLALCHEMY_DATABASE_URI</span></code></p></li>
+</ul>
+<p>When you’re ready to deploy, run <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">deploy</span></code>.</p>
+</section>
+<section id="create-a-shared-endpoint-with-cloudfront">
+<h2>Create a shared endpoint with CloudFront<a class="headerlink" href="#create-a-shared-endpoint-with-cloudfront" title="Link to this heading">#</a></h2>
+<p>Now that both the frontend and backend are online, we need to reach them through a single endpoint with CloudFront on AWS.</p>
+<section id="create-a-cloudfront-distribution-for-the-s3-bucket">
+<h3>Create a CloudFront distribution for the S3 bucket<a class="headerlink" href="#create-a-cloudfront-distribution-for-the-s3-bucket" title="Link to this heading">#</a></h3>
+<p>On the <a class="reference external" href="https://us-east-1.console.aws.amazon.com/cloudfront/v3/home">CloudFront AWS Console</a>, create a distribution.
+Set the Origin domain to the “Bucket website endpoint” URL from the S3 static site.</p>
+</section>
+<section id="add-a-second-origin-for-elastic-beanstalk">
+<h3>Add a second origin for Elastic Beanstalk<a class="headerlink" href="#add-a-second-origin-for-elastic-beanstalk" title="Link to this heading">#</a></h3>
+<p>Under the Origins tab for the distribution, create an origin where the Origin domain is the URL for the Elastic Beanstalk instance. You may want to change Response timeout for the backend from 30 seconds to the maximum 60 seconds to support loading large and/or slow downloads.</p>
+</section>
+<section id="add-a-behaviors-to-redirect-api-requests-to-elastic">
+<h3>Add a behaviors to redirect API requests to Elastic<a class="headerlink" href="#add-a-behaviors-to-redirect-api-requests-to-elastic" title="Link to this heading">#</a></h3>
+<p>By adding the S3 hosted static site origin first, the default behavior will be to forward requests to this origin. We’ll add a behavior to to forward API requests to the backend.</p>
+<p>Under the Behaviors tab, create a behavior, then</p>
+<ul class="simple">
+<li><p>Set the Path pattern to <code class="docutils literal notranslate"><span class="pre">/api/*</span></code></p></li>
+<li><p>Set the Origin to the backend on Elastic Beanstalk</p></li>
+<li><p>Set Allowed HTTP methods to <code class="docutils literal notranslate"><span class="pre">GET,</span> <span class="pre">HEAD,</span> <span class="pre">OPTIONS,</span> <span class="pre">PUT,</span> <span class="pre">POST,</span> <span class="pre">PATCH,</span> <span class="pre">DELETE</span></code></p>
+<ul>
+<li><p>allows sending POST requests that update data</p></li>
+</ul>
+</li>
+<li><p>Set Cache policy to <code class="docutils literal notranslate"><span class="pre">CacheDisabled</span></code></p>
+<ul>
+<li><p>prevents sending stale project data</p></li>
+</ul>
+</li>
+<li><p>Set Origin request policy to <code class="docutils literal notranslate"><span class="pre">AllViewer</span></code></p>
+<ul>
+<li><p>forwards query strings such as the bucket to fetch data from</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="use-a-custom-domain-name">
+<h2>Use a custom domain name<a class="headerlink" href="#use-a-custom-domain-name" title="Link to this heading">#</a></h2>
+<p>The application is now online at the domain name generated by CloudFront. Follow these steps to use a custom domain name for a deployment, such as label.deepcell.org.</p>
+<ul class="simple">
+<li><p>on Cloud DNS on https://console.cloud.google.com</p>
+<ul>
+<li><p>Add a CNAME record where the data is the URL for the CloudFront endpoint and the DNS name is <code class="docutils literal notranslate"><span class="pre">label.deepcell.org.</span></code>.</p></li>
+<li><p>Add a CNAME record where the data is <code class="docutils literal notranslate"><span class="pre">label.deepcell.org.</span></code> and DNS name is <code class="docutils literal notranslate"><span class="pre">www.label.deepcell.org.</span></code>.</p></li>
+</ul>
+</li>
+<li><p>on the CloudFront distribution</p>
+<ul>
+<li><p>Set the Alternate domain name (CNAME) to <code class="docutils literal notranslate"><span class="pre">label.deepcell.org</span></code></p></li>
+<li><p>Set the Custom SSL certificate to <code class="docutils literal notranslate"><span class="pre">*.deepcell.org</span></code>, or your own certificate for the domain name to use</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="updating-the-deployment">
+<h2>Updating the deployment<a class="headerlink" href="#updating-the-deployment" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Redeploy the backend with <code class="docutils literal notranslate"><span class="pre">eb</span> <span class="pre">deploy</span></code> in the backend folder</p>
+<ul>
+<li><p>Make sure the database credentials are set before deploying</p></li>
+</ul>
+</li>
+<li><p>Rebuild the frontend with <code class="docutils literal notranslate"><span class="pre">yarn</span> <span class="pre">build</span></code> in the frontend folder</p></li>
+<li><p>Reupload the compiled frontend static assets to the S3 bucket</p></li>
+<li><p>Invalidate the CloudFront cache for <code class="docutils literal notranslate"><span class="pre">/</span></code> and <code class="docutils literal notranslate"><span class="pre">/index.html</span></code> so the updated assets are served</p></li>
+</ul>
+</section>
+<section id="appendix-using-the-aws-rds-database">
+<h2>Appendix: using the AWS RDS database<a class="headerlink" href="#appendix-using-the-aws-rds-database" title="Link to this heading">#</a></h2>
+<p>A MySQL database is set up with RDS on AWS. It’s not part of the deployment process, other than providing credentials to the backend to connect to it.</p>
+<p>In case the database requires changes, access it on the command like with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>mysql --host=$HOST --user=$USERNAME --password -P $PORT
+</pre></div>
+</div>
+<p>and modify it with commands such as these: <a class="reference external" href="https://devhints.io/mysql">MySQL cheat sheet</a>. Make sure to set the HOST, USERNAME, and PORT for the command. If you’re switching the database that the backend uses (for instance, when the database schema changes dramatically), connect to the MySQL instance and create the new database with <code class="docutils literal notranslate"><span class="pre">CREATE</span> <span class="pre">DATABASE</span> <span class="pre">new-database-name</span></code>. The Flask backend sets up tables once it connects to the new database.</p>
+<section id="switching-between-deployment-and-development">
+<h3>Switching between deployment and development<a class="headerlink" href="#switching-between-deployment-and-development" title="Link to this heading">#</a></h3>
+<p>While developing, avoid connecting the Flask backend to the production RDS database on AWS to increase performance and to not clutter the database with development activity.</p>
+<p>While developing, comment out remote database info in .env and fmd_config.cfg so local databases are used instead of remote databases. This includes</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SQLALCHEMY_DATABASE_URI</span></code> in .env</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DATABASE</span></code> in fmd_config.cfg</p></li>
+</ul>
+<p>Before deploying the backend, uncomment these lines and then recomment them when continuing with development.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="LOCAL_USE.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Local use</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../LABEL_FILE_FORMAT.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Data Format</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#host-a-static-site-with-an-s3-bucket">Host a static site with an S3 bucket</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#host-the-backend-with-elastic-beanstalk">Host the backend with Elastic Beanstalk</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#create-a-shared-endpoint-with-cloudfront">Create a shared endpoint with CloudFront</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#create-a-cloudfront-distribution-for-the-s3-bucket">Create a CloudFront distribution for the S3 bucket</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#add-a-second-origin-for-elastic-beanstalk">Add a second origin for Elastic Beanstalk</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#add-a-behaviors-to-redirect-api-requests-to-elastic">Add a behaviors to redirect API requests to Elastic</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#use-a-custom-domain-name">Use a custom domain name</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#updating-the-deployment">Updating the deployment</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#appendix-using-the-aws-rds-database">Appendix: using the AWS RDS database</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#switching-between-deployment-and-development">Switching between deployment and development</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/setup/DEPLOYMENT.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Van Valen Lab.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Architecture &#8212; deepcell-label</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'ARCHITECTURE';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Setup and Deployment" href="setup/index.html" />
+    <link rel="prev" title="deepcell-label" href="index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">deepcell-label</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#" aria-current="page">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="setup/index.html">
+    Setup and Deployment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="LABEL_FILE_FORMAT.html">
+    Data Format
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#" aria-current="page">
+    Architecture
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="setup/index.html">
+    Setup and Deployment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="LABEL_FILE_FORMAT.html">
+    Data Format
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Architecture</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">#</a></h1>
+<p>DeepCell Label has two subcomponents</p>
+<ul class="simple">
+<li><p>a <a class="reference internal" href="#python-backend">backend</a> that handles data input and output and logic to edit segmentations</p></li>
+<li><p>a <a class="reference internal" href="#client">frontend</a> that shows and edits an image with its labels</p></li>
+</ul>
+<p>See details on how to run them <a class="reference internal" href="setup/LOCAL_USE.html"><span class="doc">locally</span></a> or
+<a class="reference internal" href="setup/DEPLOYMENT.html"><span class="doc">on the cloud</span></a>.</p>
+<section id="python-backend">
+<h2>Python backend<a class="headerlink" href="#python-backend" title="Link to this heading">#</a></h2>
+<p>The backend is a Python based Flask application that</p>
+<ul class="simple">
+<li><p>loads files into the database and bucket</p></li>
+<li><p>accesses projects for the client</p></li>
+<li><p>edits the segmentation</p></li>
+<li><p>exports the project</p></li>
+</ul>
+<section id="loading-projects">
+<h3>Loading projects<a class="headerlink" href="#loading-projects" title="Link to this heading">#</a></h3>
+<p>To create a DeepCell Label project, send a POST request with a form to <code class="docutils literal notranslate"><span class="pre">/api/project</span></code>. See the <a class="reference internal" href="LABEL_FILE_FORMAT.html#supported-input-files"><span class="std std-ref">DeepCell Label zip file format</span></a> for details on the form contents.</p>
+<p>The DeepCell Label homepage uses a similar route <code class="docutils literal notranslate"><span class="pre">/api/project/dropped</span></code> that attaches a dragged and dropped file to the request.</p>
+</section>
+<section id="accessing-projects">
+<h3>Accessing projects<a class="headerlink" href="#accessing-projects" title="Link to this heading">#</a></h3>
+<p>The client fetches project data through <code class="docutils literal notranslate"><span class="pre">/api/project/&lt;ID&gt;</span></code>. As this route provides access to projects, the S3 bucket with project zip files can be private. The route looks up the URL for the project zip in the database, then downloads and forwards the zip file to the client.</p>
+</section>
+<section id="editing-segmentation">
+<h3>Editing segmentation<a class="headerlink" href="#editing-segmentation" title="Link to this heading">#</a></h3>
+<p>The client edits the segmentation image with the <code class="docutils literal notranslate"><span class="pre">/api/edit</span></code> route. The route uses an attached zip file containing the data to edit and responds with a zip file with the edited segmentation image and cells.</p>
+<p>See <a class="reference internal" href="LABEL_FILE_FORMAT.html#edit-and-export-zips"><span class="std std-ref">DeepCell Label zip format</span></a> for how to send data to <code class="docutils literal notranslate"><span class="pre">/api/edit</span></code>.</p>
+</section>
+<section id="exporting-projects">
+<h3>Exporting projects<a class="headerlink" href="#exporting-projects" title="Link to this heading">#</a></h3>
+<p>DeepCell Label has a Submit button that sends the edited labels to the <code class="docutils literal notranslate"><span class="pre">/api/upload</span></code> route, creates a zip, and uploads the zip to an S3 bucket.</p>
+<p>When opening a DeepCell Lable link with <code class="docutils literal notranslate"><span class="pre">download=true</span></code>, the page shows a Download button instead of Submit. The button calls <code class="docutils literal notranslate"><span class="pre">/api/download</span></code> which responds with the zip for the client to download.</p>
+<p>See <a class="reference internal" href="LABEL_FILE_FORMAT.html#edit-and-export-zips"><span class="std std-ref">DeepCell Label zip format</span></a> for how to send data to these routes.</p>
+</section>
+</section>
+<section id="client">
+<h2>Client<a class="headerlink" href="#client" title="Link to this heading">#</a></h2>
+<p>The client is a <a class="reference external" href="https://reactjs.org/">React</a> based user interface with <a class="reference external" href="https://xstate.js.org/docs/">XState</a> based state management.</p>
+<section id="react-ui">
+<h3>React UI<a class="headerlink" href="#react-ui" title="Link to this heading">#</a></h3>
+<p>The top level component is <a class="reference download internal" download="" href="_downloads/bfeda820bc559869c243494a135328f5/App.js"><span class="xref download myst">App.js</span></a>, which provides a <a class="reference download internal" download="" href="_downloads/fe3a9fba62bf0263a20b1edc554a9528/Navbar.js"><span class="xref download myst">NavBar</span></a> and <a class="reference download internal" download="" href="_downloads/cac2f28cd7f6366a2cbff059f0670a3e/Footer.js"><span class="xref download myst">Footer</span></a> for all pages and routing with <a class="reference external" href="https://reactrouter.com/">React Router</a>.</p>
+<p>App.js routes between three pages:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/</span></code> shows Load, a homepage that can create project from drag-and-dropped files or example files</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/loading</span></code> shows Loading, a page for redirecting from deepcell.org/predict that shows a loading animation or error messages</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/project</span></code> shows Project, a page for viewing and editing projects</p></li>
+</ul>
+</section>
+<section id="state-management">
+<h3>State management<a class="headerlink" href="#state-management" title="Link to this heading">#</a></h3>
+<p>The React components use hooks defined in <a class="reference download internal" download="" href="_downloads/0576de4a993da6d3bded03f9fe2c5661/ProjectContext.js"><span class="xref download myst"><code class="docutils literal notranslate"><span class="pre">ProjectContext.js</span></code></span></a> to access and render the state.</p>
+<p>The root level machine spawns child actors and sets up event buses for these actors to communicate with each other.</p>
+<p>Here’s a tree diagram of the spawned state machines. The root project state machine, and the child state machine The state machines with stars have event buses that they broadcast events on. The events they broadcast are shown in blue to the right of the state machine. The events that state machines listen to from these event buses on are shown to the left.</p>
+<p>Note that as more machines are added (including cellTypes), this diagram is getting out of date in specifics, but the basic principles and structure remains true.</p>
+<p><img alt="xstate tree diagram" src="_images/xstateTree.png" /></p>
+<section id="ui-actors">
+<h4>UI actors<a class="headerlink" href="#ui-actors" title="Link to this heading">#</a></h4>
+<p>These actors manage the interactions with the UI</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">canvasMachine</span></code></p>
+<ul>
+<li><p>interprets interactions with the canvas, like <code class="docutils literal notranslate"><span class="pre">mousemove</span></code>, <code class="docutils literal notranslate"><span class="pre">mouseup</span></code>, and <code class="docutils literal notranslate"><span class="pre">mousedown</span></code></p></li>
+<li><p>broadcasts <code class="docutils literal notranslate"><span class="pre">COORDINATES</span></code> and mouse events on its event bus</p></li>
+<li><p>can switch between a panOnDrag that pans the canvas when clicking and dragging and a noPan state where the spacebar has to be held to click and drag to pan</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hoveringMachine</span></code></p>
+<ul>
+<li><p>combines the coordinates from the canvas, the labeled array from arrays, and the cell labels from cells to detemine a list of cells under the cursor</p></li>
+<li><p>broadcasts <code class="docutils literal notranslate"><span class="pre">HOVERING</span></code> events on its event bus when the hovering cells change</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">selectMachine</span></code></p>
+<ul>
+<li><p>tracks which cell is selected</p></li>
+<li><p>updates the selected cell with <code class="docutils literal notranslate"><span class="pre">SELECT</span></code>, <code class="docutils literal notranslate"><span class="pre">SELECT_NEW</span></code>, <code class="docutils literal notranslate"><span class="pre">RESET</span></code>, <code class="docutils literal notranslate"><span class="pre">SELECT_PREVIOUS</span></code>, and <code class="docutils literal notranslate"><span class="pre">SELECT_NEXT</span></code> events</p></li>
+<li><p>broadcasts SELECTED events on its event bus when the selected cell changes</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">imageMachine</span></code></p>
+<ul>
+<li><p>manages which time <code class="docutils literal notranslate"><span class="pre">t</span></code> of a timelapse to show</p></li>
+<li><p>broadcast <code class="docutils literal notranslate"><span class="pre">T</span></code> events on its event bus when <code class="docutils literal notranslate"><span class="pre">t</span></code> changes</p></li>
+<li><p>spawns <code class="docutils literal notranslate"><span class="pre">rawMachine</span></code></p>
+<ul>
+<li><p>manages which channel(s) to display</p></li>
+<li><p>broadcasts <code class="docutils literal notranslate"><span class="pre">CHANNEL</span></code> events on its event bus</p></li>
+<li><p>spawns an actor for each channel</p></li>
+<li><p>spawns an actor for each layer in color mode</p></li>
+</ul>
+</li>
+<li><p>spawns <code class="docutils literal notranslate"><span class="pre">labeledMachine</span></code></p>
+<ul>
+<li><p>manages which segmentation to display and how to display it</p></li>
+<li><p>broadcasts <code class="docutils literal notranslate"><span class="pre">FEATURE</span></code> events on its event bus</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">editMachine</span></code></p>
+<ul>
+<li><p>manages which tab of controls are open next to the canvas, such as display, segment, cells, divisions, or spots</p></li>
+<li><p>for the tabs with controls to edit labels, it spawns a child actor to manage the tab that can send events to the respective labels machine to trigger an action that edits the labels, including</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">editSegmentMachine</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">editCellsMachine</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">editDivisionsMachine</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">editCellTypesMachine</span></code></p></li>
+<li><p>each of these spawn actors for the tools it manages, and the tool actors send events to a label machine (e.g. <code class="docutils literal notranslate"><span class="pre">cellMachine</span></code>) to edit the labels</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="labels">
+<h4>Labels<a class="headerlink" href="#labels" title="Link to this heading">#</a></h4>
+<p>These state machines hold the labels and manage the logic that edit labels.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">arraysMachine</span></code></p>
+<ul>
+<li><p>manages the raw image arrays and the segmentation images</p></li>
+<li><p>spawns <code class="docutils literal notranslate"><span class="pre">segmentApiMachine</span></code> that communicates with the segmentation editing API on the Flask backend</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cellsMachine</span></code></p>
+<ul>
+<li><p>manages the cells and how to edite them</p></li>
+<li><p>edits the cells on <code class="docutils literal notranslate"><span class="pre">DELETE</span></code>, <code class="docutils literal notranslate"><span class="pre">SWAP</span></code>, <code class="docutils literal notranslate"><span class="pre">REPLACE</span></code>, and <code class="docutils literal notranslate"><span class="pre">NEW</span></code> events</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">divisionsMachine</span></code></p>
+<ul>
+<li><p>manage the divisions and how to edit them</p></li>
+<li><p>edits the divisions on <code class="docutils literal notranslate"><span class="pre">ADD_DAUGHTER</span></code> and <code class="docutils literal notranslate"><span class="pre">REMOVE_DAUGHTER</span></code> events</p></li>
+<li><p>updates divisions to stay in sync with cells when receiving <code class="docutils literal notranslate"><span class="pre">DELETE</span></code>, <code class="docutils literal notranslate"><span class="pre">SWAP</span></code>, <code class="docutils literal notranslate"><span class="pre">REPLACE</span></code>, and <code class="docutils literal notranslate"><span class="pre">NEW</span></code> events</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">spotsMachine</span></code></p>
+<ul>
+<li><p>manages the spots labels</p></li>
+<li><p>no spots editing implemented yet</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cellTypesMachine</span></code></p>
+<ul>
+<li><p>manages the cell type labels</p></li>
+<li><p>edits cell type labels by adding and removing cell types (<code class="docutils literal notranslate"><span class="pre">ADD_CELLTYPE</span></code>, <code class="docutils literal notranslate"><span class="pre">REMOVE_CELLTYPE</span></code>), modifying which cells are in which types (<code class="docutils literal notranslate"><span class="pre">ADD_CELL</span></code>, <code class="docutils literal notranslate"><span class="pre">REMOVE_CELL</span></code>), and any other cell type label edits</p></li>
+<li><p>supplemented by 2 additional machines:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">channelExpressionMachine</span></code></p>
+<ul>
+<li><p>Makes calculations for channel expressions for each cell in the image via mean and total pixel values</p></li>
+<li><p>Calculations are calculated and saved for use in plotting functionality (histogram, scatter, UMAP)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainingMachine</span></code></p>
+<ul>
+<li><p>Uses the <a class="reference external" href="https://www.tensorflow.org/js">tensorflow.js</a> package to train a machine learning model on the frontend using either the channel expression calculations or some imported embeddings for each cell</p></li>
+<li><p>The model can then be used to make predictions of cell type labels for each unlabeled cell, as well as estimate uncertainties, as we have translated the Python tensorflow implementation of <a class="reference external" href="https://www.tensorflow.org/tutorials/understanding/sngp">SNGP</a> (still needs to be tested more extensively)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="data-management">
+<h4>Data management<a class="headerlink" href="#data-management" title="Link to this heading">#</a></h4>
+<p>These state machines provide additional infrastructure to record changes to labels.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">undoMachine</span></code></p>
+<ul>
+<li><p>spawns <code class="docutils literal notranslate"><span class="pre">uiHistoryMachine</span></code> and <code class="docutils literal notranslate"><span class="pre">labelsHistoryMachine</span></code> to save and restore state</p></li>
+<li><p>tracks how many label edits have been done, undone, and redone</p></li>
+<li><p>see <a class="reference internal" href="#undo">undo</a> below for more details</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">idbMachine</span></code></p>
+<ul>
+<li><p>spawns <code class="docutils literal notranslate"><span class="pre">idbWebWorker</span></code> in a web worker to interact with IndexedDB off of the main thread</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">exportMachine</span></code></p>
+<ul>
+<li><p>sends project data to the backend to be repackaged and exported</p></li>
+</ul>
+</li>
+</ul>
+<section id="undo">
+<h5>Undo<a class="headerlink" href="#undo" title="Link to this heading">#</a></h5>
+<p>The undo machine keeps track of how many actions have been done, undone, or redone. It spawns a list of <code class="docutils literal notranslate"><span class="pre">uiHistoryMachine</span></code> to track an actor’s state when each action starts, and it spawns a list of <code class="docutils literal notranslate"><span class="pre">labelHistoryMachine</span></code> to track the label changes caused by the actions.</p>
+<p>An actor can send an REGISTER_UI event to the undo machine to create a <code class="docutils literal notranslate"><span class="pre">uiHistoryMachine</span></code> for that actor, or send a REGISTER_LABELS event to create a <code class="docutils literal notranslate"><span class="pre">labelHistoryMachine</span></code>.</p>
+<p>An actor tracked with a <code class="docutils literal notranslate"><span class="pre">uiHistoryMachine</span></code> must</p>
+<ul class="simple">
+<li><p>respond with a RESTORE event that records its current state when it receives a SAVE event</p></li>
+<li><p>restore its state when it receives RESTORE event</p></li>
+</ul>
+<p>An actor tracked with a <code class="docutils literal notranslate"><span class="pre">labelHistoryMachine</span></code> must</p>
+<ul class="simple">
+<li><p>send a SNAPSHOT event to the history machine when its labels are edited, containing the properties</p>
+<ul>
+<li><p>edit, with a number for the action that the changes are part of</p></li>
+<li><p>before, with an event that has the labels before the action</p></li>
+<li><p>after, with an event that has the labels after the action</p></li>
+</ul>
+</li>
+<li><p>restore its labels when receiving these before and after events</p></li>
+</ul>
+<p>A <code class="docutils literal notranslate"><span class="pre">uiHistoryMachine</span></code> records its actor’s state for every action, while <code class="docutils literal notranslate"><span class="pre">labelHistoryMachine</span></code> only records the state when it receives a snapshot from the actor.</p>
+</section>
+</section>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">deepcell-label</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="setup/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Setup and Deployment</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#python-backend">Python backend</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-projects">Loading projects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#accessing-projects">Accessing projects</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#editing-segmentation">Editing segmentation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#exporting-projects">Exporting projects</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#client">Client</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#react-ui">React UI</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#state-management">State management</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#ui-actors">UI actors</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#labels">Labels</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#data-management">Data management</a><ul class="nav section-nav flex-column">
+<li class="toc-h5 nav-item toc-entry"><a class="reference internal nav-link" href="#undo">Undo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/ARCHITECTURE.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Van Valen Lab.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
