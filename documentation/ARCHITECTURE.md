@@ -1,4 +1,4 @@
-# DeepCell Label Architecture
+# Architecture
 
 DeepCell Label has two subcomponents
 
