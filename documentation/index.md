@@ -3,7 +3,11 @@ deepcell-label
 
 ```{toctree}
 ---
-maxdepth: 2
-caption: Contents:
+hidden: true
 ---
+ARCHITECTURE
+LABEL_FILE_FORMAT
+FIRST_TIME_SETUP
+LOCAL_USE
+DEPLOYMENT
 ```
